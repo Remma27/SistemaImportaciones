@@ -1,0 +1,191 @@
+@{
+    ViewData["Title"] = "Informe General";
+}
+
+<div class="container-fluid mt-3">
+    <div class="card shadow">
+        <!-- Header -->
+        <div class="card-header py-3 ">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h3 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Informe General
+                    </h3>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <label class="input-group-text">Importación</label>
+                        <select class="form-select">
+                            <option selected>Seleccione...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-table me-1"></i>
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-th me-1"></i>
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>
+                            Exportar
+                        </button>
+                        <button class="btn btn-outline-primary" id="convertToLbs" type="button">
+                            <i class="fas fa-weight me-1"></i>
+                            Convertir a Libras
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Content -->
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Agroindustria</th>
+                            <th class="text-end">Req. KG</th>
+                            <th class="text-end">Req. Toneladas</th>
+                            <th class="text-end">Descarga KG</th>
+                            <th class="text-end">Faltante KG</th>
+                            <th class="text-end">Ton. Faltantes</th>
+                            <th class="text-end">Camiones Faltantes</th>
+                            <th class="text-end">Conteo Placas</th>
+                            <th class="text-end">% Descarga</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Empresa 1</td>
+                            <td class="text-end">100,000</td>
+                            <td class="text-end">100</td>
+                            <td class="text-end">50,000</td>
+                            <td class="text-end">50,000</td>
+                            <td class="text-end">50</td>
+                            <td class="text-end">10</td>
+                            <td class="text-end">5</td>
+                            <td class="text-end">50%</td>
+                        </tr>
+                        <!-- More rows here -->
+                        <tr class="table-secondary">
+                            <th>Totales:</th>
+                            <td class="text-end fw-bold">100,000</td>
+                            <td class="text-end fw-bold">100</td>
+                            <td class="text-end fw-bold">50,000</td>
+                            <td class="text-end fw-bold">50,000</td>
+                            <td class="text-end fw-bold">50</td>
+                            <td class="text-end fw-bold">10</td>
+                            <td class="text-end fw-bold">5</td>
+                            <td class="text-end fw-bold">50%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer with summary -->
+        <div class="card-footer">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Total Importación:</strong> 100,000 KG
+                </div>
+                <div class="col-md-6 text-end">
+                    <strong>Conteo Entregas:</strong> 15
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const KG_TO_LBS = 2.20462;
+            let isKilograms = true;
+
+            const table = $('.table').DataTable({
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                },
+                drawCallback: function() {
+                    updateTotals();
+                }
+            });
+
+            function convertValue(value, toLbs) {
+                if (typeof value === 'string') {
+                    value = parseFloat(value.replace(/,/g, ''));
+                }
+                if (isNaN(value)) return value;
+                
+                return toLbs ? value * KG_TO_LBS : value / KG_TO_LBS;
+            }
+
+            function formatNumber(number) {
+                return Number(parseFloat(number).toFixed(2)).toLocaleString('es');
+            }
+
+            function updateTotals() {
+                let totalReq = 0;
+                let totalDesc = 0;
+
+                table.rows().every(function() {
+                    const data = this.data();
+                    if (data[1]) { // Req. KG column
+                        totalReq += parseFloat(data[1].replace(/,/g, '')) || 0;
+                    }
+                    if (data[3]) { // Descarga KG column
+                        totalDesc += parseFloat(data[3].replace(/,/g, '')) || 0;
+                    }
+                });
+
+                const unit = isKilograms ? 'KG' : 'LBS';
+                $('.card-footer .col-md-6:first').html(
+                    `<strong>Total Importación:</strong> ${formatNumber(totalReq)} ${unit}`
+                );
+            }
+
+            $('#convertToLbs').click(function() {
+                const $button = $(this);
+                
+                table.rows().every(function(rowIdx, tableLoop, rowLoop) {
+                    const data = this.data();
+                    
+                    // Convert numeric columns
+                    [1, 2, 3, 4, 5].forEach(colIdx => {
+                        if (data[colIdx] && !data[colIdx].includes('%')) {
+                            const value = parseFloat(data[colIdx].replace(/,/g, ''));
+                            if (!isNaN(value)) {
+                                data[colIdx] = formatNumber(convertValue(value, !isKilograms));
+                            }
+                        }
+                    });
+                    
+                    this.data(data);
+                });
+
+                // Update headers
+                const oldUnit = isKilograms ? 'KG' : 'LBS';
+                const newUnit = isKilograms ? 'LBS' : 'KG';
+                table.columns().header().each(function(header) {
+                    const $header = $(header);
+                    if ($header.text().includes(oldUnit)) {
+                        $header.text($header.text().replace(oldUnit, newUnit));
+                    }
+                });
+
+                isKilograms = !isKilograms;
+                $button.html(`<i class="fas fa-weight me-1"></i>Convertir a ${isKilograms ? 'Libras' : 'Kilos'}`);
+                
+                table.draw(false);
+                updateTotals();
+            });
+        });
+    </script>
+}

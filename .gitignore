@@ -22,6 +22,7 @@ _UpgradeReport_Files/
 ###############
 # Directories #
 ###############
+# Ignore bin and obj directories
 bin/
 obj/
 TestResults/
@@ -127,3 +128,7 @@ $RECYCLE.BIN/
 # Directories
 bin/
 obj/
+/bin
+/bin/Debug/net9.0/cs
+/bin/Debug/net9.0
+/bin/Debug

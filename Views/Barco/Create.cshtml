@@ -1,0 +1,63 @@
+@model Sistema_de_Gestion_de_Importaciones.Models.Barco
+
+@{
+    ViewData["Title"] = "Crear Barco";
+}
+
+<h1>Crear Barco</h1>
+
+<h4>Barco</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div class="form-group">
+                <label asp-for="NombreBarco" class="control-label"></label>
+                <input asp-for="NombreBarco" class="form-control" />
+                <span asp-validation-for="NombreBarco" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla1" class="control-label"></label>
+                <input asp-for="Escotilla1" class="form-control" />
+                <span asp-validation-for="Escotilla1" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla2" class="control-label"></label>
+                <input asp-for="Escotilla2" class="form-control" />
+                <span asp-validation-for="Escotilla2" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla3" class="control-label"></label>
+                <input asp-for="Escotilla3" class="form-control" />
+                <span asp-validation-for="Escotilla3" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla4" class="control-label"></label>
+                <input asp-for="Escotilla4" class="form-control" />
+                <span asp-validation-for="Escotilla4" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla5" class="control-label"></label>
+                <input asp-for="Escotilla5" class="form-control" />
+                <span asp-validation-for="Escotilla5" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla6" class="control-label"></label>
+                <input asp-for="Escotilla6" class="form-control" />
+                <span asp-validation-for="Escotilla6" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Escotilla7" class="control-label"></label>
+                <input asp-for="Escotilla7" class="form-control" />
+                <span asp-validation-for="Escotilla7" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Crear" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Volver a la lista</a>
+</div>

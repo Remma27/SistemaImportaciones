@@ -1,0 +1,79 @@
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.Models.Barco>
+
+@{
+    ViewData["Title"] = "Barcos";
+}
+
+<h1>Barcos</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Crear Nuevo Barco</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.NombreBarco)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla1)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla2)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla3)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla4)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla5)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla6)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Escotilla7)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.NombreBarco)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla1)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla2)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla3)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla4)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla5)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla6)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Escotilla7)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Editar</a> |
+                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Detalles</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Eliminar</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

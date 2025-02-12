@@ -1,0 +1,69 @@
+@model Sistema_de_Gestion_de_Importaciones.Models.Barco
+
+@{
+    ViewData["Title"] = "Eliminar Barco";
+}
+
+<h1>Eliminar Barco</h1>
+
+<h3>¿Está seguro que desea eliminar este barco?</h3>
+<div>
+    <h4>Barco</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.NombreBarco)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.NombreBarco)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla1)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla1)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla2)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla2)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla3)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla3)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla4)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla4)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla5)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla5)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla6)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla6)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Escotilla7)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Escotilla7)
+        </dd>
+    </dl>
+    
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

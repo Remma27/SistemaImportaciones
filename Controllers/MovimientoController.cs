@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
+using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -20,10 +21,24 @@ public class MovimientoController : Controller
     // GET: Movimiento
     public async Task<IActionResult> Index()
     {
-        return View(await _context.Movimientos
-            .Include(m => m.Importacion)
-            .Include(m => m.Empresa)
-            .ToListAsync());
+        try
+        {
+            var query = "SELECT * FROM movimientos";
+            var movimientos = await _context.Movimientos
+                .FromSqlRaw(query)
+                .Include(m => m.Importacion)
+                .Include(m => m.Empresa)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return View(movimientos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading movimientos");
+            // Return empty list instead of failing
+            return View(new List<Movimiento>());
+        }
     }
 
     // GET: Movimiento/Details/5
@@ -34,17 +49,28 @@ public class MovimientoController : Controller
             return NotFound();
         }
 
-        var movimiento = await _context.Movimientos
-            .Include(m => m.Importacion)
-            .Include(m => m.Empresa)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (movimiento == null)
+        try
         {
+            var query = "SELECT * FROM movimientos WHERE id = {0}";
+            var movimiento = await _context.Movimientos
+                .FromSqlRaw(query, id)
+                .Include(m => m.Importacion)
+                .Include(m => m.Empresa)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+
+            if (movimiento == null)
+            {
+                return NotFound();
+            }
+
+            return View(movimiento);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading movimiento details for ID: {Id}", id);
             return NotFound();
         }
-
-        return View(movimiento);
     }
 
     // GET: Movimiento/Create
@@ -172,5 +198,178 @@ public class MovimientoController : Controller
     private bool MovimientoExists(int id)
     {
         return _context.Movimientos.Any(e => e.Id == id);
+    }
+
+    // GET: Movimiento/InformeGeneral
+    [Route("Operaciones/InformeGeneral")]
+    [HttpGet]
+    public async Task<IActionResult> InformeGeneral(int? importacionId = null)
+    {
+        try
+        {
+            _logger.LogInformation("Starting InformeGeneral data retrieval");
+
+            // Debug: Check importaciones data
+            var importacionesCount = await _context.Importaciones.CountAsync();
+            _logger.LogInformation($"Total importaciones in database: {importacionesCount}");
+
+            // Get importaciones for dropdown with more details
+            var importaciones = await _context.Importaciones
+                .Include(i => i.Barco)
+                .OrderByDescending(i => i.Id)
+                .Select(i => new
+                {
+                    i.Id,
+                    BarcoNombre = i.Barco != null ? i.Barco.NombreBarco : "Sin Barco",
+                    FechaRegistro = i.FechaHoraSystema
+                })
+                .ToListAsync();
+
+            _logger.LogInformation($"Retrieved {importaciones.Count} importaciones");
+
+            // Create dropdown items with more descriptive text
+            var selectListItems = importaciones.Select(i => new SelectListItem
+            {
+                Value = i.Id.ToString(),
+                Text = $"#{i.Id} - {i.BarcoNombre} - ({i.FechaRegistro:dd/MM/yyyy})"
+            }).ToList();
+
+            // Add "All" option at the beginning
+            selectListItems.Insert(0, new SelectListItem
+            {
+                Value = "",
+                Text = "Todas las Importaciones",
+                Selected = !importacionId.HasValue
+            });
+
+            ViewBag.Importaciones = selectListItems;
+
+            // Log selected importacion
+            if (importacionId.HasValue)
+            {
+                var selectedImportacion = importaciones.FirstOrDefault(i => i.Id == importacionId);
+                _logger.LogInformation($"Selected importacion: {(selectedImportacion?.Id.ToString() ?? "None")}");
+            }
+
+            // Obtener datos y analizar la estructura
+            var analysis = await _context.Movimientos
+                .Include(m => m.Empresa)
+                .Where(m => !importacionId.HasValue || m.IdImportacion == importacionId)
+                .Select(m => new
+                {
+                    m.IdEmpresa,
+                    EmpresaNombre = m.Empresa != null ? m.Empresa.NombreEmpresa : "Sin Empresa",
+                    m.IdImportacion,
+                    m.CantidadRequerida,
+                    m.CantidadEntregada,
+                })
+                .ToListAsync();
+
+            // Primero agrupar por empresa
+            var groupedByEmpresa = analysis
+                .GroupBy(m => new { m.IdEmpresa, m.EmpresaNombre })
+                .Select(g => new
+                {
+                    g.Key.IdEmpresa,
+                    g.Key.EmpresaNombre,
+                    ImportacionesCount = g.Select(x => x.IdImportacion).Distinct().Count(),
+                    MovimientosCount = g.Count(),
+                    TotalRequerido = g.Sum(x => x.CantidadRequerida ?? 0),
+                    TotalEntregado = g.Sum(x => x.CantidadEntregada ?? 0)
+                })
+                .ToList();
+
+            // Log de análisis
+            foreach (var g in groupedByEmpresa.Take(5))
+            {
+                _logger.LogInformation($"Empresa: {g.EmpresaNombre}, " +
+                    $"Importaciones: {g.ImportacionesCount}, " +
+                    $"Movimientos: {g.MovimientosCount}, " +
+                    $"Total Req: {g.TotalRequerido:N2}, " +
+                    $"Total Ent: {g.TotalEntregado:N2}");
+            }
+
+            // Crear el informe final
+            var informeData = groupedByEmpresa
+                .Select(g => new InformeGeneralViewModel
+                {
+                    Empresa = g.EmpresaNombre ?? "Sin Empresa",
+                    RequeridoKg = g.TotalRequerido,
+                    DescargaKg = g.TotalEntregado,
+                    RequeridoTon = g.TotalRequerido / 1000,
+                    FaltanteKg = g.TotalRequerido - g.TotalEntregado,
+                    TonFaltantes = (g.TotalRequerido - g.TotalEntregado) / 1000,
+                    CamionesFaltantes = (int)Math.Ceiling((g.TotalRequerido - g.TotalEntregado) / 30000),
+                    ConteoPlacas = _context.Movimientos
+                        .Where(m => m.IdEmpresa == g.IdEmpresa && m.Placa != null)
+                        .Select(m => m.Placa)
+                        .Distinct()
+                        .Count(),
+                    PorcentajeDescarga = g.TotalRequerido > 0
+                        ? (g.TotalEntregado / g.TotalRequerido) * 100
+                        : 0
+                })
+                .OrderBy(x => x.Empresa)
+                .ToList();
+
+            ViewBag.DataCount = informeData.Count;
+            ViewBag.TotalRegistros = analysis.Count;
+            ViewBag.HasData = informeData.Any();
+            ViewBag.ImportacionesCount = analysis.Select(x => x.IdImportacion).Distinct().Count();
+            ViewBag.SelectedImportacion = importacionId;
+
+            return View("~/Views/Operaciones/InformeGeneral.cshtml", informeData);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in InformeGeneral");
+            throw;
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetInformeByImportacion(int importacionId)
+    {
+        try
+        {
+            return await InformeGeneral(importacionId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting informe for importación: {ImportacionId}", importacionId);
+            return Json(new { error = "Error loading data" });
+        }
+    }
+
+    private List<InformeGeneralViewModel> GetTestData()
+    {
+        _logger.LogInformation("Generating test data");
+        return new List<InformeGeneralViewModel>
+        {
+            new InformeGeneralViewModel
+            {
+                Empresa = "Empresa Test 1",
+                RequeridoKg = 50000,
+                RequeridoTon = 50,
+                DescargaKg = 30000,
+                FaltanteKg = 20000,
+                TonFaltantes = 20,
+                CamionesFaltantes = 1,
+                ConteoPlacas = 2,
+                PorcentajeDescarga = 60
+            },
+            new InformeGeneralViewModel
+            {
+                Empresa = "Empresa Test 2",
+                RequeridoKg = 75000,
+                RequeridoTon = 75,
+                DescargaKg = 25000,
+                FaltanteKg = 50000,
+                TonFaltantes = 50,
+                CamionesFaltantes = 2,
+                ConteoPlacas = 1,
+                PorcentajeDescarga = 33.33
+            }
+        };
     }
 }

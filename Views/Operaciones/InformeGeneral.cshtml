@@ -1,10 +1,11 @@
+@using Sistema_de_Gestion_de_Importaciones.Models.ViewModels
+@model IEnumerable<InformeGeneralViewModel>
 @{
     ViewData["Title"] = "Informe General";
 }
 
 <div class="container-fluid mt-3">
     <div class="card shadow">
-        <!-- Header -->
         <div class="card-header py-3 ">
             <div class="row align-items-center">
                 <div class="col-md-4">
@@ -16,8 +17,13 @@
                 <div class="col-md-4">
                     <div class="input-group">
                         <label class="input-group-text">Importación</label>
-                        <select class="form-select">
-                            <option selected>Seleccione...</option>
+                        <select class="form-select" id="importacionSelect">
+                            @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.Importaciones)
+                            {
+                                <option value="@item.Value" @(item.Selected ? "selected" : "")>
+                                    @item.Text
+                                </option>
+                            }
                         </select>
                     </div>
                 </div>
@@ -41,8 +47,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Table Content -->
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -60,35 +64,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>Empresa 1</td>
-                            <td class="text-end">100,000</td>
-                            <td class="text-end">100</td>
-                            <td class="text-end">50,000</td>
-                            <td class="text-end">50,000</td>
-                            <td class="text-end">50</td>
-                            <td class="text-end">10</td>
-                            <td class="text-end">5</td>
-                            <td class="text-end">50%</td>
-                        </tr>
-                        <!-- More rows here -->
-                        <tr class="table-secondary">
-                            <th>Totales:</th>
-                            <td class="text-end fw-bold">100,000</td>
-                            <td class="text-end fw-bold">100</td>
-                            <td class="text-end fw-bold">50,000</td>
-                            <td class="text-end fw-bold">50,000</td>
-                            <td class="text-end fw-bold">50</td>
-                            <td class="text-end fw-bold">10</td>
-                            <td class="text-end fw-bold">5</td>
-                            <td class="text-end fw-bold">50%</td>
-                        </tr>
+                        @if (Model != null)
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@(item.Empresa ?? "Sin Empresa")</td>
+                                    <td class="text-end">@item.RequeridoKg.ToString("N2")</td>
+                                    <td class="text-end">@item.RequeridoTon.ToString("N2")</td>
+                                    <td class="text-end">@item.DescargaKg.ToString("N2")</td>
+                                    <td class="text-end">@item.FaltanteKg.ToString("N2")</td>
+                                    <td class="text-end">@item.TonFaltantes.ToString("N2")</td>
+                                    <td class="text-end">@item.CamionesFaltantes</td>
+                                    <td class="text-end">@item.ConteoPlacas</td>
+                                    <td class="text-end">@item.PorcentajeDescarga.ToString("N2")%</td>
+                                </tr>
+                            }
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
-
-        <!-- Footer with summary -->
         <div class="card-footer">
             <div class="row">
                 <div class="col-md-6">
@@ -105,87 +101,114 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            const KG_TO_LBS = 2.20462;
-            let isKilograms = true;
-
-            const table = $('.table').DataTable({
-                responsive: true,
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
-                },
-                drawCallback: function() {
-                    updateTotals();
-                }
-            });
-
-            function convertValue(value, toLbs) {
-                if (typeof value === 'string') {
-                    value = parseFloat(value.replace(/,/g, ''));
-                }
-                if (isNaN(value)) return value;
+            console.log('jQuery version:', $.fn.jquery);
+            console.log('DataTables version:', $.fn.dataTable?.version);
+            try {
+                console.log('DataTable initialization starting...');
+                console.log('Table rows before DataTable:', $('.table tbody tr').length);
                 
-                return toLbs ? value * KG_TO_LBS : value / KG_TO_LBS;
-            }
-
-            function formatNumber(number) {
-                return Number(parseFloat(number).toFixed(2)).toLocaleString('es');
-            }
-
-            function updateTotals() {
-                let totalReq = 0;
-                let totalDesc = 0;
-
-                table.rows().every(function() {
-                    const data = this.data();
-                    if (data[1]) { // Req. KG column
-                        totalReq += parseFloat(data[1].replace(/,/g, '')) || 0;
-                    }
-                    if (data[3]) { // Descarga KG column
-                        totalDesc += parseFloat(data[3].replace(/,/g, '')) || 0;
+                const table = $('.table').DataTable({
+                    dom: 'Bfrtip',
+                    responsive: true,
+                    language: {
+                        url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                    },
+                    pageLength: 10,
+                    ordering: true,
+                    searching: true,
+                    processing: true,
+                    order: [[0, 'asc']],
+                    columnDefs: [
+                        { className: "text-end", targets: [1,2,3,4,5,6,7,8] }
+                    ],
+                    drawCallback: function() {
+                        updateTotals();
                     }
                 });
 
-                const unit = isKilograms ? 'KG' : 'LBS';
-                $('.card-footer .col-md-6:first').html(
-                    `<strong>Total Importación:</strong> ${formatNumber(totalReq)} ${unit}`
-                );
-            }
+                console.log('DataTable initialization completed');
+                console.log('DataTable rows:', table.rows().count());
 
-            $('#convertToLbs').click(function() {
-                const $button = $(this);
-                
-                table.rows().every(function(rowIdx, tableLoop, rowLoop) {
-                    const data = this.data();
+                const KG_TO_LBS = 2.20462;
+                let isKilograms = true;
+
+                function convertValue(value, toLbs) {
+                    if (typeof value === 'string') {
+                        value = parseFloat(value.replace(/,/g, ''));
+                    }
+                    if (isNaN(value)) return value;
                     
-                    // Convert numeric columns
-                    [1, 2, 3, 4, 5].forEach(colIdx => {
-                        if (data[colIdx] && !data[colIdx].includes('%')) {
-                            const value = parseFloat(data[colIdx].replace(/,/g, ''));
-                            if (!isNaN(value)) {
-                                data[colIdx] = formatNumber(convertValue(value, !isKilograms));
-                            }
+                    return toLbs ? value * KG_TO_LBS : value / KG_TO_LBS;
+                }
+
+                function formatNumber(number) {
+                    return Number(parseFloat(number).toFixed(2)).toLocaleString('es');
+                }
+
+                function updateTotals() {
+                    let totalReq = 0;
+                    let totalDesc = 0;
+
+                    table.rows().every(function() {
+                        const data = this.data();
+                        if (data[1]) { // Req. KG column
+                            totalReq += parseFloat(data[1].replace(/,/g, '')) || 0;
+                        }
+                        if (data[3]) { // Descarga KG column
+                            totalDesc += parseFloat(data[3].replace(/,/g, '')) || 0;
                         }
                     });
+
+                    const unit = isKilograms ? 'KG' : 'LBS';
+                    $('.card-footer .col-md-6:first').html(
+                        `<strong>Total Importación:</strong> ${formatNumber(totalReq)} ${unit}`
+                    );
+                }
+
+                $('#convertToLbs').click(function() {
+                    const $button = $(this);
                     
-                    this.data(data);
+                    table.rows().every(function(rowIdx, tableLoop, rowLoop) {
+                        const data = this.data();
+                        
+                        [1, 2, 3, 4, 5].forEach(colIdx => {
+                            if (data[colIdx] && !data[colIdx].includes('%')) {
+                                const value = parseFloat(data[colIdx].replace(/,/g, ''));
+                                if (!isNaN(value)) {
+                                    data[colIdx] = formatNumber(convertValue(value, !isKilograms));
+                                }
+                            }
+                        });
+                        
+                        this.data(data);
+                    });
+
+                    const oldUnit = isKilograms ? 'KG' : 'LBS';
+                    const newUnit = isKilograms ? 'LBS' : 'KG';
+                    table.columns().header().each(function(header) {
+                        const $header = $(header);
+                        if ($header.text().includes(oldUnit)) {
+                            $header.text($header.text().replace(oldUnit, newUnit));
+                        }
+                    });
+
+                    isKilograms = !isKilograms;
+                    $button.html(`<i class="fas fa-weight me-1"></i>Convertir a ${isKilograms ? 'Libras' : 'Kilos'}`);
+                    
+                    table.draw(false);
+                    updateTotals();
                 });
 
-                // Update headers
-                const oldUnit = isKilograms ? 'KG' : 'LBS';
-                const newUnit = isKilograms ? 'LBS' : 'KG';
-                table.columns().header().each(function(header) {
-                    const $header = $(header);
-                    if ($header.text().includes(oldUnit)) {
-                        $header.text($header.text().replace(oldUnit, newUnit));
-                    }
+                $('#importacionSelect').change(function() {
+                    const importacionId = $(this).val();
+                    window.location.href = importacionId 
+                        ? `/Operaciones/InformeGeneral?importacionId=${importacionId}`
+                        : '/Operaciones/InformeGeneral';
                 });
-
-                isKilograms = !isKilograms;
-                $button.html(`<i class="fas fa-weight me-1"></i>Convertir a ${isKilograms ? 'Libras' : 'Kilos'}`);
-                
-                table.draw(false);
-                updateTotals();
-            });
+            } catch (error) {
+                console.error('Error initializing DataTable:', error);
+                console.error(error.stack);
+            }
         });
     </script>
 }

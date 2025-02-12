@@ -32,7 +32,7 @@ public class Importacion
     [Display(Name = "Total Carga Kilos")]
     [Range(1, int.MaxValue, ErrorMessage = "El total de carga debe ser mayor a 0")]
     [Column("totalcargakilos")]
-    public int TotalCargaKilos { get; set; }
+    public double TotalCargaKilos { get; set; }
 
     // Constructor
     public Importacion()

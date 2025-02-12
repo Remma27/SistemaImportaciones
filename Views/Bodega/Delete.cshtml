@@ -1,0 +1,27 @@
+@model Sistema_de_Gestion_de_Importaciones.Models.Bodega
+
+@{
+    ViewData["Title"] = "Eliminar Bodega";
+}
+
+<h1>Eliminar Bodega</h1>
+
+<h3>¿Está seguro que desea eliminar esta bodega?</h3>
+<div>
+    <h4>Bodega</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.NombreBodega)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.NombreBodega)
+        </dd>
+    </dl>
+    
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="IdBodega" />
+        <input type="submit" value="Eliminar" class="btn btn-danger" /> |
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

@@ -11,7 +11,7 @@
                 <div class="col">
                     <h3 class="mb-0">Importaciones</h3>
                 </div>
-                <div class="col text-end">
+                <div la="col text-end">
                     <a asp-action="Create" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i>Nueva Importación
                     </a>
@@ -23,9 +23,9 @@
                 <table class="table table-hover">
                     <thead>
                         <tr>
-                            <th>@Html.DisplayNameFor(model => model.FechaHora)</th>
-                            <th>@Html.DisplayNameFor(model => model.Barco != null ? model.Barco.NombreBarco : "N/A")</th>
-                            <th>@Html.DisplayNameFor(model => model.TotalCargaKilos)</th>
+                            <th>@Html.DisplayNameFor(model => model.First().FechaHora)</th>
+                            <th>@Html.DisplayNameFor(model => model.First().Barco.NombreBarco)</th>
+                            <th>@Html.DisplayNameFor(model => model.First().TotalCargaKilos)</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>

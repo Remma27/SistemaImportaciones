@@ -35,8 +35,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Data
 
             modelBuilder.Entity<Bodega>(entity =>
             {
-                entity.ToTable("bodegas");
+                entity.ToTable("empresa_bodegas");
                 entity.Property(e => e.IdBodega).HasColumnName("id");
+                entity.Property(e => e.NombreBodega).HasColumnName("bodega");
             });
 
             modelBuilder.Entity<Importacion>(entity =>

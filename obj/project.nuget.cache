@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Jo2lsCFWnv0=",
+  "dgSpecHash": "hvrAqN167bg=",
   "success": true,
-  "projectFilePath": "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
+  "projectFilePath": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\A.Sosa\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\A.Sosa\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

@@ -147,3 +147,4 @@ c:\Users\A.Sosa\Desktop\Emmanuel\Sistema de Gestion de Importaciones\obj\Debug\n
 c:\Users\A.Sosa\Desktop\Emmanuel\Sistema de Gestion de Importaciones\obj\Debug\net9.0\Sistema de Gestion de Importaciones.pdb
 c:\Users\A.Sosa\Desktop\Emmanuel\Sistema de Gestion de Importaciones\obj\Debug\net9.0\Sistema de Gestion de Importaciones.genruntimeconfig.cache
 c:\Users\A.Sosa\Desktop\Emmanuel\Sistema de Gestion de Importaciones\obj\Debug\net9.0\ref\Sistema de Gestion de Importaciones.dll
+c:\Users\A.Sosa\Desktop\Emmanuel\Sistema de Gestion de Importaciones\obj\Debug\net9.0\Sistema de Gestion de Importaciones.sourcelink.json

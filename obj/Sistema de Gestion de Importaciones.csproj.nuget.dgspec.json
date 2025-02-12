@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj": {}
+    "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj": {}
   },
   "projects": {
-    "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj": {
+    "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
+        "projectUniqueName": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
         "projectName": "Sistema de Gestion de Importaciones",
-        "projectPath": "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
+        "projectPath": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
         "packagesPath": "C:\\Users\\A.Sosa\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\",
+        "outputPath": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\A.Sosa\\AppData\\Roaming\\NuGet\\NuGet.Config"

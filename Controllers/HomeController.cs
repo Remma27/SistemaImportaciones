@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sistema_de_Gestion_de_Importaciones.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
+[Authorize]
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;

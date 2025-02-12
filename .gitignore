@@ -73,3 +73,57 @@ _[Ss]cripts
 *.nupkg
 *.ncrunchsolution
 *.dot[Cc]over
+.fake
+
+# Visual Studio Code
+.vscode/
+
+# User-specific files
+*.rsuser
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Entity Framework
+*.edmx.diagram
+*.edmx.sql
+*.edmx
+
+# SQL Server files
+*.mdf
+*.ldf
+
+# Azure DevOps
+.vs/
+.vsconfig
+
+# Local history for JetBrains IDEs
+.idea/.idea/
+
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# Directories
+bin/
+obj/

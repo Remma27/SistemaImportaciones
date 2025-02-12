@@ -1,11 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Auth/IniciarSesion";
+        options.LogoutPath = "/Auth/CerrarSesion";
+    });
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."),
@@ -54,9 +63,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // Asegúrate de que esta línea esté presente para servir archivos estáticos
+app.UseStaticFiles();
+
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

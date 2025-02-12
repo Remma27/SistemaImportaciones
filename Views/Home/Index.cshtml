@@ -1,29 +1,32 @@
-﻿@{
+﻿@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authentication
+
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="container-fluid">
-    <!-- Header Section -->
-    <div class="row mb-4 bg-light py-4">
-        <div class="col-12 text-center">
-            <h1 class="display-4">Sistema de Gestión</h1>
-            <p class="lead">Panel de Control Principal</p>
-            <div class="mt-4">
-                <a href="@Url.Action("IniciarSesion", "Auth")" class="btn btn-primary mx-2">
-                    <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
-                </a>
-                <a href="@Url.Action("Registrarse", "Auth")" class="btn btn-outline-primary mx-2">
-                    <i class="fas fa-user-plus me-2"></i>Registrarse
-                </a>
-            </div>
-        </div>
+    
+    <div class="text-center mb-4">
+        <h1 class="display-4">Bienvenido</h1>
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            <p>Hola, <strong>@User.Identity.Name</strong>!</p>
+            <form asp-action="CerrarSesion" asp-controller="Auth" method="post" class="d-inline">
+                <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
+            </form>
+        }
+        else
+        {
+            <p>Por favor <a asp-action="IniciarSesion" asp-controller="Auth" class="btn btn-primary">Iniciar Sesión</a></p>
+        }
     </div>
 
     <div class="row justify-content-center">
         <!-- Preferences Card -->
         <div class="col-12 col-md-10 col-lg-8 mb-4">
             <div class="card shadow">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="fas fa-cog me-2"></i>
                         Preferencias
@@ -68,7 +71,7 @@
         <!-- Operations Card -->
         <div class="col-12 col-md-10 col-lg-8 mb-4">
             <div class="card shadow">
-                <div class="card-header">
+                <div class="card-header bg-success text-white">
                     <h5 class="mb-0">
                         <i class="fas fa-tasks me-2"></i>
                         Operaciones
@@ -88,11 +91,6 @@
                                         <i class="fas fa-weight me-2"></i>Registro de Pesajes de Camiones con Grana
                                     </a>
                                 </li>
-                                @* <li class="list-group-item">
-                                    <a href="@Url.Action("EnviarDatos", "Operaciones")" class="btn btn-link text-dark text-decoration-none">
-                                        <i class="fas fa-paper-plane me-2"></i>Enviar Datos
-                                    </a>
-                                </li> *@
                                 <li class="list-group-item">
                                     <a href="@Url.Action("InformeGeneral", "Operaciones")" class="btn btn-link text-dark text-decoration-none">
                                         <i class="fas fa-chart-bar me-2"></i>Informe General

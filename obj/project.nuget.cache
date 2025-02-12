@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "QEJK96V/3eM=",
+  "dgSpecHash": "4OOJvqpjAYE=",
   "success": true,
-  "projectFilePath": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
+  "projectFilePath": "C:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\Sistema de Gestion de Importaciones.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\A.Sosa\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\A.Sosa\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",

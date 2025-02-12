@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
+using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System.Drawing;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -339,6 +342,127 @@ public class MovimientoController : Controller
             _logger.LogError(ex, "Error getting informe for importación: {ImportacionId}", importacionId);
             return Json(new { error = "Error loading data" });
         }
+    }
+
+    [HttpGet]
+    [Route("Movimiento/ExportToExcel")]
+    public async Task<IActionResult> ExportToExcel(int? importacionId = null)
+    {
+        try
+        {
+            var informeData = await GetInformeData(importacionId);
+
+            using (var package = new ExcelPackage())
+            {
+                var worksheet = package.Workbook.Worksheets.Add("Informe General");
+
+                // Encabezados
+                worksheet.Cells[1, 1].Value = "Empresa";
+                worksheet.Cells[1, 2].Value = "Req. KG";
+                worksheet.Cells[1, 3].Value = "Req. Toneladas";
+                worksheet.Cells[1, 4].Value = "Descarga KG";
+                worksheet.Cells[1, 5].Value = "Faltante KG";
+                worksheet.Cells[1, 6].Value = "Ton. Faltantes";
+                worksheet.Cells[1, 7].Value = "Camiones Faltantes";
+                worksheet.Cells[1, 8].Value = "Conteo Placas";
+                worksheet.Cells[1, 9].Value = "% Descarga";
+
+                // Estilo de encabezados
+                using (var range = worksheet.Cells[1, 1, 1, 9])
+                {
+                    range.Style.Font.Bold = true;
+                    range.Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    range.Style.Fill.BackgroundColor.SetColor(Color.LightGray);
+                    range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                }
+
+                // Datos
+                for (int i = 0; i < informeData.Count; i++)
+                {
+                    var item = informeData[i];
+                    worksheet.Cells[i + 2, 1].Value = item.Empresa;
+                    worksheet.Cells[i + 2, 2].Value = item.RequeridoKg;
+                    worksheet.Cells[i + 2, 3].Value = item.RequeridoTon;
+                    worksheet.Cells[i + 2, 4].Value = item.DescargaKg;
+                    worksheet.Cells[i + 2, 5].Value = item.FaltanteKg;
+                    worksheet.Cells[i + 2, 6].Value = item.TonFaltantes;
+                    worksheet.Cells[i + 2, 7].Value = item.CamionesFaltantes;
+                    worksheet.Cells[i + 2, 8].Value = item.ConteoPlacas;
+                    worksheet.Cells[i + 2, 9].Value = item.PorcentajeDescarga;
+                }
+
+                // Ajustar ancho de columnas
+                worksheet.Cells.AutoFitColumns();
+
+                var stream = new MemoryStream();
+                package.SaveAs(stream);
+                stream.Position = 0;
+
+                var fileName = $"InformeGeneral_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting to Excel");
+            return RedirectToAction(nameof(InformeGeneral), new { importacionId });
+        }
+    }
+
+    private async Task<List<InformeGeneralViewModel>> GetInformeData(int? importacionId)
+    {
+        // Obtener datos y analizar la estructura
+        var analysis = await _context.Movimientos
+            .Include(m => m.Empresa)
+            .Where(m => !importacionId.HasValue || m.IdImportacion == importacionId)
+            .Select(m => new
+            {
+                m.IdEmpresa,
+                EmpresaNombre = m.Empresa != null ? m.Empresa.NombreEmpresa : "Sin Empresa",
+                m.IdImportacion,
+                m.CantidadRequerida,
+                m.CantidadEntregada,
+            })
+            .ToListAsync();
+
+        // Primero agrupar por empresa
+        var groupedByEmpresa = analysis
+            .GroupBy(m => new { m.IdEmpresa, m.EmpresaNombre })
+            .Select(g => new
+            {
+                g.Key.IdEmpresa,
+                g.Key.EmpresaNombre,
+                ImportacionesCount = g.Select(x => x.IdImportacion).Distinct().Count(),
+                MovimientosCount = g.Count(),
+                TotalRequerido = g.Sum(x => x.CantidadRequerida ?? 0),
+                TotalEntregado = g.Sum(x => x.CantidadEntregada ?? 0)
+            })
+            .ToList();
+
+        // Crear el informe final
+        var informeData = groupedByEmpresa
+            .Select(g => new InformeGeneralViewModel
+            {
+                Empresa = g.EmpresaNombre ?? "Sin Empresa",
+                RequeridoKg = g.TotalRequerido,
+                DescargaKg = g.TotalEntregado,
+                RequeridoTon = g.TotalRequerido / 1000,
+                FaltanteKg = g.TotalRequerido - g.TotalEntregado,
+                TonFaltantes = (g.TotalRequerido - g.TotalEntregado) / 1000,
+                CamionesFaltantes = (int)Math.Ceiling((g.TotalRequerido - g.TotalEntregado) / 30000),
+                ConteoPlacas = _context.Movimientos
+                    .Where(m => m.IdEmpresa == g.IdEmpresa && m.Placa != null)
+                    .Select(m => m.Placa)
+                    .Distinct()
+                    .Count(),
+                PorcentajeDescarga = g.TotalRequerido > 0
+                    ? (g.TotalEntregado / g.TotalRequerido) * 100
+                    : 0
+            })
+            .OrderBy(x => x.Empresa)
+            .ToList();
+
+        return informeData;
     }
 
     private List<InformeGeneralViewModel> GetTestData()

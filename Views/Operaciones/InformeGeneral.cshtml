@@ -35,7 +35,7 @@
                         <button class="btn btn-outline-primary">
                             <i class="fas fa-th me-1"></i>
                         </button>
-                        <button class="btn btn-outline-primary">
+                        <button class="btn btn-outline-primary" id="exportToExcel">
                             <i class="fas fa-download me-1"></i>
                             Exportar
                         </button>
@@ -49,7 +49,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="informeTable">
                     <thead class="table-light">
                         <tr>
                             <th>Agroindustria</th>
@@ -64,7 +64,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model != null)
+                        @if (Model != null && Model.Any())
                         {
                             foreach (var item in Model)
                             {
@@ -81,6 +81,12 @@
                                 </tr>
                             }
                         }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center">Seleccione una importación para ver los datos.</td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
@@ -88,10 +94,10 @@
         <div class="card-footer">
             <div class="row">
                 <div class="col-md-6">
-                    <strong>Total Importación:</strong> 100,000 KG
+                    <strong>Total Importación:</strong> @ViewBag.TotalImportacion KG
                 </div>
                 <div class="col-md-6 text-end">
-                    <strong>Conteo Entregas:</strong> 15
+                    <strong>Conteo Entregas:</strong> @ViewBag.ConteoEntregas
                 </div>
             </div>
         </div>
@@ -105,9 +111,9 @@
             console.log('DataTables version:', $.fn.dataTable?.version);
             try {
                 console.log('DataTable initialization starting...');
-                console.log('Table rows before DataTable:', $('.table tbody tr').length);
+                console.log('Table rows before DataTable:', $('#informeTable tbody tr').length);
                 
-                const table = $('.table').DataTable({
+                const table = $('#informeTable').DataTable({
                     dom: 'Bfrtip',
                     responsive: true,
                     language: {
@@ -204,6 +210,14 @@
                     window.location.href = importacionId 
                         ? `/Operaciones/InformeGeneral?importacionId=${importacionId}`
                         : '/Operaciones/InformeGeneral';
+                });
+
+                $('#exportToExcel').click(function() {
+                    const importacionId = $('#importacionSelect').val();
+                    const url = importacionId 
+                        ? `/Movimiento/ExportToExcel?importacionId=${importacionId}`
+                        : `/Movimiento/ExportToExcel`;
+                    window.location.href = url;
                 });
             } catch (error) {
                 console.error('Error initializing DataTable:', error);

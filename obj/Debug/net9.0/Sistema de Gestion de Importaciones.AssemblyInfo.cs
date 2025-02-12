@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Sistema de Gestion de Importaciones")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fb775959731f24e56539bef98cea7842cc651e70")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f607460694fa08821f9e26b3923a579dc0948afd")]
 [assembly: System.Reflection.AssemblyProductAttribute("Sistema de Gestion de Importaciones")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Sistema de Gestion de Importaciones")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

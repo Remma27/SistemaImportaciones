@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "HwQvjg5vcmovnrottbQiw9vobEAkrbWiaKobgqdeI0Y=",
+  "Hash": "Wrhew+SH4g9Gww9Je2T46YKqNzLxwTglQT+Sj7d2xuA=",
   "Source": "Sistema de Gestion de Importaciones",
   "BasePath": "_content/Sistema de Gestion de Importaciones",
   "Mode": "Default",
@@ -332,12 +332,12 @@
       "OriginalItemSpec": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.rtl.css.map"
     },
     {
-      "Identity": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-4qz1dff2ck.gz",
+      "Identity": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-fltfnu3bx7.gz",
       "SourceId": "Sistema de Gestion de Importaciones",
       "SourceType": "Computed",
       "ContentRoot": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\",
       "BasePath": "_content/Sistema de Gestion de Importaciones",
-      "RelativePath": "Sistema de Gestion de Importaciones#[.{fingerprint=4qz1dff2ck}]?.styles.css.gz",
+      "RelativePath": "Sistema de Gestion de Importaciones#[.{fingerprint=fltfnu3bx7}]?.styles.css.gz",
       "AssetKind": "All",
       "AssetMode": "CurrentProject",
       "AssetRole": "Alternative",
@@ -346,8 +346,8 @@
       "RelatedAsset": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\bundle\\Sistema de Gestion de Importaciones.styles.css",
       "AssetTraitName": "Content-Encoding",
       "AssetTraitValue": "gzip",
-      "Fingerprint": "8jrh5je323",
-      "Integrity": "XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=",
+      "Fingerprint": "vtisayc1q4",
+      "Integrity": "rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\bundle\\Sistema de Gestion de Importaciones.styles.css"
@@ -1340,12 +1340,12 @@
       "OriginalItemSpec": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap-utilities.css"
     },
     {
-      "Identity": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-4qz1dff2ck.gz",
+      "Identity": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-fltfnu3bx7.gz",
       "SourceId": "Sistema de Gestion de Importaciones",
       "SourceType": "Computed",
       "ContentRoot": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\",
       "BasePath": "_content/Sistema de Gestion de Importaciones",
-      "RelativePath": "Sistema de Gestion de Importaciones#[.{fingerprint=4qz1dff2ck}]!.bundle.scp.css.gz",
+      "RelativePath": "Sistema de Gestion de Importaciones#[.{fingerprint=fltfnu3bx7}]!.bundle.scp.css.gz",
       "AssetKind": "All",
       "AssetMode": "Reference",
       "AssetRole": "Alternative",
@@ -1354,8 +1354,8 @@
       "RelatedAsset": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Sistema de Gestion de Importaciones.bundle.scp.css",
       "AssetTraitName": "Content-Encoding",
       "AssetTraitValue": "gzip",
-      "Fingerprint": "8jrh5je323",
-      "Integrity": "XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=",
+      "Fingerprint": "vtisayc1q4",
+      "Integrity": "rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Sistema de Gestion de Importaciones.bundle.scp.css"
@@ -1375,8 +1375,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "ScopedCss",
       "AssetTraitValue": "ApplicationBundle",
-      "Fingerprint": "4qz1dff2ck",
-      "Integrity": "5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=",
+      "Fingerprint": "fltfnu3bx7",
+      "Integrity": "k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\bundle\\Sistema de Gestion de Importaciones.styles.css"
@@ -1396,8 +1396,8 @@
       "RelatedAsset": "",
       "AssetTraitName": "ScopedCss",
       "AssetTraitValue": "ProjectBundle",
-      "Fingerprint": "4qz1dff2ck",
-      "Integrity": "5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=",
+      "Fingerprint": "fltfnu3bx7",
+      "Integrity": "k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Sistema de Gestion de Importaciones.bundle.scp.css"
@@ -21286,13 +21286,13 @@
       ]
     },
     {
-      "Route": "Sistema de Gestion de Importaciones.4qz1dff2ck.bundle.scp.css",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-4qz1dff2ck.gz",
+      "Route": "Sistema de Gestion de Importaciones.bundle.scp.css",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-fltfnu3bx7.gz",
       "Selectors": [
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.001801801802"
+          "Quality": "0.001795332136"
         }
       ],
       "ResponseHeaders": [
@@ -21302,19 +21302,19 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "554"
+          "Value": "556"
         },
         {
           "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
-          "Value": "max-age=31536000, immutable"
+          "Value": "no-cache"
         },
         {
           "Name": "Content-Encoding",
@@ -21330,26 +21330,18 @@
         },
         {
           "Name": "ETag",
-          "Value": "W/\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
+          "Value": "W/\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
         }
       ],
       "EndpointProperties": [
         {
-          "Name": "fingerprint",
-          "Value": "4qz1dff2ck"
-        },
-        {
-          "Name": "label",
-          "Value": "Sistema de Gestion de Importaciones.bundle.scp.css"
-        },
-        {
           "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
         }
       ]
     },
     {
-      "Route": "Sistema de Gestion de Importaciones.4qz1dff2ck.bundle.scp.css",
+      "Route": "Sistema de Gestion de Importaciones.bundle.scp.css",
       "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Sistema de Gestion de Importaciones.bundle.scp.css",
       "Selectors": [],
       "ResponseHeaders": [
@@ -21359,7 +21351,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "1153"
+          "Value": "1197"
         },
         {
           "Name": "Content-Type",
@@ -21367,11 +21359,156 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
+          "Value": "\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
+        }
+      ]
+    },
+    {
+      "Route": "Sistema de Gestion de Importaciones.bundle.scp.css.gz",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-fltfnu3bx7.gz",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "556"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "no-cache"
+        },
+        {
+          "Name": "Content-Encoding",
+          "Value": "gzip"
+        },
+        {
+          "Name": "Vary",
+          "Value": "Content-Encoding"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ="
+        }
+      ]
+    },
+    {
+      "Route": "Sistema de Gestion de Importaciones.fltfnu3bx7.bundle.scp.css",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-fltfnu3bx7.gz",
+      "Selectors": [
+        {
+          "Name": "Content-Encoding",
+          "Value": "gzip",
+          "Quality": "0.001795332136"
+        }
+      ],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "556"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Encoding",
+          "Value": "gzip"
+        },
+        {
+          "Name": "Vary",
+          "Value": "Content-Encoding"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "W/\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "fltfnu3bx7"
+        },
+        {
+          "Name": "label",
+          "Value": "Sistema de Gestion de Importaciones.bundle.scp.css"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
+        }
+      ]
+    },
+    {
+      "Route": "Sistema de Gestion de Importaciones.fltfnu3bx7.bundle.scp.css",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Sistema de Gestion de Importaciones.bundle.scp.css",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "1197"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "text/css"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21381,7 +21518,7 @@
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "4qz1dff2ck"
+          "Value": "fltfnu3bx7"
         },
         {
           "Name": "label",
@@ -21389,13 +21526,13 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
         }
       ]
     },
     {
-      "Route": "Sistema de Gestion de Importaciones.4qz1dff2ck.bundle.scp.css.gz",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-4qz1dff2ck.gz",
+      "Route": "Sistema de Gestion de Importaciones.fltfnu3bx7.bundle.scp.css.gz",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-fltfnu3bx7.gz",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -21404,7 +21541,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "554"
+          "Value": "556"
         },
         {
           "Name": "Content-Type",
@@ -21412,11 +21549,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21434,7 +21571,7 @@
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "4qz1dff2ck"
+          "Value": "fltfnu3bx7"
         },
         {
           "Name": "label",
@@ -21442,18 +21579,18 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c="
+          "Value": "sha256-rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ="
         }
       ]
     },
     {
-      "Route": "Sistema de Gestion de Importaciones.4qz1dff2ck.styles.css",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-4qz1dff2ck.gz",
+      "Route": "Sistema de Gestion de Importaciones.fltfnu3bx7.styles.css",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-fltfnu3bx7.gz",
       "Selectors": [
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.001801801802"
+          "Quality": "0.001795332136"
         }
       ],
       "ResponseHeaders": [
@@ -21463,15 +21600,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "554"
+          "Value": "556"
         },
         {
           "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21491,13 +21628,13 @@
         },
         {
           "Name": "ETag",
-          "Value": "W/\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
+          "Value": "W/\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
         }
       ],
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "4qz1dff2ck"
+          "Value": "fltfnu3bx7"
         },
         {
           "Name": "label",
@@ -21505,12 +21642,12 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
         }
       ]
     },
     {
-      "Route": "Sistema de Gestion de Importaciones.4qz1dff2ck.styles.css",
+      "Route": "Sistema de Gestion de Importaciones.fltfnu3bx7.styles.css",
       "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\bundle\\Sistema de Gestion de Importaciones.styles.css",
       "Selectors": [],
       "ResponseHeaders": [
@@ -21520,7 +21657,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "1153"
+          "Value": "1197"
         },
         {
           "Name": "Content-Type",
@@ -21528,11 +21665,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
+          "Value": "\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21542,7 +21679,7 @@
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "4qz1dff2ck"
+          "Value": "fltfnu3bx7"
         },
         {
           "Name": "label",
@@ -21550,13 +21687,13 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
         }
       ]
     },
     {
-      "Route": "Sistema de Gestion de Importaciones.4qz1dff2ck.styles.css.gz",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-4qz1dff2ck.gz",
+      "Route": "Sistema de Gestion de Importaciones.fltfnu3bx7.styles.css.gz",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-fltfnu3bx7.gz",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -21565,7 +21702,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "554"
+          "Value": "556"
         },
         {
           "Name": "Content-Type",
@@ -21573,11 +21710,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21595,7 +21732,7 @@
       "EndpointProperties": [
         {
           "Name": "fingerprint",
-          "Value": "4qz1dff2ck"
+          "Value": "fltfnu3bx7"
         },
         {
           "Name": "label",
@@ -21603,155 +21740,18 @@
         },
         {
           "Name": "integrity",
-          "Value": "sha256-XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c="
-        }
-      ]
-    },
-    {
-      "Route": "Sistema de Gestion de Importaciones.bundle.scp.css",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-4qz1dff2ck.gz",
-      "Selectors": [
-        {
-          "Name": "Content-Encoding",
-          "Value": "gzip",
-          "Quality": "0.001801801802"
-        }
-      ],
-      "ResponseHeaders": [
-        {
-          "Name": "Accept-Ranges",
-          "Value": "bytes"
-        },
-        {
-          "Name": "Content-Length",
-          "Value": "554"
-        },
-        {
-          "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
-        },
-        {
-          "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
-        },
-        {
-          "Name": "Cache-Control",
-          "Value": "no-cache"
-        },
-        {
-          "Name": "Content-Encoding",
-          "Value": "gzip"
-        },
-        {
-          "Name": "Vary",
-          "Value": "Content-Encoding"
-        },
-        {
-          "Name": "Content-Type",
-          "Value": "text/css"
-        },
-        {
-          "Name": "ETag",
-          "Value": "W/\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
-        }
-      ],
-      "EndpointProperties": [
-        {
-          "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
-        }
-      ]
-    },
-    {
-      "Route": "Sistema de Gestion de Importaciones.bundle.scp.css",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\scopedcss\\projectbundle\\Sistema de Gestion de Importaciones.bundle.scp.css",
-      "Selectors": [],
-      "ResponseHeaders": [
-        {
-          "Name": "Accept-Ranges",
-          "Value": "bytes"
-        },
-        {
-          "Name": "Content-Length",
-          "Value": "1153"
-        },
-        {
-          "Name": "Content-Type",
-          "Value": "text/css"
-        },
-        {
-          "Name": "ETag",
-          "Value": "\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
-        },
-        {
-          "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
-        },
-        {
-          "Name": "Cache-Control",
-          "Value": "no-cache"
-        }
-      ],
-      "EndpointProperties": [
-        {
-          "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
-        }
-      ]
-    },
-    {
-      "Route": "Sistema de Gestion de Importaciones.bundle.scp.css.gz",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\zzmyayrywq-4qz1dff2ck.gz",
-      "Selectors": [],
-      "ResponseHeaders": [
-        {
-          "Name": "Accept-Ranges",
-          "Value": "bytes"
-        },
-        {
-          "Name": "Content-Length",
-          "Value": "554"
-        },
-        {
-          "Name": "Content-Type",
-          "Value": "text/css"
-        },
-        {
-          "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
-        },
-        {
-          "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
-        },
-        {
-          "Name": "Cache-Control",
-          "Value": "no-cache"
-        },
-        {
-          "Name": "Content-Encoding",
-          "Value": "gzip"
-        },
-        {
-          "Name": "Vary",
-          "Value": "Content-Encoding"
-        }
-      ],
-      "EndpointProperties": [
-        {
-          "Name": "integrity",
-          "Value": "sha256-XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c="
+          "Value": "sha256-rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ="
         }
       ]
     },
     {
       "Route": "Sistema de Gestion de Importaciones.styles.css",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-4qz1dff2ck.gz",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-fltfnu3bx7.gz",
       "Selectors": [
         {
           "Name": "Content-Encoding",
           "Value": "gzip",
-          "Quality": "0.001801801802"
+          "Quality": "0.001795332136"
         }
       ],
       "ResponseHeaders": [
@@ -21761,15 +21761,15 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "554"
+          "Value": "556"
         },
         {
           "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21789,13 +21789,13 @@
         },
         {
           "Name": "ETag",
-          "Value": "W/\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
+          "Value": "W/\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
         }
       ],
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
         }
       ]
     },
@@ -21810,7 +21810,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "1153"
+          "Value": "1197"
         },
         {
           "Name": "Content-Type",
@@ -21818,11 +21818,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM=\""
+          "Value": "\"k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21832,13 +21832,13 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-5FtnqbKfhiKhTLYVZo7X/QGdrtbTonxSW3VEml+YXIM="
+          "Value": "sha256-k+I+aNT5FgJx1hrnhYF+t84zCQPgJq05yLFvRbBNOoE="
         }
       ]
     },
     {
       "Route": "Sistema de Gestion de Importaciones.styles.css.gz",
-      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-4qz1dff2ck.gz",
+      "AssetFile": "c:\\Users\\A.Sosa\\Desktop\\Emmanuel\\Sistema de Gestion de Importaciones\\obj\\Debug\\net9.0\\compressed\\778mc0azp0-fltfnu3bx7.gz",
       "Selectors": [],
       "ResponseHeaders": [
         {
@@ -21847,7 +21847,7 @@
         },
         {
           "Name": "Content-Length",
-          "Value": "554"
+          "Value": "556"
         },
         {
           "Name": "Content-Type",
@@ -21855,11 +21855,11 @@
         },
         {
           "Name": "ETag",
-          "Value": "\"XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c=\""
+          "Value": "\"rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ=\""
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 11 Feb 2025 21:23:58 GMT"
+          "Value": "Wed, 12 Feb 2025 16:19:17 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -21877,7 +21877,7 @@
       "EndpointProperties": [
         {
           "Name": "integrity",
-          "Value": "sha256-XGktw3KyWMW8vvK8wXygRtYwUk/5I5Lgwiy5/LHar4c="
+          "Value": "sha256-rZ+ksmjsTpm06/JS8izlL7sEGrON/5yQPWlnKIoGLBQ="
         }
       ]
     }

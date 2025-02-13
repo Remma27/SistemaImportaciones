@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -58,6 +59,7 @@ public class ImportacionController : Controller
     {
         if (ModelState.IsValid)
         {
+            importacion.IdUsuario = HttpContext.User.GetUserId();
             importacion.FechaHoraSystema = DateTime.Now;
             _context.Add(importacion);
             await _context.SaveChangesAsync();
@@ -98,6 +100,7 @@ public class ImportacionController : Controller
         {
             try
             {
+                importacion.IdUsuario = HttpContext.User.GetUserId();
                 _context.Update(importacion);
                 await _context.SaveChangesAsync();
             }

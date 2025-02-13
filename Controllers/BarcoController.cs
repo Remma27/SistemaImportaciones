@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -88,6 +89,7 @@ public class BarcoController : Controller
         {
             if (ModelState.IsValid)
             {
+                barco.IdUsuario = HttpContext.User.GetUserId();
                 _context.Add(barco);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Created new barco: {NombreBarco}", barco.NombreBarco);
@@ -141,6 +143,7 @@ public class BarcoController : Controller
         {
             if (ModelState.IsValid)
             {
+                barco.IdUsuario = HttpContext.User.GetUserId();
                 _context.Update(barco);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Updated barco: {NombreBarco}", barco.NombreBarco);

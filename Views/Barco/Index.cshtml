@@ -4,76 +4,59 @@
     ViewData["Title"] = "Barcos";
 }
 
-<h1>Barcos</h1>
-
-<p>
-    <a asp-action="Create" class="btn btn-primary">Crear Nuevo Barco</a>
-</p>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.NombreBarco)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla1)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla2)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla3)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla4)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla5)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla6)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Escotilla7)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var item in Model)
-    {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.NombreBarco)
-            </td>
-            <td>
-                @(item.Escotilla1 ?? 0)
-            </td>
-            <td>
-                @(item.Escotilla2 ?? 0)
-            </td>
-            <td>
-                @(item.Escotilla3 ?? 0)
-            </td>
-            <td>
-                @(item.Escotilla4 ?? 0)
-            </td>
-            <td>
-                @(item.Escotilla5 ?? 0)
-            </td>
-            <td>
-                @(item.Escotilla6 ?? 0)
-            </td>
-            <td>
-                @(item.Escotilla7 ?? 0)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Editar</a> |
-                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info">Detalles</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Eliminar</a>
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+<div class="container-fluid">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h3 class="mb-0">Gestión de Barcos</h3>
+                </div>
+                <div class="col text-end">
+                    <a asp-action="Create" class="btn btn-light">
+                        <i class="fas fa-plus-circle me-1"></i>Nuevo Barco
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>@Html.DisplayNameFor(model => model.NombreBarco)</th>
+                            <th>Escotillas (Toneladas)</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.NombreBarco)</td>
+                            <td>
+                                <div class="row g-2">
+                                    <div class="col-auto"><span class="badge bg-info">E1: @(item.Escotilla1 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E2: @(item.Escotilla2 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E3: @(item.Escotilla3 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E4: @(item.Escotilla4 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E5: @(item.Escotilla5 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E6: @(item.Escotilla6 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E7: @(item.Escotilla7 ?? 0)</span></div>
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

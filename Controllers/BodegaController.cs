@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -53,6 +54,7 @@ public class BodegaController : Controller
     {
         if (ModelState.IsValid)
         {
+            bodega.IdUsuario = HttpContext.User.GetUserId();
             _context.Add(bodega);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -90,6 +92,7 @@ public class BodegaController : Controller
         {
             try
             {
+                bodega.IdUsuario = HttpContext.User.GetUserId();
                 _context.Update(bodega);
                 await _context.SaveChangesAsync();
             }

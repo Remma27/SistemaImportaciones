@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -53,6 +54,8 @@ public class EmpresaController : Controller
     {
         if (ModelState.IsValid)
         {
+            // Set idusuario using the logged-in user's id from claims:
+            empresa.IdUsuario = HttpContext.User.GetUserId();
             _context.Add(empresa);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -90,6 +93,8 @@ public class EmpresaController : Controller
         {
             try
             {
+                // Update user tracker property:
+                empresa.IdUsuario = HttpContext.User.GetUserId();
                 _context.Update(empresa);
                 await _context.SaveChangesAsync();
             }

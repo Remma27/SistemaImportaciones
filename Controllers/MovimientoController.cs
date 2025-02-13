@@ -7,6 +7,7 @@ using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using System.Drawing;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -92,6 +93,7 @@ public class MovimientoController : Controller
     {
         if (ModelState.IsValid)
         {
+            movimiento.IdUsuario = HttpContext.User.GetUserId();
             movimiento.FechaHoraSystema = DateTime.Now;
             movimiento.FechaHora = DateTime.Now;
             _context.Add(movimiento);
@@ -139,6 +141,7 @@ public class MovimientoController : Controller
         {
             try
             {
+                movimiento.IdUsuario = HttpContext.User.GetUserId();
                 _context.Update(movimiento);
                 await _context.SaveChangesAsync();
             }

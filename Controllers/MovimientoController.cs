@@ -443,8 +443,8 @@ public class MovimientoController : Controller
                 _logger.LogInformation("Fetching movements for importacion {0}", importacionId);
 
                 movimientos = await _context.Movimientos
-                    .Include(m => m.Importacion)
-                        .ThenInclude(i => i.Barco)
+                    .Include(m => m.Importacion!)
+                        .ThenInclude(i => i!.Barco)
                     .Include(m => m.Empresa)
                     .Where(m => m.IdImportacion == importacionId)
                     .OrderByDescending(m => m.FechaHora)
@@ -452,8 +452,8 @@ public class MovimientoController : Controller
                     {
                         Id = m.Id,
                         Fecha = m.FechaHora ?? DateTime.Now,
-                        NombreBarco = m.Importacion.Barco.NombreBarco ?? "Sin Barco",
-                        NombreEmpresa = m.Empresa.NombreEmpresa ?? "Sin Empresa",
+                        NombreBarco = m.Importacion == null || m.Importacion.Barco == null ? "Sin Barco" : m.Importacion.Barco.NombreBarco ?? "Sin Barco",
+                        NombreEmpresa = m.Empresa == null ? "Sin Empresa" : m.Empresa.NombreEmpresa ?? "Sin Empresa",
                         CantidadRequerida = (decimal)(m.CantidadRequerida ?? 0),
                         CantidadCamiones = m.CantidadCamiones ?? 0
                     })

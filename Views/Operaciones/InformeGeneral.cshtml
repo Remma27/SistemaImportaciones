@@ -105,21 +105,88 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" rel="stylesheet" />
     <script>
         $(document).ready(function() {
-            console.log('jQuery version:', $.fn.jquery);
-            console.log('DataTables version:', $.fn.dataTable?.version);
-            try {
-                console.log('DataTable initialization starting...');
-                console.log('Table rows before DataTable:', $('#informeTable tbody tr').length);
-                
+            try {                
+                function formatNumber(number) {
+                    return Number(parseFloat(number || 0).toFixed(2)).toLocaleString('es');
+                }
+
+                function updateTotals() {
+                    let totalRequerido = 0;
+                    let totalDescarga = 0;
+                    let totalFaltante = 0;
+                    let totalCamiones = 0;
+                    let totalPlacas = 0;
+
+                    // Usar la API de DataTables para obtener solo las filas visibles
+                    table.rows({ search: 'applied' }).every(function() {
+                        const $row = $(this.node());
+                        
+                        // Obtener los valores usando la API de DataTables
+                        const cells = this.data();
+                        
+                        // Parsear los valores correctamente, removiendo las comas y manejando NaN
+                        const reqKg = parseFloat((cells[1] || '0').toString().replace(/,/g, '')) || 0;
+                        const descKg = parseFloat((cells[3] || '0').toString().replace(/,/g, '')) || 0;
+                        const faltKg = parseFloat((cells[4] || '0').toString().replace(/,/g, '')) || 0;
+                        const camiones = parseInt((cells[6] || '0').toString()) || 0;
+                        const placas = parseInt((cells[7] || '0').toString()) || 0;
+
+                        totalRequerido += reqKg;
+                        totalDescarga += descKg;
+                        totalFaltante += faltKg;
+                        totalCamiones += camiones;
+                        totalPlacas += placas;
+                    });
+
+                    // Actualizar el footer con los totales formateados
+                    $('.card-footer .row').html(`
+                        <div class="col-md-6">
+                            <strong>Total Requerido:</strong> ${formatNumber(totalRequerido)} KG
+                            <br>
+                            <strong>Total Descarga:</strong> ${formatNumber(totalDescarga)} KG
+                            <br>
+                            <strong>Total Faltante:</strong> ${formatNumber(totalFaltante)} KG
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <strong>Total Camiones Faltantes:</strong> ${totalCamiones}
+                            <br>
+                            <strong>Total Placas:</strong> ${totalPlacas}
+                        </div>
+                    `);
+                }
+
                 const table = $('#informeTable').DataTable({
-                    dom: 'Bfrtip',
+                    dom: 'Bfrt', // Removido 'p' de paginación
                     responsive: true,
+                    buttons: [
+                        {
+                            extend: 'excel',
+                            text: '<i class="fas fa-file-excel me-1"></i> Exportar a Excel',
+                            className: 'btn btn-success',
+                            title: 'Informe_General',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        }
+                    ],
+                    initComplete: function() {
+                        $('.buttons-excel').css({
+                            'margin-bottom': '10px',
+                            'border-radius': '5px',
+                            'font-weight': '500',
+                            'padding': '8px 15px'
+                        });
+                    },
                     language: {
                         url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
                     },
-                    pageLength: 10,
+                    pageLength: -1, // Mostrar todos los registros
                     ordering: true,
                     searching: true,
                     processing: true,
@@ -132,78 +199,8 @@
                     }
                 });
 
-                console.log('DataTable initialization completed');
-                console.log('DataTable rows:', table.rows().count());
-
-                const KG_TO_LBS = 2.20462;
-                let isKilograms = true;
-
-                function convertValue(value, toLbs) {
-                    if (typeof value === 'string') {
-                        value = parseFloat(value.replace(/,/g, ''));
-                    }
-                    if (isNaN(value)) return value;
-                    
-                    return toLbs ? value * KG_TO_LBS : value / KG_TO_LBS;
-                }
-
-                function formatNumber(number) {
-                    return Number(parseFloat(number).toFixed(2)).toLocaleString('es');
-                }
-
-                function updateTotals() {
-                    let totalReq = 0;
-                    let totalDesc = 0;
-
-                    table.rows().every(function() {
-                        const data = this.data();
-                        if (data[1]) { // Req. KG column
-                            totalReq += parseFloat(data[1].replace(/,/g, '')) || 0;
-                        }
-                        if (data[3]) { // Descarga KG column
-                            totalDesc += parseFloat(data[3].replace(/,/g, '')) || 0;
-                        }
-                    });
-
-                    const unit = isKilograms ? 'KG' : 'LBS';
-                    $('.card-footer .col-md-6:first').html(
-                        `<strong>Total Importación:</strong> ${formatNumber(totalReq)} ${unit}`
-                    );
-                }
-
-                $('#convertToLbs').click(function() {
-                    const $button = $(this);
-                    
-                    table.rows().every(function(rowIdx, tableLoop, rowLoop) {
-                        const data = this.data();
-                        
-                        [1, 2, 3, 4, 5].forEach(colIdx => {
-                            if (data[colIdx] && !data[colIdx].includes('%')) {
-                                const value = parseFloat(data[colIdx].replace(/,/g, ''));
-                                if (!isNaN(value)) {
-                                    data[colIdx] = formatNumber(convertValue(value, !isKilograms));
-                                }
-                            }
-                        });
-                        
-                        this.data(data);
-                    });
-
-                    const oldUnit = isKilograms ? 'KG' : 'LBS';
-                    const newUnit = isKilograms ? 'LBS' : 'KG';
-                    table.columns().header().each(function(header) {
-                        const $header = $(header);
-                        if ($header.text().includes(oldUnit)) {
-                            $header.text($header.text().replace(oldUnit, newUnit));
-                        }
-                    });
-
-                    isKilograms = !isKilograms;
-                    $button.html(`<i class="fas fa-weight me-1"></i>Convertir a ${isKilograms ? 'Libras' : 'Kilos'}`);
-                    
-                    table.draw(false);
-                    updateTotals();
-                });
+                // Remove el manejador anterior de exportToExcel y oculta el botón original
+                $('#exportToExcel').hide();
 
                 $('#importacionSelect').change(function() {
                     const importacionId = $(this).val();
@@ -212,13 +209,11 @@
                         : '/Operaciones/InformeGeneral';
                 });
 
-                $('#exportToExcel').click(function() {
-                    const importacionId = $('#importacionSelect').val();
-                    const url = importacionId 
-                        ? `/Movimiento/ExportToExcel?importacionId=${importacionId}`
-                        : `/Movimiento/ExportToExcel`;
-                    window.location.href = url;
+                // Asegurarse de que los totales se actualicen cuando se realice una búsqueda
+                table.on('search.dt', function() {
+                    updateTotals();
                 });
+
             } catch (error) {
                 console.error('Error initializing DataTable:', error);
                 console.error(error.stack);

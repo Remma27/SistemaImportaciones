@@ -7,21 +7,6 @@
 
 <div class="container-fluid">
     
-    <div class="text-center mb-4">
-        <h1 class="display-4">Bienvenido</h1>
-        @if (User.Identity != null && User.Identity.IsAuthenticated)
-        {
-            <p>Hola, <strong>@User.Identity.Name</strong>!</p>
-            <form asp-action="CerrarSesion" asp-controller="Auth" method="post" class="d-inline">
-                <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
-            </form>
-        }
-        else
-        {
-            <p>Por favor <a asp-action="IniciarSesion" asp-controller="Auth" class="btn btn-primary">Iniciar Sesión</a></p>
-        }
-    </div>
-
     <div class="row justify-content-center">
         <!-- Preferences Card -->
         <div class="col-12 col-md-10 col-lg-8 mb-4">

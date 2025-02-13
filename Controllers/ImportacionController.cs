@@ -48,7 +48,7 @@ public class ImportacionController : Controller
     // GET: Importacion/Create
     public IActionResult Create()
     {
-        ViewData["IdBarco"] = new SelectList(_context.Barcos, "Id", "NombreBarco");
+        ViewBag.Barcos = new SelectList(_context.Barcos, "Id", "NombreBarco");
         return View();
     }
 
@@ -65,7 +65,7 @@ public class ImportacionController : Controller
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
-        ViewData["IdBarco"] = new SelectList(_context.Barcos, "Id", "NombreBarco", importacion.IdBarco);
+        ViewBag.Barcos = new SelectList(_context.Barcos, "Id", "NombreBarco", importacion.IdBarco);
         return View(importacion);
     }
 
@@ -82,7 +82,7 @@ public class ImportacionController : Controller
         {
             return NotFound();
         }
-        ViewData["IdBarco"] = new SelectList(_context.Barcos, "Id", "NombreBarco", importacion.IdBarco);
+        ViewBag.Barcos = new SelectList(_context.Barcos, "Id", "NombreBarco", importacion.IdBarco);
         return View(importacion);
     }
 
@@ -117,7 +117,7 @@ public class ImportacionController : Controller
             }
             return RedirectToAction(nameof(Index));
         }
-        ViewData["IdBarco"] = new SelectList(_context.Barcos, "Id", "NombreBarco", importacion.IdBarco);
+        ViewBag.Barcos = new SelectList(_context.Barcos, "Id", "NombreBarco", importacion.IdBarco);
         return View(importacion);
     }
 

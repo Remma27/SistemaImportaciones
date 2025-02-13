@@ -10,17 +10,17 @@ public class Movimiento
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
 
-    //[Required(ErrorMessage = "La fecha y hora es requerida")]
+    [Required(ErrorMessage = "La fecha y hora es requerida")]
     [Display(Name = "Fecha y Hora")]
     [Column("fechahora")]
     public DateTime? FechaHora { get; set; }
 
-    //[Required(ErrorMessage = "La fecha y hora del sistema es requerida")]
+    [Required(ErrorMessage = "La fecha y hora del sistema es requerida")]
     [Display(Name = "Fecha y Hora del Sistema")]
     [Column("fechahorasistema")]
     public DateTime? FechaHoraSystema { get; set; }
 
-    //[Required(ErrorMessage = "El ID de la importación es requerido")]
+    [Required(ErrorMessage = "El ID de la importación es requerido")]
     [Display(Name = "Importación")]
     [Column("idimportacion")]
     public int? IdImportacion { get; set; }
@@ -28,7 +28,7 @@ public class Movimiento
     [ForeignKey("IdImportacion")]
     public virtual Importacion? Importacion { get; set; }
 
-    //[Required(ErrorMessage = "El ID de la empresa es requerido")]
+    [Required(ErrorMessage = "El ID de la empresa es requerido")]
     [Display(Name = "Empresa")]
     [Column("idempresa")]
     public int? IdEmpresa { get; set; }
@@ -36,25 +36,25 @@ public class Movimiento
     [ForeignKey("IdEmpresa")]
     public virtual Empresa? Empresa { get; set; }
 
-    //[Required(ErrorMessage = "El tipo de transacción es requerido")]
+    [Required(ErrorMessage = "El tipo de transacción es requerido")]
     [Display(Name = "Tipo de Transacción")]
     [Range(1, 2, ErrorMessage = "El tipo de transacción debe ser 1 (Entrada) o 2 (Salida)")]
     [Column("tipotransaccion")]
     public int? TipoTransaccion { get; set; }
 
-    //[Required(ErrorMessage = "La cantidad de camiones es requerida")]
+    [Required(ErrorMessage = "La cantidad de camiones es requerida")]
     [Display(Name = "Cantidad de Camiones")]
     [Range(1, int.MaxValue, ErrorMessage = "La cantidad de camiones debe ser mayor a 0")]
     [Column("cantidadcamiones")]
     public int? CantidadCamiones { get; set; }
 
-    //[Required(ErrorMessage = "La cantidad requerida es requerida")]
+    [Required(ErrorMessage = "La cantidad requerida es requerida")]
     [Display(Name = "Cantidad Requerida")]
     [Range(0.01, double.MaxValue, ErrorMessage = "La cantidad requerida debe ser mayor a 0")]
     [Column("cantidadrequerida")]
     public double? CantidadRequerida { get; set; }
 
-    //[Required(ErrorMessage = "La cantidad entregada es requerida")]
+    [Required(ErrorMessage = "La cantidad entregada es requerida")]
     [Display(Name = "Cantidad Entregada")]
     [Range(0.0, double.MaxValue, ErrorMessage = "La cantidad entregada debe ser mayor o igual a 0")]
     [Column("cantidadentregada")]
@@ -68,7 +68,7 @@ public class Movimiento
     [Column("placa_alterna")]
     public int? PlacaAlterna { get; set; }
 
-    //[Required(ErrorMessage = "La guía es requerida")]
+    [Required(ErrorMessage = "La guía es requerida")]
     [Display(Name = "Guía")]
     [Column("guia")]
     public int? Guia { get; set; }
@@ -77,7 +77,7 @@ public class Movimiento
     [Column("guia_alterna")]
     public string? GuiaAlterna { get; set; } = "N/A";
 
-    //[Required(ErrorMessage = "La escotilla es requerida")]
+    [Required(ErrorMessage = "La escotilla es requerida")]
     [Display(Name = "Escotilla")]
     [Range(1, 7, ErrorMessage = "La escotilla debe estar entre 1 y 7")]
     [Column("escotilla")]
@@ -91,6 +91,10 @@ public class Movimiento
     [Display(Name = "Bodega")]
     [Column("bodega")]
     public int? Bodega { get; set; }
+
+    [Display(Name = "Usuario")]
+    [Column("idusuario")]
+    public int? IdUsuario { get; set; }
 
     // Constructor
     public Movimiento()

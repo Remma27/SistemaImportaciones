@@ -16,4 +16,14 @@ public class Bodega
     [StringLength(100)]
     [Column("bodega")]
     public string? NombreBodega { get; set; }
+
+    [Display(Name = "Usuario")]
+    [Column("idusuario")]
+    public int? IdUsuario { get; set; }
+
+    // Constructor
+    public Bodega()
+    {
+        NombreBodega = string.Empty;
+    }
 }

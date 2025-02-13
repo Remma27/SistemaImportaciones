@@ -109,7 +109,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, usuario.Nombre),
-                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Email, usuario.Email ?? string.Empty),
                 new Claim("UserId", usuario.Id.ToString())
             };
 

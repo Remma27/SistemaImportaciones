@@ -3,12 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Sistema_de_Gestion_de_Importaciones.Models;
 
-public enum EstatusEmpresa
-{
-    Estatus1 = 1,
-    Estatus2 = 2
-}
-
 public class Empresa
 {
     [Key]
@@ -26,12 +20,16 @@ public class Empresa
     [Display(Name = "Estatus")]
     [Range(1, 2, ErrorMessage = "El estatus debe ser 1 o 2")]
     [Column("estatus")]
-    public EstatusEmpresa Estatus { get; set; }
+    public int Estatus { get; set; }
+
+    [Display(Name = "Usuario")]
+    [Column("idusuario")]
+    public int? IdUsuario { get; set; }
 
     // Constructor
     public Empresa()
     {
         NombreEmpresa = string.Empty;
-        Estatus = EstatusEmpresa.Estatus1;
+        Estatus = 1; // Default to "Activo"
     }
 }

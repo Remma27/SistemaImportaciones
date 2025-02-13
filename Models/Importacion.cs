@@ -34,6 +34,10 @@ public class Importacion
     [Column("totalcargakilos")]
     public double TotalCargaKilos { get; set; }
 
+    [Display(Name = "Usuario")]
+    [Column("idusuario")]
+    public int? IdUsuario { get; set; }
+
     // Constructor
     public Importacion()
     {

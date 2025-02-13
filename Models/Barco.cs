@@ -51,6 +51,10 @@ public class Barco
     [DisplayFormat(DataFormatString = "{0:F4}")]
     public decimal? Escotilla7 { get; set; }
 
+    [Display(Name = "Usuario")]
+    [Column("idusuario")]
+    public int? IdUsuario { get; set; }
+
     // Constructor
     public Barco()
     {

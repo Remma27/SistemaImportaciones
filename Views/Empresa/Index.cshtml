@@ -30,7 +30,7 @@
                 @Html.DisplayFor(modelItem => item.NombreEmpresa)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Estatus)
+                <input type="checkbox" disabled="disabled" @(item.Estatus == 1 ? "checked" : "") style="color: green;" />
             </td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.IdEmpresa" class="btn btn-warning">Editar</a> |

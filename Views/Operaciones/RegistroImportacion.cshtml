@@ -1,48 +1,60 @@
-@model IEnumerable<Sistema_de_Gestion_de_Importaciones.Models.Importacion>
-
+@using Sistema_de_Gestion_de_Importaciones.Models.ViewModels
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.Controllers.MovimientoController.RegistroImportacionViewModel>
 @{
     ViewData["Title"] = "Registro de Requerimientos de Importación";
 }
 
-<div class="container-fluid">
+<div class="container-fluid mt-3">
     <div class="card shadow">
-        <div class="card-header py-3">
+        <div class="card-header py-3 ">
             <div class="row align-items-center">
-                <div class="col">
+                <div class="col-md-4">
                     <h3 class="mb-0">
-                        <i class="fas fa-clipboard-list me-2"></i>
+                        <i class="fas fa-chart-bar me-2"></i>
                         Registro de Requerimientos de Importación
                     </h3>
                 </div>
-                <div class="col text-end">
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarModal">
-                        <i class="fas fa-plus me-1"></i>Agregar
-                    </button>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <label class="input-group-text">Importación</label>
+                        <select class="form-select" id="importacionSelect">
+                            @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.Importaciones)
+                            {
+                                <option value="@item.Value" selected="@item.Selected">
+                                    @item.Text
+                                </option>
+                            }
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover" id="informeTable">
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
                             <th>Fecha</th>
                             <th>Barco</th>
-                            <th>Total Kilos</th>
+                            <th>Empresa</th>
+                            <th class="text-end">KG Requeridos</th>
+                            <th class="text-end">Cant. Camiones</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (Model != null && Model.Any())
                         {
-                            @foreach (var item in Model)
+                            foreach (var item in Model)
                             {
                                 <tr>
                                     <td>@item.Id</td>
-                                    <td>@item.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td>@item.Barco?.NombreBarco</td>
-                                    <td>@item.TotalCargaKilos.ToString("N0")</td>
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@item.NombreBarco</td>
+                                    <td>@item.NombreEmpresa</td>
+                                    <td class="text-end">@item.CantidadRequerida.ToString("N2")</td>
+                                    <td class="text-end">@item.CantidadCamiones</td>
                                     <td>
                                         <button class="btn btn-sm btn-warning">
                                             <i class="fas fa-edit"></i>
@@ -57,7 +69,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="5" class="text-center">No hay registros disponibles</td>
+                                <td colspan="9" class="text-center">Seleccione una importación para ver los datos.</td>
                             </tr>
                         }
                     </tbody>
@@ -67,40 +79,56 @@
     </div>
 </div>
 
-<!-- Modal para Agregar/Editar -->
-<div class="modal fade" id="agregarModal" tabindex="-1" aria-labelledby="agregarModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="agregarModalLabel">Nuevo Registro</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formRegistro">
-                    <div class="mb-3">
-                        <label for="barco" class="form-label">Barco</label>
-                        <select class="form-select" id="barco" required>
-                            <option value="">Seleccione un barco...</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="totalKilos" class="form-label">Total Kilos</label>
-                        <input type="number" class="form-control" id="totalKilos" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary">Guardar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    
     <script>
         $(document).ready(function() {
-            
+            try {
+                // Debug logs
+                console.log('Estado inicial:', {
+                    jqueryVersion: $.fn.jquery,
+                    hasDataTable: typeof $.fn.DataTable === 'function',
+                    tableExists: $('#informeTable').length > 0,
+                    rowCount: $('#informeTable tbody tr').length
+                });
+
+                // Inicialización simple
+                if ($('#informeTable').length) {
+                    $('#informeTable').DataTable({
+                        autoWidth: false,
+                        info: false,
+                        paging: false,
+                        searching: true,
+                        ordering: true,
+                        order: [[0, 'desc']],
+                        language: {
+                            search: "Buscar:",
+                            zeroRecords: "No se encontraron registros coincidentes",
+                            emptyTable: "Seleccione una importación para ver los datos"
+                        },
+                        columnDefs: [
+                            { targets: 6, orderable: false }
+                        ]
+                    });
+                }
+
+                // Cambio de importación
+                $('#importacionSelect').on('change', function() {
+                    var importacionId = $(this).val();
+                    console.log('Cambiando importación:', importacionId);
+                    
+                    if (importacionId) {
+                        window.location.href = '/Operaciones/RegistroImportacion?importacionId=' + importacionId;
+                    } else {
+                        window.location.href = '/Operaciones/RegistroImportacion';
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error al inicializar:', error);
+            }
         });
     </script>
 }

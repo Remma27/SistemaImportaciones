@@ -1,26 +1,39 @@
 @model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroRequerimientosViewModel>
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["Title"] = "Registro de Requerimientos";
 }
 
-<div class="container-fluid mt-4">
+<div class="container my-5">
     <div class="card shadow">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
-            <h3 class="mb-0">Registro de Requerimientos</h3>
-            <a asp-action="Create" class="btn btn-light">
-                <i class="fas fa-plus me-1"></i>Nuevo Registro
-            </a>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="searchInput" placeholder="Buscar registro...">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                    </div>
+        <div class="card-header bg-primary text-white">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-0">Registro de Requerimientos</h3>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a asp-action="Create" class="btn btn-light">
+                        <i class="fas fa-plus me-1"></i> Nuevo Registro
+                    </a>
                 </div>
             </div>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label">Seleccione una Importación</label>
+                    <select name="selectedBarco" class="form-select" asp-items="ViewBag.Barcos">
+                        <option value="">Seleccione</option>
+                    </select>
+                </div>
+                <div class="col-md-6 align-self-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead class="table-light">
@@ -29,39 +42,58 @@
                             <th>Fecha y Hora</th>
                             <th>Importación</th>
                             <th>Empresa</th>
-                            <th>Tipo de Transacción</th>
                             <th>Cantidad Requerida</th>
                             <th>Cantidad de Camiones</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model)
+                        @if(Model.Any())
+                        {
+                            foreach(var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.IdMovimiento</td>
+                                    <td>@string.Format("{0:dd/MM/yyyy HH:mm}", item.FechaHora)</td>
+                                    <td>@item.Importacion</td>
+                                    <td>@item.Empresa</td>
+                                    <td>@item.CantidadRequerida kg</td>
+                                    <td>@item.CantidadCamiones</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td>@item.IdMovimiento</td>
-                                <td>@string.Format("{0:dd/MM/yyyy HH:mm}", item.FechaHora)</td>
-                                <td>@item.Importacion</td>
-                                <td>@item.Empresa</td>
-                                <td>@item.TipoTransaccion</td>
-                                <td>@item.CantidadRequerida kg</td>
-                                <td>@item.CantidadCamiones</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a asp-action="Edit" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a asp-action="Delete" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
+                                <td colspan="7" class="text-center">No hay registros disponibles</td>
                             </tr>
                         }
                     </tbody>
+                    @if(Model.Any())
+                    {
+                        var totalRequerida = Model.Sum(x => x.CantidadRequerida);
+                        var totalCamiones = Model.Sum(x => x.CantidadCamiones);
+                        <tfoot>
+                            <tr class="table-secondary">
+                                <td colspan="4" class="fw-bold text-end">Totales:</td>
+                                <td class="fw-bold">@totalRequerida kg</td>
+                                <td class="fw-bold">@totalCamiones</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    }
                 </table>
             </div>
         </div>
     </div>
 </div>
-

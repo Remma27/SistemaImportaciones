@@ -20,16 +20,33 @@ public class RegistroRequerimientosController : Controller
     }
 
     // GET: RegistroRequerimientos
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? selectedBarco)
     {
         try
         {
             _logger.LogInformation("Starting data retrieval for RegistroRequerimientos");
 
+            // Obtener la lista de barcos que tienen movimientos (TipoTransaccion == 1)
+            var barcos = await (from b in _context.Barcos
+                                join i in _context.Importaciones on b.Id equals i.IdBarco
+                                join m in _context.Movimientos on i.Id equals m.IdImportacion
+                                where m.TipoTransaccion == 1
+                                select b)
+                               .Distinct()
+                               .ToListAsync();
+            ViewBag.Barcos = new SelectList(barcos, "Id", "NombreBarco", selectedBarco);
+
+            // Si no se ha seleccionado un barco, no retornar nada
+            if (!selectedBarco.HasValue)
+            {
+                return View(new List<RegistroRequerimientosViewModel>());
+            }
+
             var result = await (from m in _context.Movimientos
                                 join i in _context.Importaciones on m.IdImportacion equals i.Id
                                 join e in _context.Empresas on m.IdEmpresa equals e.IdEmpresa
                                 join b in _context.Barcos on i.IdBarco equals b.Id
+                                where b.Id == selectedBarco.Value && m.TipoTransaccion == 1
                                 select new RegistroRequerimientosViewModel
                                 {
                                     IdMovimiento = m.Id,
@@ -100,8 +117,9 @@ public class RegistroRequerimientosController : Controller
                                  join b in _context.Barcos on i.IdBarco equals b.Id
                                  select new { i.Id, b.NombreBarco }).ToList();
 
+            // Filtrar empresas con estatus "Activo"
             ViewBag.Importaciones = new SelectList(importaciones, "Id", "NombreBarco");
-            ViewBag.Empresas = new SelectList(_context.Empresas, "IdEmpresa", "NombreEmpresa");
+            ViewBag.Empresas = new SelectList(_context.Empresas.Where(e => e.Estatus == 1), "IdEmpresa", "NombreEmpresa");
 
             var viewModel = new RegistroRequerimientosViewModel
             {
@@ -153,7 +171,8 @@ public class RegistroRequerimientosController : Controller
                              select new { i.Id, b.NombreBarco }).ToList();
 
         ViewBag.Importaciones = new SelectList(importaciones, "Id", "NombreBarco", viewModel.IdImportacion);
-        ViewBag.Empresas = new SelectList(_context.Empresas, "IdEmpresa", "NombreEmpresa", viewModel.IdEmpresa);
+        // Asegurar filtrar empresas activas
+        ViewBag.Empresas = new SelectList(_context.Empresas.Where(e => e.Estatus == 1), "IdEmpresa", "NombreEmpresa", viewModel.IdEmpresa);
         return View(viewModel);
     }
 
@@ -196,7 +215,8 @@ public class RegistroRequerimientosController : Controller
                                  select new { i.Id, b.NombreBarco }).ToList();
 
             ViewBag.Importaciones = new SelectList(importaciones, "Id", "NombreBarco", result.IdImportacion);
-            ViewBag.Empresas = new SelectList(_context.Empresas, "IdEmpresa", "NombreEmpresa", result.IdEmpresa);
+            // Filtrar empresas con estatus "Activo"
+            ViewBag.Empresas = new SelectList(_context.Empresas.Where(e => e.Estatus == 1), "IdEmpresa", "NombreEmpresa", result.IdEmpresa);
 
             return View(result);
         }
@@ -230,7 +250,7 @@ public class RegistroRequerimientosController : Controller
                     return NotFound();
                 }
 
-                // Update only the fields that are allowed to be modified
+                // Actualizar las propiedades
                 movimiento.FechaHora = viewModel.FechaHora;
                 movimiento.IdImportacion = viewModel.IdImportacion;
                 movimiento.IdEmpresa = viewModel.IdEmpresa;
@@ -238,8 +258,10 @@ public class RegistroRequerimientosController : Controller
                 movimiento.CantidadRequerida = viewModel.CantidadRequerida;
                 movimiento.CantidadCamiones = viewModel.CantidadCamiones;
 
+                // Asignar ID de usuario
                 movimiento.IdUsuario = HttpContext.User.GetUserId();
-                _context.Update(movimiento);
+
+                // La entidad ya está siendo rastreada, solo se guarda los cambios
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully updated movimiento ID: {Id}", id);
@@ -252,7 +274,7 @@ public class RegistroRequerimientosController : Controller
                 {
                     return NotFound();
                 }
-                throw;
+                ModelState.AddModelError("", "Error de concurrencia al actualizar el movimiento.");
             }
             catch (Exception ex)
             {
@@ -261,7 +283,7 @@ public class RegistroRequerimientosController : Controller
             }
         }
 
-        // If we got this far, something failed, redisplay form
+        // Si llega aquí, algo falló; recargar los selectlists y volver a mostrar el formulario
         try
         {
             var importaciones = await (from i in _context.Importaciones
@@ -271,7 +293,7 @@ public class RegistroRequerimientosController : Controller
                                      .ToListAsync();
 
             ViewBag.Importaciones = new SelectList(importaciones, "Id", "NombreBarco", viewModel.IdImportacion);
-            ViewBag.Empresas = new SelectList(_context.Empresas, "IdEmpresa", "NombreEmpresa", viewModel.IdEmpresa);
+            ViewBag.Empresas = new SelectList(_context.Empresas.Where(e => e.Estatus == 1), "IdEmpresa", "NombreEmpresa", viewModel.IdEmpresa);
 
             return View(viewModel);
         }

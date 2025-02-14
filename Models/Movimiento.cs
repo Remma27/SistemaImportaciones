@@ -60,7 +60,7 @@ public class Movimiento
     [Column("placa_alterna")]
     public string? PlacaAlterna { get; set; }
 
-    [Required(ErrorMessage = "La guía es requerida")]
+    //[Required(ErrorMessage = "La guía es requerida")]
     [Display(Name = "Guía")]
     [Column("guia")]
     public int? Guia { get; set; }
@@ -69,7 +69,7 @@ public class Movimiento
     [Column("guia_alterna")]
     public string? GuiaAlterna { get; set; } = "N/A";
 
-    [Required(ErrorMessage = "La escotilla es requerida")]
+    //[Required(ErrorMessage = "La escotilla es requerida")]
     [Display(Name = "Escotilla")]
     [Range(1, 7, ErrorMessage = "La escotilla debe estar entre 1 y 7")]
     [Column("escotilla")]

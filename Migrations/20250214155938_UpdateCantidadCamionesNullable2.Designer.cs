@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sistema_de_Gestion_de_Importaciones.Data;
 
@@ -11,9 +12,11 @@ using Sistema_de_Gestion_de_Importaciones.Data;
 namespace Sistema_de_Gestion_de_Importaciones.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250214155938_UpdateCantidadCamionesNullable2")]
+    partial class UpdateCantidadCamionesNullable2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -175,15 +178,15 @@ namespace Sistema_de_Gestion_de_Importaciones.Migrations
                         .HasColumnType("int")
                         .HasColumnName("bodega");
 
-                    b.Property<int?>("CantidadCamiones")
+                    b.Property<int>("CantidadCamiones")
                         .HasColumnType("int")
                         .HasColumnName("cantidadcamiones");
 
-                    b.Property<double?>("CantidadEntregada")
+                    b.Property<double>("CantidadEntregada")
                         .HasColumnType("double")
                         .HasColumnName("cantidadentregada");
 
-                    b.Property<double?>("CantidadRequerida")
+                    b.Property<double>("CantidadRequerida")
                         .HasColumnType("double")
                         .HasColumnName("cantidadrequerida");
 
@@ -191,11 +194,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Migrations
                         .HasColumnType("int")
                         .HasColumnName("escotilla");
 
-                    b.Property<DateTime?>("FechaHora")
+                    b.Property<DateTime>("FechaHora")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("fechahora");
 
-                    b.Property<DateTime?>("FechaHoraSystema")
+                    b.Property<DateTime>("FechaHoraSystema")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("fechahorasistema");
 
@@ -207,11 +210,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("guia_alterna");
 
-                    b.Property<int?>("IdEmpresa")
+                    b.Property<int>("IdEmpresa")
                         .HasColumnType("int")
                         .HasColumnName("idempresa");
 
-                    b.Property<int?>("IdImportacion")
+                    b.Property<int>("IdImportacion")
                         .HasColumnType("int")
                         .HasColumnName("idimportacion");
 
@@ -227,7 +230,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("placa_alterna");
 
-                    b.Property<int?>("TipoTransaccion")
+                    b.Property<int>("TipoTransaccion")
                         .HasColumnType("int")
                         .HasColumnName("tipotransaccion");
 
@@ -307,12 +310,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Migrations
                     b.HasOne("Sistema_de_Gestion_de_Importaciones.Models.Empresa", "Empresa")
                         .WithMany()
                         .HasForeignKey("IdEmpresa")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Sistema_de_Gestion_de_Importaciones.Models.Importacion", "Importacion")
                         .WithMany()
                         .HasForeignKey("IdImportacion")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Empresa");
 

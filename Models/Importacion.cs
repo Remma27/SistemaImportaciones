@@ -37,6 +37,8 @@ public class Importacion
     [Display(Name = "Usuario")]
     [Column("idusuario")]
     public int? IdUsuario { get; set; }
+    // Remove or comment out this line as it's not needed
+    // public string? NombreBarco { get; internal set; }
 
     // Constructor
     public Importacion()

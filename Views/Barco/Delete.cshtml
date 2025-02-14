@@ -30,7 +30,7 @@
                                 {
                                     <div class="col-auto">
                                         <span class="badge bg-info">
-                                            E@(i): @(typeof(Barco).GetProperty($"Escotilla{i}").GetValue(Model) ?? 0)
+                                            E@(i): @(typeof(Barco).GetProperty($"Escotilla{i}")?.GetValue(Model) ?? 0)
                                         </span>
                                     </div>
                                 }

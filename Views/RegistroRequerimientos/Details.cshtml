@@ -1,0 +1,54 @@
+@model Sistema_de_Gestion_de_Importaciones.Models.Movimiento
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>Movimiento</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            Fecha y Hora
+        </dt>
+        <dd class="col-sm-10">
+            @Model.FechaHora
+        </dd>
+        <dt class="col-sm-2">
+            Id Importación
+        </dt>
+        <dd class="col-sm-10">
+            @Model.IdImportacion
+        </dd>
+        <dt class="col-sm-2">
+            Id Empresa
+        </dt>
+        <dd class="col-sm-10">
+            @Model.IdEmpresa
+        </dd>
+        <dt class="col-sm-2">
+            Tipo de Transacción
+        </dt>
+        <dd class="col-sm-10">
+            @Model.TipoTransaccion
+        </dd>
+        <dt class="col-sm-2">
+            Cantidad Requerida
+        </dt>
+        <dd class="col-sm-10">
+            @Model.CantidadRequerida
+        </dd>
+        <dt class="col-sm-2">
+            Cantidad de Camiones
+        </dt>
+        <dd class="col-sm-10">
+            @Model.CantidadCamiones
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

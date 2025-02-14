@@ -1,0 +1,67 @@
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroRequerimientosViewModel>
+
+@{
+    ViewData["Title"] = "Registro de Requerimientos";
+}
+
+<div class="container-fluid mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+            <h3 class="mb-0">Registro de Requerimientos</h3>
+            <a asp-action="Create" class="btn btn-light">
+                <i class="fas fa-plus me-1"></i>Nuevo Registro
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Buscar registro...">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha y Hora</th>
+                            <th>Importación</th>
+                            <th>Empresa</th>
+                            <th>Tipo de Transacción</th>
+                            <th>Cantidad Requerida</th>
+                            <th>Cantidad de Camiones</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.IdMovimiento</td>
+                                <td>@string.Format("{0:dd/MM/yyyy HH:mm}", item.FechaHora)</td>
+                                <td>@item.Importacion</td>
+                                <td>@item.Empresa</td>
+                                <td>@item.TipoTransaccion</td>
+                                <td>@item.CantidadRequerida kg</td>
+                                <td>@item.CantidadCamiones</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Edit" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+

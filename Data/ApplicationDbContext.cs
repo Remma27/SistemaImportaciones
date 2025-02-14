@@ -16,7 +16,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Data
         public DbSet<Importacion> Importaciones { get; set; }
         public DbSet<Movimiento> Movimientos { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -25,12 +24,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Data
             {
                 entity.ToTable("barcos");
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.NombreBarco).HasColumnName("nombrebarco");
             });
 
             modelBuilder.Entity<Empresa>(entity =>
             {
                 entity.ToTable("empresas");
                 entity.Property(e => e.IdEmpresa).HasColumnName("id_empresa");
+                entity.Property(e => e.NombreEmpresa).HasColumnName("nombreempresa");
             });
 
             modelBuilder.Entity<Bodega>(entity =>
@@ -58,6 +59,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Data
             {
                 entity.ToTable("movimientos");
                 entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.FechaHora).HasColumnName("fechahora");
+                entity.Property(e => e.IdImportacion).HasColumnName("idimportacion");
+                entity.Property(e => e.IdEmpresa).HasColumnName("idempresa");
+                entity.Property(e => e.TipoTransaccion).HasColumnName("tipotransaccion");
+                entity.Property(e => e.CantidadRequerida).HasColumnName("cantidadrequerida");
+                entity.Property(e => e.CantidadCamiones).HasColumnName("cantidadcamiones");
                 entity.HasOne(m => m.Importacion)
                     .WithMany()
                     .HasForeignKey(m => m.IdImportacion)

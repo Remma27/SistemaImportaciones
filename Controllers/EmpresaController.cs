@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -18,12 +19,14 @@ public class EmpresaController : Controller
     }
 
     // GET: Empresa
+    [Authorize]
     public async Task<IActionResult> Index()
     {
         return View(await _context.Empresas.ToListAsync());
     }
 
     // GET: Empresa/Details/5
+    [Authorize]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null)
@@ -42,12 +45,14 @@ public class EmpresaController : Controller
     }
 
     // GET: Empresa/Create
+    [Authorize]
     public IActionResult Create()
     {
         return View();
     }
 
     // POST: Empresa/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("NombreEmpresa,Estatus")] Empresa empresa)
@@ -64,6 +69,7 @@ public class EmpresaController : Controller
     }
 
     // GET: Empresa/Edit/5
+    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null)
@@ -80,6 +86,7 @@ public class EmpresaController : Controller
     }
 
     // POST: Empresa/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("IdEmpresa,NombreEmpresa,Estatus")] Empresa empresa)
@@ -115,6 +122,7 @@ public class EmpresaController : Controller
     }
 
     // GET: Empresa/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
@@ -133,6 +141,7 @@ public class EmpresaController : Controller
     }
 
     // POST: Empresa/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

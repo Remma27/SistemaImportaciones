@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -18,12 +19,14 @@ public class BodegaController : Controller
     }
 
     // GET: Bodega
+    [Authorize]
     public async Task<IActionResult> Index()
     {
         return View(await _context.Bodegas.ToListAsync());
     }
 
     // GET: Bodega/Details/5
+    [Authorize]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null)
@@ -42,12 +45,14 @@ public class BodegaController : Controller
     }
 
     // GET: Bodega/Create
+    [Authorize]
     public IActionResult Create()
     {
         return View();
     }
 
     // POST: Bodega/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("NombreBodega")] Bodega bodega)
@@ -63,6 +68,7 @@ public class BodegaController : Controller
     }
 
     // GET: Bodega/Edit/5
+    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null)
@@ -79,6 +85,7 @@ public class BodegaController : Controller
     }
 
     // POST: Bodega/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("IdBodega,NombreBodega")] Bodega bodega)
@@ -113,6 +120,7 @@ public class BodegaController : Controller
     }
 
     // GET: Bodega/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
@@ -131,6 +139,7 @@ public class BodegaController : Controller
     }
 
     // POST: Bodega/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

@@ -5,6 +5,7 @@ using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -20,6 +21,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // GET: RegistroRequerimientos
+    [Authorize]
     public async Task<IActionResult> Index(int? selectedBarco)
     {
         try
@@ -72,6 +74,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // GET: RegistroRequerimientos/Details/5
+    [Authorize]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -109,6 +112,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // GET: RegistroRequerimientos/Create
+    [Authorize]
     public IActionResult Create()
     {
         try
@@ -136,6 +140,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // POST: RegistroRequerimientos/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("FechaHora,IdImportacion,IdEmpresa,TipoTransaccion,CantidadRequerida,CantidadCamiones")] RegistroRequerimientosViewModel viewModel)
@@ -177,6 +182,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // GET: RegistroRequerimientos/Edit/5
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> Edit(int? id)
     {
@@ -228,6 +234,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // POST: RegistroRequerimientos/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Route("[controller]/Edit/{id}")]
@@ -305,6 +312,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // GET: RegistroRequerimientos/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
@@ -339,6 +347,7 @@ public class RegistroRequerimientosController : Controller
     }
 
     // POST: RegistroRequerimientos/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -19,6 +20,7 @@ public class ImportacionController : Controller
     }
 
     // GET: Importacion
+    [Authorize]
     public async Task<IActionResult> Index()
     {
         return View(await _context.Importaciones
@@ -27,6 +29,7 @@ public class ImportacionController : Controller
     }
 
     // GET: Importacion/Details/5
+    [Authorize]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null)
@@ -46,6 +49,7 @@ public class ImportacionController : Controller
     }
 
     // GET: Importacion/Create
+    [Authorize]
     public IActionResult Create()
     {
         ViewBag.Barcos = new SelectList(_context.Barcos, "Id", "NombreBarco");
@@ -53,6 +57,7 @@ public class ImportacionController : Controller
     }
 
     // POST: Importacion/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("FechaHora,IdBarco,TotalCargaKilos")] Importacion importacion)
@@ -70,6 +75,7 @@ public class ImportacionController : Controller
     }
 
     // GET: Importacion/Edit/5
+    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null)
@@ -87,6 +93,7 @@ public class ImportacionController : Controller
     }
 
     // POST: Importacion/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Id,FechaHora,IdBarco,TotalCargaKilos,FechaHoraSystema")] Importacion importacion)
@@ -122,6 +129,7 @@ public class ImportacionController : Controller
     }
 
     // GET: Importacion/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
@@ -141,6 +149,7 @@ public class ImportacionController : Controller
     }
 
     // POST: Importacion/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

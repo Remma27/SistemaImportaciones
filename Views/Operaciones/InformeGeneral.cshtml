@@ -1,223 +1,148 @@
-@using Sistema_de_Gestion_de_Importaciones.Models.ViewModels
-@model IEnumerable<InformeGeneralViewModel>
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.Models.ViewModels.InformeGeneralViewModel>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
 @{
     ViewData["Title"] = "Informe General";
+    var totales = new
+    {
+        RequeridoKg = Model.Sum(x => x.RequeridoKg),
+        DescargaKg = Model.Sum(x => x.DescargaKg),
+        FaltanteKg = Model.Sum(x => x.FaltanteKg),
+        CamionesFaltantes = Model.Sum(x => x.CamionesFaltantes),
+        ConteoPlacas = Model.Sum(x => x.ConteoPlacas),
+        PorcentajePromedio = Model.Any() ? Model.Average(x => x.PorcentajeDescarga) : 0
+    };
 }
 
-<div class="container-fluid mt-3">
-    <div class="card shadow">
-        <div class="card-header py-3 ">
+<div class="container-fluid py-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white py-3">
             <div class="row align-items-center">
                 <div class="col-md-4">
-                    <h3 class="mb-0">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        Informe General
-                    </h3>
+                    <h3 class="mb-0">Informe General</h3>
                 </div>
                 <div class="col-md-4">
-                    <div class="input-group">
-                        <label class="input-group-text">Importación</label>
-                        <select class="form-select" id="importacionSelect">
-                            @foreach (var item in (IEnumerable<SelectListItem>)ViewBag.Importaciones)
-                            {
-                                <option value="@item.Value" selected="@item.Selected">
-                                    @item.Text
-                                </option>
-                            }
-                        </select>
-                    </div>
+                    <form method="get" asp-action="InformeGeneral" asp-controller="Movimiento" class="mb-0">
+                        <div class="input-group">
+                            <select name="importacionId" class="form-select" asp-items="ViewBag.Importaciones">
+                            </select>
+                            <button type="submit" class="btn btn-light">
+                                <i class="fas fa-filter me-1"></i> Filtrar
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-outline-primary">
-                            <i class="fas fa-table me-1"></i>
+                <div class="col-md-4">
+                    <div class="btn-group float-end" role="group">
+                        <button class="btn btn-light" title="Vista tabla">
+                            <i class="fas fa-table"></i>
                         </button>
-                        <button class="btn btn-outline-primary">
-                            <i class="fas fa-th me-1"></i>
+                        <button class="btn btn-light" title="Vista cuadrícula">
+                            <i class="fas fa-th"></i>
                         </button>
-                        <button class="btn btn-outline-primary" id="exportToExcel">
-                            <i class="fas fa-download me-1"></i>
-                            Exportar
+                        <button class="btn btn-light" id="exportToExcel" title="Exportar a Excel">
+                            <i class="fas fa-file-excel me-1"></i> Excel
                         </button>
-                        <button class="btn btn-outline-primary" id="convertToLbs" type="button">
-                            <i class="fas fa-weight me-1"></i>
-                            Convertir a Libras
+                        <button class="btn btn-light" id="convertToLbs" title="Convertir a libras">
+                            <i class="fas fa-weight me-1"></i> Libras
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover" id="informeTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Agroindustria</th>
-                            <th class="text-end">Req. KG</th>
-                            <th class="text-end">Req. Toneladas</th>
-                            <th class="text-end">Descarga KG</th>
-                            <th class="text-end">Faltante KG</th>
-                            <th class="text-end">Ton. Faltantes</th>
-                            <th class="text-end">Camiones Faltantes</th>
-                            <th class="text-end">Conteo Placas</th>
-                            <th class="text-end">% Descarga</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model != null && Model.Any())
-                        {
-                            foreach (var item in Model)
+        <div class="card-body p-0">
+            @if(!Model.Any())
+            {
+                <div class="alert alert-info m-3">
+                    <i class="fas fa-info-circle me-2"></i> No hay datos para mostrar.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-bottom">Empresa</th>
+                                <th class="border-bottom text-end">Requerido (Kg)</th>
+                                <th class="border-bottom text-end">Descarga (Kg)</th>
+                                <th class="border-bottom text-end">Faltante (Kg)</th>
+                                <th class="border-bottom text-end">Camiones Faltantes</th>
+                                <th class="border-bottom text-end">Placas</th>
+                                <th class="border-bottom text-end">% Descarga</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var item in Model)
                             {
                                 <tr>
-                                    <td>@(item.Empresa ?? "Sin Empresa")</td>
+                                    <td>@item.Empresa</td>
                                     <td class="text-end">@item.RequeridoKg.ToString("N2")</td>
-                                    <td class="text-end">@item.RequeridoTon.ToString("N2")</td>
                                     <td class="text-end">@item.DescargaKg.ToString("N2")</td>
                                     <td class="text-end">@item.FaltanteKg.ToString("N2")</td>
-                                    <td class="text-end">@item.TonFaltantes.ToString("N2")</td>
                                     <td class="text-end">@item.CamionesFaltantes</td>
                                     <td class="text-end">@item.ConteoPlacas</td>
                                     <td class="text-end">@item.PorcentajeDescarga.ToString("N2")%</td>
                                 </tr>
                             }
-                        }
-                        else
-                        {
+                        </tbody>
+                        <tfoot class="table-primary fw-bold">
                             <tr>
-                                <td colspan="9" class="text-center">Seleccione una importación para ver los datos.</td>
+                                <td>TOTALES</td>
+                                <td class="text-end">@totales.RequeridoKg.ToString("N2")</td>
+                                <td class="text-end">@totales.DescargaKg.ToString("N2")</td>
+                                <td class="text-end">@totales.FaltanteKg.ToString("N2")</td>
+                                <td class="text-end">@totales.CamionesFaltantes</td>
+                                <td class="text-end">@totales.ConteoPlacas</td>
+                                <td class="text-end">@totales.PorcentajePromedio.ToString("N2")%</td>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer">
-            <div class="row">
-                <div class="col-md-6">
-                    <strong>Total Importación:</strong> @ViewBag.TotalImportacion KG
+                        </tfoot>
+                    </table>
                 </div>
-                <div class="col-md-6 text-end">
-                    <strong>Conteo Entregas:</strong> @ViewBag.ConteoEntregas
-                </div>
-            </div>
+            }
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-    <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/gh/linways/table-to-excel@v1.0.4/dist/tableToExcel.js"></script>
     <script>
-        $(document).ready(function() {
-            try {                
-                function formatNumber(number) {
-                    return Number(parseFloat(number || 0).toFixed(2)).toLocaleString('es');
+        document.getElementById('exportToExcel').addEventListener('click', function () {
+            let table = document.querySelector('table');
+            let fileName = 'Informe_General_' + new Date().toISOString().slice(0,10);
+            
+            TableToExcel.convert(table, {
+                name: fileName + '.xlsx',
+                sheet: {
+                    name: 'Informe General'
                 }
+            });
+        });
 
-                function updateTotals() {
-                    let totalRequerido = 0;
-                    let totalDescarga = 0;
-                    let totalFaltante = 0;
-                    let totalCamiones = 0;
-                    let totalPlacas = 0;
-
-                    // Usar la API de DataTables para obtener solo las filas visibles
-                    table.rows({ search: 'applied' }).every(function() {
-                        const $row = $(this.node());
-                        
-                        // Obtener los valores usando la API de DataTables
-                        const cells = this.data();
-                        
-                        // Parsear los valores correctamente, removiendo las comas y manejando NaN
-                        const reqKg = parseFloat((cells[1] || '0').toString().replace(/,/g, '')) || 0;
-                        const descKg = parseFloat((cells[3] || '0').toString().replace(/,/g, '')) || 0;
-                        const faltKg = parseFloat((cells[4] || '0').toString().replace(/,/g, '')) || 0;
-                        const camiones = parseInt((cells[6] || '0').toString()) || 0;
-                        const placas = parseInt((cells[7] || '0').toString()) || 0;
-
-                        totalRequerido += reqKg;
-                        totalDescarga += descKg;
-                        totalFaltante += faltKg;
-                        totalCamiones += camiones;
-                        totalPlacas += placas;
-                    });
-
-                    // Actualizar el footer con los totales formateados
-                    $('.card-footer .row').html(`
-                        <div class="col-md-6">
-                            <strong>Total Requerido:</strong> ${formatNumber(totalRequerido)} KG
-                            <br>
-                            <strong>Total Descarga:</strong> ${formatNumber(totalDescarga)} KG
-                            <br>
-                            <strong>Total Faltante:</strong> ${formatNumber(totalFaltante)} KG
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <strong>Total Camiones Faltantes:</strong> ${totalCamiones}
-                            <br>
-                            <strong>Total Placas:</strong> ${totalPlacas}
-                        </div>
-                    `);
-                }
-
-                const table = $('#informeTable').DataTable({
-                    dom: 'Bfrt', // Removido 'p' de paginación
-                    responsive: true,
-                    buttons: [
-                        {
-                            extend: 'excel',
-                            text: '<i class="fas fa-file-excel me-1"></i> Exportar a Excel',
-                            className: 'btn btn-success',
-                            title: 'Informe_General',
-                            exportOptions: {
-                                columns: ':visible'
-                            }
-                        }
-                    ],
-                    initComplete: function() {
-                        $('.buttons-excel').css({
-                            'margin-bottom': '10px',
-                            'border-radius': '5px',
-                            'font-weight': '500',
-                            'padding': '8px 15px'
-                        });
-                    },
-                    language: {
-                        url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
-                    },
-                    pageLength: -1, // Mostrar todos los registros
-                    ordering: true,
-                    searching: true,
-                    processing: true,
-                    order: [[0, 'asc']],
-                    columnDefs: [
-                        { className: "text-end", targets: [1,2,3,4,5,6,7,8] }
-                    ],
-                    drawCallback: function() {
-                        updateTotals();
+        document.getElementById('convertToLbs').addEventListener('click', function() {
+            const kgToLbs = 2.20462;
+            const cells = document.querySelectorAll('td.text-end');
+            
+            cells.forEach(cell => {
+                const text = cell.textContent;
+                if (text.includes('Kg')) {
+                    const value = parseFloat(text);
+                    if (!isNaN(value)) {
+                        const lbs = (value * kgToLbs).toFixed(2);
+                        cell.textContent = text.replace(/[\d.,]+/g, lbs).replace('Kg', 'Lbs');
                     }
-                });
-
-                // Remove el manejador anterior de exportToExcel y oculta el botón original
-                $('#exportToExcel').hide();
-
-                $('#importacionSelect').change(function() {
-                    const importacionId = $(this).val();
-                    window.location.href = importacionId 
-                        ? `/Operaciones/InformeGeneral?importacionId=${importacionId}`
-                        : '/Operaciones/InformeGeneral';
-                });
-
-                // Asegurarse de que los totales se actualicen cuando se realice una búsqueda
-                table.on('search.dt', function() {
-                    updateTotals();
-                });
-
-            } catch (error) {
-                console.error('Error initializing DataTable:', error);
-                console.error(error.stack);
-            }
+                }
+            });
+            
+            // Actualizar encabezados
+            const headers = document.querySelectorAll('th');
+            headers.forEach(header => {
+                if (header.textContent.includes('Kg')) {
+                    header.textContent = header.textContent.replace('Kg', 'Lbs');
+                }
+            });
+            
+            this.disabled = true;
         });
     </script>
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models;
 using Sistema_de_Gestion_de_Importaciones.Data;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers;
 
@@ -18,6 +19,7 @@ public class BarcoController : Controller
     }
 
     // GET: Barco
+    [Authorize]
     public async Task<IActionResult> Index()
     {
         try
@@ -36,6 +38,7 @@ public class BarcoController : Controller
     }
 
     // GET: Barco/Details/5
+    [Authorize]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
@@ -65,6 +68,7 @@ public class BarcoController : Controller
     }
 
     // GET: Barco/Create
+    [Authorize]
     public IActionResult Create()
     {
         var barco = new Barco
@@ -81,6 +85,7 @@ public class BarcoController : Controller
     }
 
     // POST: Barco/Create
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create([Bind("NombreBarco,Escotilla1,Escotilla2,Escotilla3,Escotilla4,Escotilla5,Escotilla6,Escotilla7")] Barco barco)
@@ -106,6 +111,7 @@ public class BarcoController : Controller
     }
 
     // GET: Barco/Edit/5
+    [Authorize]
     public async Task<IActionResult> Edit(int? id)
     {
         if (id == null)
@@ -130,6 +136,7 @@ public class BarcoController : Controller
     }
 
     // POST: Barco/Edit/5
+    [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, [Bind("Id,NombreBarco,Escotilla1,Escotilla2,Escotilla3,Escotilla4,Escotilla5,Escotilla6,Escotilla7")] Barco barco)
@@ -170,6 +177,7 @@ public class BarcoController : Controller
     }
 
     // GET: Barco/Delete/5
+    [Authorize]
     public async Task<IActionResult> Delete(int? id)
     {
         if (id == null)
@@ -197,6 +205,7 @@ public class BarcoController : Controller
     }
 
     // POST: Barco/Delete/5
+    [Authorize]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)

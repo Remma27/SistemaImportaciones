@@ -46,14 +46,14 @@
                             <tr>
                                 <td>
                                     <span class="text-primary">
-                                        @item.FechaHora.ToString("dd/MM/yyyy HH:mm")
+                                        @item.fechahora?.ToString("dd/MM/yyyy HH:mm")
                                     </span>
                                 </td>
                                 <td>
                                     @if (item.Barco != null)
                                     {
                                         <span class="badge bg-info text-dark">
-                                            <i class="fas fa-ship me-1"></i>@item.Barco.NombreBarco
+                                            <i class="fas fa-ship me-1"></i>@item.Barco.nombrebarco
                                         </span>
                                     }
                                     else
@@ -63,16 +63,16 @@
                                 </td>
                                 <td>
                                     <span class="badge bg-success">
-                                        @item.TotalCargaKilos.ToString("N0") kg
+                                        @item.totalcargakilos?.ToString("N0") kg
                                     </span>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-group">
-                                        <a asp-action="Edit" asp-route-id="@item.Id" 
+                                        <a asp-action="Edit" asp-route-id="@item.id" 
                                         class="btn btn-sm btn-warning" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a asp-action="Delete" asp-route-id="@item.Id" 
+                                        <a asp-action="Delete" asp-route-id="@item.id" 
                                         class="btn btn-sm btn-danger" title="Eliminar">
                                             <i class="fas fa-trash"></i>
                                         </a>

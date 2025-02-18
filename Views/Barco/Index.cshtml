@@ -23,7 +23,7 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>@Html.DisplayNameFor(model => model.NombreBarco)</th>
+                            <th>@Html.DisplayNameFor(model => model.nombrebarco)</th>
                             <th>Escotillas (Toneladas)</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -32,23 +32,23 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>@Html.DisplayFor(modelItem => item.NombreBarco)</td>
+                            <td>@Html.DisplayFor(modelItem => item.nombrebarco)</td>
                             <td>
                                 <div class="row g-2">
-                                    <div class="col-auto"><span class="badge bg-info">E1: @(item.Escotilla1 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E2: @(item.Escotilla2 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E3: @(item.Escotilla3 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E4: @(item.Escotilla4 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E5: @(item.Escotilla5 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E6: @(item.Escotilla6 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E7: @(item.Escotilla7 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E1: @(item.escotilla1 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E2: @(item.escotilla2 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E3: @(item.escotilla3 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E4: @(item.escotilla4 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E5: @(item.escotilla5 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E6: @(item.escotilla6 ?? 0)</span></div>
+                                    <div class="col-auto"><span class="badge bg-info">E7: @(item.escotilla7 ?? 0)</span></div>
                                 </div>
                             </td>
                             <td class="text-end">
-                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
+                                <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                <a asp-action="Delete" asp-route-id="@item.id" class="btn btn-sm btn-danger">
                                     <i class="fas fa-trash"></i>
                                 </a>
                             </td>

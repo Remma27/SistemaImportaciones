@@ -1,11 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API.Models
 {
     public class Barco
     {
         [Key]
+        [Required]
         public int id { get; set; }
+        [Required]
         public string? nombrebarco { get; set; }
         public decimal? escotilla1 { get; set; }
         public decimal? escotilla2 { get; set; }
@@ -15,6 +18,9 @@ namespace API.Models
         public decimal? escotilla6 { get; set; }
         public decimal? escotilla7 { get; set; }
         public int? idusuario { get; set; }
+
+        [ForeignKey("idusuario")]
+        public virtual Usuario? Usuario { get; set; }
 
     }
 }

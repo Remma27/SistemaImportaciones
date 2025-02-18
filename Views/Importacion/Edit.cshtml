@@ -13,26 +13,26 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="Edit">
-                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="id" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label asp-for="FechaHora" class="form-label">Fecha y Hora</label>
-                                <input asp-for="FechaHora" class="form-control" type="datetime-local" />
-                                <span asp-validation-for="FechaHora" class="text-danger"></span>
+                                <label asp-for="fechahora" class="form-label">Fecha y Hora</label>
+                                <input asp-for="fechahora" class="form-control" type="datetime-local" />
+                                <span asp-validation-for="fechahora" class="text-danger"></span>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label asp-for="IdBarco" class="form-label">Barco</label>
-                                <select asp-for="IdBarco" class="form-select" asp-items="ViewBag.Barcos">
+                                <label asp-for="idbarco" class="form-label">Barco</label>
+                                <select asp-for="idbarco" class="form-select" asp-items="ViewBag.Barcos">
                                     <option value="">Seleccione un barco</option>
                                 </select>
-                                <span asp-validation-for="IdBarco" class="text-danger"></span>
+                                <span asp-validation-for="idbarco" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label asp-for="TotalCargaKilos" class="form-label">Total Carga (Kilos)</label>
-                                <input asp-for="TotalCargaKilos" class="form-control" type="number" />
-                                <span asp-validation-for="TotalCargaKilos" class="text-danger"></span>
+                                <label asp-for="totalcargakilos" class="form-label">Total Carga (Kilos)</label>
+                                <input asp-for="totalcargakilos" class="form-control" type="number" />
+                                <span asp-validation-for="totalcargakilos" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="d-flex justify-content-between mt-4">

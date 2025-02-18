@@ -1,14 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace API.Models
+namespace SistemaDeGestionDeImportaciones.Models
 {
-    public class Empresa_Bodegas
+    public class Bodega
     {
         [Key]
         public int id { get; set; }
         [Required]
-        public string? bodega { get; set; }
+        public string? Nombre { get; set; }
         public int? idusuario { get; set; }
 
         [ForeignKey("idusuario")]

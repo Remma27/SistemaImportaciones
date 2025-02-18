@@ -7,6 +7,7 @@ namespace API.Models
     public class Movimiento
     {
         [Key]
+        [Required]
         public int id { get; set; }
         public DateTime? fechahora { get; set; }
         public DateTime? fechahorasistema { get; set; }
@@ -37,5 +38,8 @@ namespace API.Models
 
         public int? bodega { get; set; }
         public int? idusuario { get; set; }
+
+        [ForeignKey("idusuario")]
+        public virtual Usuario? Usuario { get; set; }
     }
 }

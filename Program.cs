@@ -1,80 +1,67 @@
-using Microsoft.EntityFrameworkCore;
-using Sistema_de_Gestion_de_Importaciones.Data;
-using Sistema_de_Gestion_de_Importaciones.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using SistemaDeGestionDeImportaciones.Services;
+using SistemaDeGestionDeImportaciones.Services.Interfaces;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllersWithViews();
-
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Auth/IniciarSesion";
-        options.LogoutPath = "/Auth/CerrarSesion";
-    });
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found."),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    ));
-
-var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
+namespace SistemaDeGestionDeImportaciones
 {
-    var services = scope.ServiceProvider;
-    try
+    public class Program
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        context.Database.EnsureCreated();
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while creating the database.");
-    }
-}
-
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    if (!context.Usuarios.Any())
-    {
-        context.Usuarios.Add(new Usuario
+        public static void Main(string[] args)
         {
-            Nombre = "Admin",
-            Email = "admin@example.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
-            FechaCreacion = DateTime.Now,
-            Activo = true
-        });
-        context.SaveChanges();
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Configuración básica
+            builder.Services.AddControllersWithViews();
+
+            // Configuración de autenticación
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Auth/IniciarSesion";
+                    options.LogoutPath = "/Auth/CerrarSesion";
+                });
+
+            // Configuración de HttpClient y servicios
+            string apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5000";
+
+            builder.Services.AddHttpClient("API", client =>
+            {
+                client.BaseAddress = new Uri(apiBaseUrl);
+            });
+
+            builder.Services.AddScoped<IImportacionService>(sp =>
+            {
+                var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                return new ImportacionService(httpClient, configuration);
+            });
+
+            var app = builder.Build();
+
+            // Configuración del pipeline
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            // Configuración de rutas
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.MapControllerRoute(
+                name: "operaciones",
+                pattern: "Operaciones/{action=Index}/{id?}",
+                defaults: new { controller = "Movimiento" });
+
+            app.Run();
+        }
     }
 }
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapControllerRoute(
-    name: "operaciones",
-    pattern: "Operaciones/{action=Index}/{id?}",
-    defaults: new { controller = "Movimiento" });
-
-app.Run();

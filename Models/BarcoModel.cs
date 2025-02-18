@@ -1,12 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace API.Models
+namespace SistemaDeGestionDeImportaciones.Models
 {
     public class Barco
     {
         [Key]
-        [Required]
         public int id { get; set; }
         [Required]
         public string? nombrebarco { get; set; }
@@ -21,6 +20,5 @@ namespace API.Models
 
         [ForeignKey("idusuario")]
         public virtual Usuario? Usuario { get; set; }
-
     }
 }

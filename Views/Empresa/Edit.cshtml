@@ -13,19 +13,19 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="Edit">
-                        @Html.HiddenFor(model => model.IdEmpresa)
+                        @Html.HiddenFor(model => model.id_empresa)
                         <div class="mb-3">
-                            <label asp-for="NombreEmpresa" class="form-label"></label>
-                            <input asp-for="NombreEmpresa" class="form-control" />
-                            <span asp-validation-for="NombreEmpresa" class="text-danger"></span>
+                            <label asp-for="nombreempresa" class="form-label"></label>
+                            <input asp-for="nombreempresa" class="form-control" />
+                            <span asp-validation-for="nombreempresa" class="text-danger"></span>
                         </div>
                         <div class="mb-3">
-                            <label asp-for="Estatus" class="form-label"></label>
-                            <select asp-for="Estatus" class="form-select">
+                            <label asp-for="estatus" class="form-label"></label>
+                            <select asp-for="estatus" class="form-select">
                                 <option value="1">Activo</option>
                                 <option value="2">Inactivo</option>
                             </select>
-                            <span asp-validation-for="Estatus" class="text-danger"></span>
+                            <span asp-validation-for="estatus" class="text-danger"></span>
                         </div>
                         <div class="d-flex justify-content-between mt-4">
                             <a asp-action="Index" class="btn btn-secondary">

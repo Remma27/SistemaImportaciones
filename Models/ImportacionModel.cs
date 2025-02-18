@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SistemaDeGestionDeImportaciones.Models;
+namespace Sistema_de_Gestion_de_Importaciones.Models;
 
 public class Importacion
 {

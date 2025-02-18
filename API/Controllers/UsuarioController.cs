@@ -79,5 +79,31 @@ namespace API.Controllers
             var result = _context.Usuarios.ToList();
             return new JsonResult(Ok(result));
         }
+
+        // IniciarSesion
+        [HttpPost]
+        public JsonResult IniciarSesion(Usuario model)
+        {
+            var usuario = _context.Usuarios.FirstOrDefault(u => u.email == model.email && u.password_hash == model.password_hash);
+            if (usuario == null)
+            {
+                return new JsonResult(NotFound());
+            }
+            return new JsonResult(Ok(usuario));
+        }
+
+        // Registrar
+        [HttpPost]
+        public JsonResult Registrar(Usuario model)
+        {
+            var usuario = _context.Usuarios.FirstOrDefault(u => u.email == model.email);
+            if (usuario != null)
+            {
+                return new JsonResult(BadRequest("El email ya está registrado."));
+            }
+            _context.Usuarios.Add(model);
+            _context.SaveChanges();
+            return new JsonResult(Ok(model));
+        }
     }
 }

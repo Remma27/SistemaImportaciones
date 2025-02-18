@@ -1,6 +1,6 @@
-using SistemaDeGestionDeImportaciones.Models;
+using Sistema_de_Gestion_de_Importaciones.Models;
 
-namespace SistemaDeGestionDeImportaciones.Services.Interfaces
+namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
 {
     public interface IBodegaService
     {

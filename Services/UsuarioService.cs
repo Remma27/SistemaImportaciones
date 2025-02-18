@@ -1,5 +1,6 @@
-using SistemaDeGestionDeImportaciones.Models;
-using SistemaDeGestionDeImportaciones.Services.Interfaces;
+using Sistema_de_Gestion_de_Importaciones.ViewModels;
+using Sistema_de_Gestion_de_Importaciones.Models;
+using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace SistemaDeGestionDeImportaciones.Services;
 
@@ -83,5 +84,43 @@ public class UsuarioService : IUsuarioService
         }
     }
 
+    public async Task<Usuario> RegistrarUsuarioAsync(RegistroViewModel model)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Registrar", model);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<Usuario>();
+            return result ?? throw new InvalidOperationException("Error al registrar el usuario");
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"Error al registrar el usuario: {ex.Message}", ex);
+        }
+    }
 
+    public async Task<Usuario> IniciarSesionAsync(LoginViewModel model)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/IniciarSesion", model);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<Usuario>();
+            return result ?? throw new InvalidOperationException("Error al iniciar sesión");
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"Error al iniciar sesión: {ex.Message}", ex);
+        }
+    }
+
+    Task<OperationResult> IUsuarioService.RegistrarUsuarioAsync(RegistroViewModel model)
+    {
+        throw new NotImplementedException();
+    }
+
+    Task<OperationResult> IUsuarioService.IniciarSesionAsync(LoginViewModel model)
+    {
+        throw new NotImplementedException();
+    }
 }

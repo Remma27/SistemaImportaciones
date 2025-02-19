@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -15,23 +15,33 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
-        // GET: Muestra la lista de empresas
+        // GET: Empresa
         public async Task<IActionResult> Index()
         {
-            var empresas = await _empresaService.GetAllAsync();
-            return View(empresas);
+            try
+            {
+                var empresas = await _empresaService.GetAllAsync();
+                return View(empresas);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener las empresas");
+                ViewBag.Error = "Error al cargar las empresas. Por favor, intente más tarde.";
+                return View(new List<Empresa>());
+            }
         }
 
-        // GET: Muestra el formulario para crear una nueva empresa
-        public IActionResult Crear()
+        // GET: Empresa/Create
+        [HttpGet]
+        public IActionResult Create()
         {
-            return View(new Empresa());
+            return View();
         }
 
-        // POST: Crea una nueva empresa consumiendo el service
+        // POST: Empresa/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(Empresa model)
+        public async Task<IActionResult> Create(Empresa model)
         {
             if (!ModelState.IsValid)
             {
@@ -40,26 +50,20 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
             try
             {
-                if (string.IsNullOrWhiteSpace(model.nombreempresa))
-                {
-                    ModelState.AddModelError("nombreempresa", "El nombre de la empresa es requerido");
-                    return View(model);
-                }
-
                 await _empresaService.CreateAsync(model);
-                _logger.LogInformation($"Empresa '{model.nombreempresa}' creada exitosamente.");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al crear la empresa '{model.nombreempresa}'.");
-                ModelState.AddModelError("", "Ocurrió un error al crear la empresa.");
+                _logger.LogError(ex, "Error al crear la empresa");
+                ModelState.AddModelError("", "Error al crear la empresa. Por favor, intente más tarde.");
                 return View(model);
             }
         }
 
-        // GET: Muestra el formulario para editar una empresa
-        public async Task<IActionResult> Editar(int id)
+        // GET: Empresa/Edit/5
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
         {
             var empresa = await _empresaService.GetByIdAsync(id);
             if (empresa == null)
@@ -69,11 +73,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(empresa);
         }
 
-        // POST: Edita una empresa consumiendo el service
+        // POST: Empresa/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Editar(Empresa model)
+        public async Task<IActionResult> Edit(int id, Empresa model)
         {
+            if (id != model.id_empresa)
+            {
+                return NotFound();
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -81,26 +90,20 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
             try
             {
-                var empresaExistente = await _empresaService.GetByIdAsync(model.id_empresa);
-                if (empresaExistente == null)
-                {
-                    return NotFound();
-                }
-
-                await _empresaService.UpdateAsync(model.id_empresa, model);
-                _logger.LogInformation($"Empresa '{model.nombreempresa}' actualizada exitosamente.");
+                await _empresaService.UpdateAsync(id, model);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error al actualizar la empresa '{model.nombreempresa}'.");
-                ModelState.AddModelError("", "Ocurrió un error al actualizar la empresa.");
+                _logger.LogError(ex, "Error al actualizar la empresa");
+                ModelState.AddModelError("", "Error al actualizar la empresa. Por favor, intente más tarde.");
                 return View(model);
             }
         }
 
-        // GET: Muestra el formulario para eliminar una empresa
-        public async Task<IActionResult> Eliminar(int id)
+        // GET: Empresa/Delete/5
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
         {
             var empresa = await _empresaService.GetByIdAsync(id);
             if (empresa == null)
@@ -108,6 +111,23 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 return NotFound();
             }
             return View(empresa);
+        }
+
+        // POST: Empresa/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                await _empresaService.DeleteAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar la empresa");
+                return RedirectToAction(nameof(Index));
+            }
         }
     }
 }

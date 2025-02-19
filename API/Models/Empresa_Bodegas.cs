@@ -7,7 +7,6 @@ namespace API.Models
     {
         [Key]
         public int id { get; set; }
-        [Required]
         public string? bodega { get; set; }
         public int? idusuario { get; set; }
 

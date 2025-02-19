@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -18,8 +18,17 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // Muestra la lista de barcos
         public async Task<IActionResult> Index()
         {
-            var barcos = await _barcoService.GetAllAsync();
-            return View(barcos);
+            try
+            {
+                var barcos = await _barcoService.GetAllAsync();
+                return View(barcos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener los barcos");
+                ViewBag.Error = "Error al cargar los barcos. Por favor, intente más tarde.";
+                return View(new List<Barco>());
+            }
         }
 
         // GET: Muestra el formulario para crear un nuevo barco

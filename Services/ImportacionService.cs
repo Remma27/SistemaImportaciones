@@ -1,4 +1,5 @@
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
+using System.Text.Json;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services;
@@ -11,17 +12,39 @@ public class ImportacionService : IImportacionService
     public ImportacionService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Importaciones";
+        // Change the API route to match the controller
+        _apiUrl = "api/Importaciones/";
     }
 
     public async Task<IEnumerable<Importacion>> GetAllAsync()
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<IEnumerable<Importacion>>(_apiUrl);
-            return result ?? Enumerable.Empty<Importacion>();
+            var url = _apiUrl + "GetAll";
+            var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException($"Error al obtener las importaciones: {response.StatusCode}, {content}");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using JsonDocument document = JsonDocument.Parse(content);
+            var root = document.RootElement;
+            if (root.TryGetProperty("value", out JsonElement valueElement))
+            {
+                var importacionesJson = valueElement.GetRawText();
+                var importaciones = JsonSerializer.Deserialize<IEnumerable<Importacion>>(importacionesJson, options);
+                return importaciones ?? new List<Importacion>();
+            }
+            return new List<Importacion>();
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
             throw new Exception($"Error al obtener las importaciones: {ex.Message}", ex);
         }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using System;
 using System.Threading.Tasks;

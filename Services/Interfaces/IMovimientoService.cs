@@ -1,4 +1,4 @@
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
 {

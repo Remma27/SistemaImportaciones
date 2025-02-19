@@ -1,4 +1,4 @@
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services;
@@ -15,12 +15,12 @@ public class BodegaService : IBodegaService
         _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Bodega";
     }
 
-    public async Task<IEnumerable<Bodega>> GetAllAsync()
+    public async Task<IEnumerable<Empresa_Bodegas>> GetAllAsync()
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<IEnumerable<Bodega>>(_apiUrl);
-            return result ?? Enumerable.Empty<Bodega>();
+            var result = await _httpClient.GetFromJsonAsync<IEnumerable<Empresa_Bodegas>>(_apiUrl);
+            return result ?? Enumerable.Empty<Empresa_Bodegas>();
         }
         catch (HttpRequestException ex)
         {
@@ -28,11 +28,11 @@ public class BodegaService : IBodegaService
         }
     }
 
-    public async Task<Bodega> GetByIdAsync(int id)
+    public async Task<Empresa_Bodegas> GetByIdAsync(int id)
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<Bodega>($"{_apiUrl}/{id}");
+            var result = await _httpClient.GetFromJsonAsync<Empresa_Bodegas>($"{_apiUrl}/{id}");
             return result ?? throw new KeyNotFoundException($"No se encontró la bodega con ID {id}");
         }
         catch (HttpRequestException ex)
@@ -41,13 +41,13 @@ public class BodegaService : IBodegaService
         }
     }
 
-    public async Task<Bodega> CreateAsync(Bodega bodega)
+    public async Task<Empresa_Bodegas> CreateAsync(Empresa_Bodegas bodega)
     {
         try
         {
             var response = await _httpClient.PostAsJsonAsync(_apiUrl, bodega);
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<Bodega>();
+            var result = await response.Content.ReadFromJsonAsync<Empresa_Bodegas>();
             return result ?? throw new InvalidOperationException("Error al crear la bodega");
         }
         catch (HttpRequestException ex)
@@ -56,13 +56,13 @@ public class BodegaService : IBodegaService
         }
     }
 
-    public async Task<Bodega> UpdateAsync(int id, Bodega bodega)
+    public async Task<Empresa_Bodegas> UpdateAsync(int id, Empresa_Bodegas bodega)
     {
         try
         {
             var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{id}", bodega);
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<Bodega>();
+            var result = await response.Content.ReadFromJsonAsync<Empresa_Bodegas>();
             return result ?? throw new InvalidOperationException("Error al actualizar la bodega");
         }
         catch (HttpRequestException ex)

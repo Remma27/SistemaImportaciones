@@ -11,19 +11,19 @@ namespace SistemaDeGestionDeImportaciones
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configuración básica
+            // Basic configuration
             builder.Services.AddControllersWithViews();
 
-            // Configuración de autenticación
+            // Configure Authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
-                    options.LoginPath = "/Auth/IniciarSesion";
+                    options.LoginPath = "/Home/IniciarSesion"; // Usa el controlador Home
                     options.LogoutPath = "/Auth/CerrarSesion";
                 });
 
             // Configuración de HttpClient y servicios
-            string apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5000";
+            string apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5078";
 
             builder.Services.AddHttpClient("API", client =>
             {
@@ -48,19 +48,15 @@ namespace SistemaDeGestionDeImportaciones
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // Configuración de rutas
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            app.MapControllerRoute(
-                name: "operaciones",
-                pattern: "Operaciones/{action=Index}/{id?}",
-                defaults: new { controller = "Movimiento" });
 
             app.Run();
         }

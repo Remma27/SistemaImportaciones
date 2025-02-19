@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -26,13 +26,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // GET: Show the create form for a new bodega
         public IActionResult Crear()
         {
-            return View(new Bodega());
+            return View(new Empresa_Bodegas());
         }
 
         // POST: Create a new bodega using the service
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(Bodega model)
+        public async Task<IActionResult> Crear(Empresa_Bodegas model)
         {
             if (!ModelState.IsValid)
             {
@@ -75,7 +75,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // POST: Edita una bodega consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Editar(Bodega model)
+        public async Task<IActionResult> Editar(Empresa_Bodegas model)
         {
             if (!ModelState.IsValid)
             {

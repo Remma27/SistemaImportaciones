@@ -15,12 +15,18 @@ public class HomeController : Controller
         _logger = logger;
     }
 
+    [AllowAnonymous]
     public IActionResult Index()
+    {
+        return RedirectToAction("IniciarSesion", "Auth");
+    }
+
+    public IActionResult Privacy()
     {
         return View();
     }
 
-    public IActionResult Privacy()
+    public IActionResult IniciarSesion()
     {
         return View();
     }

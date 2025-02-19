@@ -1,13 +1,13 @@
-using Sistema_de_Gestion_de_Importaciones.Models;
+using API.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
 {
     public interface IBodegaService
     {
-        Task<IEnumerable<Bodega>> GetAllAsync();
-        Task<Bodega> GetByIdAsync(int id);
-        Task<Bodega> CreateAsync(Bodega bodega);
-        Task<Bodega> UpdateAsync(int id, Bodega bodega);
+        Task<IEnumerable<Empresa_Bodegas>> GetAllAsync();
+        Task<Empresa_Bodegas> GetByIdAsync(int id);
+        Task<Empresa_Bodegas> CreateAsync(Empresa_Bodegas bodega);
+        Task<Empresa_Bodegas> UpdateAsync(int id, Empresa_Bodegas bodega);
         Task DeleteAsync(int id);
     }
 }

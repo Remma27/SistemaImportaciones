@@ -19,8 +19,17 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // GET: Show list of bodegas
         public async Task<IActionResult> Index()
         {
-            var bodegas = await _bodegaService.GetAllAsync();
-            return View(bodegas);
+            try
+            {
+                var bodegas = await _bodegaService.GetAllAsync();
+                return View(bodegas);
+            }
+            catch (Exception)
+            {
+                //_logger.LogError(ex, "Error al obtener las bodegas");
+                ViewBag.Error = "Error al cargar las bodegas. Por favor, intente más tarde.";
+                return View(new List<Empresa_Bodegas>());
+            }
         }
 
         // GET: Show the create form for a new bodega

@@ -1,4 +1,5 @@
 using API.Models;
+using System.Text.Json;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services;
@@ -12,18 +13,41 @@ public class BodegaService : IBodegaService
     public BodegaService(HttpClient httpClient, IConfiguration configuration)
     {
         _httpClient = httpClient;
-        _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Bodega";
+        // Add /GetAll to match the API controller action
+        _apiUrl = "api/Bodega/";
     }
 
     public async Task<IEnumerable<Empresa_Bodegas>> GetAllAsync()
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<IEnumerable<Empresa_Bodegas>>(_apiUrl);
-            return result ?? Enumerable.Empty<Empresa_Bodegas>();
+            var url = _apiUrl + "GetAll";
+            var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new HttpRequestException($"Error al obtener las bodegas: {response.StatusCode}, {content}");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using JsonDocument document = JsonDocument.Parse(content);
+            var root = document.RootElement;
+            if (root.TryGetProperty("value", out JsonElement valueElement))
+            {
+                var bodegasJson = valueElement.GetRawText();
+                var bodegas = JsonSerializer.Deserialize<IEnumerable<Empresa_Bodegas>>(bodegasJson, options);
+                return bodegas ?? new List<Empresa_Bodegas>();
+            }
+            return new List<Empresa_Bodegas>();
         }
         catch (HttpRequestException ex)
         {
+            Console.WriteLine($"API call failed: {ex.Message}");
             throw new Exception($"Error al obtener las bodegas: {ex.Message}", ex);
         }
     }

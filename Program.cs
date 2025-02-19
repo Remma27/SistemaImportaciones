@@ -6,8 +6,22 @@ using SistemaDeGestionDeImportaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Middleware;
+using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add this near the top of your configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+});
 
 // ----------------------
 // Configuración de la API (Base de datos, Swagger, Endpoints API)
@@ -22,8 +36,8 @@ builder.Services.AddDbContext<ApiContext>(opt =>
     opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
-// Registrar PasswordHashService
-builder.Services.AddScoped<PasswordHashService>();
+// Reemplaza todas las configuraciones de servicios individuales con esta única línea
+builder.Services.AddApplicationServices(builder.Configuration);
 
 builder.Services.AddControllers(); // Para API controllers
 
@@ -66,6 +80,7 @@ builder.Services.AddScoped<IImportacionService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<ImportacionService>>();
     return new ImportacionService(httpClient, configuration);
 });
 
@@ -86,12 +101,34 @@ builder.Services.AddHttpClient<IEmpresaService, EmpresaService>(client =>
     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 });
 
+// Register BarcoService
+builder.Services.AddScoped<IBarcoService>(sp =>
+{
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<BarcoService>>();
+    return new BarcoService(httpClient, configuration, logger);
+});
+
+// Add this with the other service registrations
+builder.Services.AddScoped<IBodegaService>(sp =>
+{
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    return new BodegaService(httpClient, configuration);
+});
+
 var app = builder.Build();
 
 // ----------------------
 // Pipeline de la aplicación
 // ----------------------
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -102,16 +139,24 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Add this before app.UseRouting();
+app.UseCors("AllowAll");
+
 // Agregar el middleware de logging después de app.UseRouting();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configura las rutas MVC antes que las rutas de API
+// Mapea las rutas MVC
+app.MapControllerRoute(
+    name: "auth",
+    pattern: "Auth/{action=IniciarSesion}",
+    defaults: new { controller = "Auth" }
+);
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Empresa}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Mapea también los endpoints API
 app.MapControllers();

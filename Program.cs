@@ -5,6 +5,7 @@ using API.Services; // Agregar este using
 using SistemaDeGestionDeImportaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Services;
+using Sistema_de_Gestion_de_Importaciones.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,16 @@ builder.Services.AddDbContext<ApiContext>(opt =>
 builder.Services.AddScoped<PasswordHashService>();
 
 builder.Services.AddControllers(); // Para API controllers
+
+// Agregar después de builder.Services.AddControllers();
+builder.Services.AddLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddConsole();
+    logging.AddDebug();
+    logging.SetMinimumLevel(LogLevel.Information);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -64,17 +75,23 @@ builder.Services.AddHttpClient<IUsuarioService, UsuarioService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
+// Reemplazar la configuración existente del HttpClient con esta:
+builder.Services.AddHttpClient<IEmpresaService, EmpresaService>(client =>
+{
+    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
+    Console.WriteLine($"Configurando API URL: {apiUrl}"); // Para debug
+    client.BaseAddress = new Uri(apiUrl ?? "http://localhost:5079/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Accept.Clear();
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
+
 var app = builder.Build();
 
 // ----------------------
 // Pipeline de la aplicación
 // ----------------------
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -84,18 +101,17 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Agregar el middleware de logging después de app.UseRouting();
+app.UseMiddleware<RequestLoggingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Mapea las rutas MVC
-app.MapControllerRoute(
-    name: "auth",
-    pattern: "Auth/{action=IniciarSesion}",
-    defaults: new { controller = "Auth" }
-);
+// Configura las rutas MVC antes que las rutas de API
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Empresa}/{action=Index}/{id?}");
 
 // Mapea también los endpoints API
 app.MapControllers();

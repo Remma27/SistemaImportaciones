@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using API.Data;
+using Sistema_de_Gestion_de_Importaciones.ViewModels;
 
 namespace API.Controllers
 {
@@ -80,18 +81,6 @@ namespace API.Controllers
             return new JsonResult(Ok(result));
         }
 
-        // IniciarSesion
-        [HttpPost]
-        public JsonResult IniciarSesion(Usuario model)
-        {
-            var usuario = _context.Usuarios.FirstOrDefault(u => u.email == model.email && u.password_hash == model.password_hash);
-            if (usuario == null)
-            {
-                return new JsonResult(NotFound());
-            }
-            return new JsonResult(Ok(usuario));
-        }
-
         // Registrar
         [HttpPost]
         public JsonResult Registrar(Usuario model)
@@ -104,6 +93,33 @@ namespace API.Controllers
             _context.Usuarios.Add(model);
             _context.SaveChanges();
             return new JsonResult(Ok(model));
+        }
+
+        [HttpPost]
+        public ActionResult<Usuario> IniciarSesion([FromBody] LoginViewModel model)
+        {
+            try
+            {
+                var usuario = _context.Usuarios
+                    .AsEnumerable()
+                    .FirstOrDefault(u =>
+                        string.Equals(u.email, model.Email, StringComparison.OrdinalIgnoreCase) &&
+                        u.password_hash == model.Password);
+
+                if (usuario == null)
+                {
+                    return BadRequest(new { message = "Credenciales inválidas" });
+                }
+
+                usuario.ultimo_acceso = DateTime.Now;
+                _context.SaveChanges();
+
+                return Ok(usuario);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
+            }
         }
     }
 }

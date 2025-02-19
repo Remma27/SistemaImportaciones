@@ -76,54 +76,50 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         }
 
         [HttpPost]
-        [IgnoreAntiforgeryToken] // Si deseas desactivar la validación antiforgery en inicio de sesión
+        [IgnoreAntiforgeryToken] // O usar [ValidateAntiForgeryToken] conforme al formulario
         public async Task<IActionResult> IniciarSesion(LoginViewModel model)
         {
-            try
+            if (!ModelState.IsValid)
             {
-                if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Intento de inicio de sesión con modelo inválido");
-                    return View(model);
-                }
-
-                var resultado = await _usuarioService.IniciarSesionAsync(model);
-                if (!resultado.Success || resultado.Data is null)
-                {
-                    _logger.LogWarning($"Error en inicio de sesión para {model.Email}");
-                    ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? "Error de autenticación");
-                    return View(model);
-                }
-
-                var usuario = resultado.Data as Usuario;
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, usuario?.nombre ?? string.Empty),
-                    new Claim(ClaimTypes.Email, usuario?.email ?? string.Empty),
-                    new Claim("UserId", usuario?.id.ToString() ?? "0")
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(12)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation($"Usuario {model.Email} ha iniciado sesión exitosamente");
-                return RedirectToAction("Index", "Home");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error inesperado durante el inicio de sesión");
-                ModelState.AddModelError(string.Empty, "Ocurrió un error durante el inicio de sesión");
                 return View(model);
             }
+
+            var resultado = await _usuarioService.IniciarSesionAsync(model);
+            if (!resultado.Success)
+            {
+                ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? "Error de autenticación");
+                return View(model);
+            }
+
+            var usuario = resultado.Data as Usuario;
+            if (usuario == null)
+            {
+                ModelState.AddModelError(string.Empty, "Error de autenticación");
+                return View(model);
+            }
+
+            // Construir los claims del usuario.
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, usuario.nombre ?? string.Empty),
+                new Claim(ClaimTypes.Email, usuario.email ?? string.Empty),
+                new Claim("UserId", usuario.id.ToString())
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true, // Ajusta según sea necesario
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(12)
+            };
+
+            // Firmar al usuario para crear la cookie
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpPost]

@@ -11,6 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Configuración de la API (Base de datos, Swagger, Endpoints API)
 // ----------------------
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+}
+
 builder.Services.AddDbContext<ApiContext>(opt =>
     opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
@@ -29,6 +34,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Auth/IniciarSesion";
         options.LogoutPath = "/Auth/CerrarSesion";
+        options.AccessDeniedPath = "/Auth/IniciarSesion";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
     });
 
 // Si tu API y frontend se comunican internamente, configura el HttpClient con el mismo puerto
@@ -83,8 +91,7 @@ app.MapControllerRoute(
 );
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}"
-);
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 // Mapea también los endpoints API
 app.MapControllers();

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using API.Data; // Asegúrate de que ApiContext esté en este proyecto o en uno referenciado.
+using API.Data;
+using API.Services; // Agregar este using
 using SistemaDeGestionDeImportaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Services;
@@ -19,6 +20,9 @@ if (string.IsNullOrEmpty(connectionString))
 builder.Services.AddDbContext<ApiContext>(opt =>
     opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
+
+// Registrar PasswordHashService
+builder.Services.AddScoped<PasswordHashService>();
 
 builder.Services.AddControllers(); // Para API controllers
 builder.Services.AddEndpointsApiExplorer();

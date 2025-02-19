@@ -7,7 +7,7 @@ using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using API.Models;
 using Microsoft.AspNetCore.Authorization;
 
-namespace Sistema_de_Gestion_de_Importaciones.Controllers
+namespace SistemaDeGestionDeImportaciones.Controllers
 {
     [AllowAnonymous]
     public class AuthController : Controller
@@ -27,19 +27,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(); // Asegúrate de tener Views/Auth/IniciarSesion.cshtml
         }
 
+        [HttpGet]
         public IActionResult Registrarse()
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Index", "Home");
             }
-            return View(new RegistroViewModel
+            var model = new RegistroViewModel
             {
                 Nombre = string.Empty,
                 Email = string.Empty,
                 Password = string.Empty,
                 ConfirmPassword = string.Empty
-            });
+            };
+            return View(model);
         }
 
         [HttpPost]
@@ -74,7 +76,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken] // Si deseas desactivar la validación antiforgery en inicio de sesión
         public async Task<IActionResult> IniciarSesion(LoginViewModel model)
         {
             try
@@ -86,19 +88,19 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 }
 
                 var resultado = await _usuarioService.IniciarSesionAsync(model);
-                if (!resultado.Success || resultado.Usuario is null)
+                if (!resultado.Success || resultado.Data is null)
                 {
                     _logger.LogWarning($"Error en inicio de sesión para {model.Email}");
                     ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? "Error de autenticación");
                     return View(model);
                 }
 
-                var usuario = resultado.Usuario;
+                var usuario = resultado.Data as Usuario;
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, usuario!.nombre ?? string.Empty),
-                    new Claim(ClaimTypes.Email, usuario!.email ?? string.Empty),
-                    new Claim("UserId", usuario!.id.ToString())
+                    new Claim(ClaimTypes.Name, usuario?.nombre ?? string.Empty),
+                    new Claim(ClaimTypes.Email, usuario?.email ?? string.Empty),
+                    new Claim("UserId", usuario?.id.ToString() ?? "0")
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

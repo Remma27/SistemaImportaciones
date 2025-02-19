@@ -1,3 +1,4 @@
+@using Sistema_de_Gestion_de_Importaciones.ViewModels
 @{
     ViewData["Title"] = "Iniciar Sesión";
 }
@@ -9,14 +10,14 @@
         <div class="card-body">
             <h2 class="text-center mb-4">Iniciar Sesión</h2>
             <form method="post" action="/Auth/IniciarSesion">
-                <div asp-validation-summary="All" class="text-danger"></div>
+                @Html.AntiForgeryToken()
                 <div class="form-group">
                     <label for="username">Usuario</label>
-                    <input type="text" class="form-control" id="username" name="username" required />
+                    <input type="text" id="username" name="username" class="form-control" required />
                 </div>
                 <div class="form-group">
                     <label for="password">Contraseña</label>
-                    <input type="password" class="form-control" id="password" name="password" required />
+                    <input type="password" id="password" name="password" class="form-control" required />
                 </div>
                 <button type="submit" class="btn btn-primary">Ingresar</button>
             </form>

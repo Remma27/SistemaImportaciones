@@ -11,13 +11,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
     [Authorize]
     public class RegistroRequerimientosController : Controller
     {
-        private readonly IRegistroRequerimientosService _registroService;
+        private readonly IMovimientoService _movimientoService;
         private readonly ILogger<RegistroRequerimientosController> _logger;
 
-        public RegistroRequerimientosController(IRegistroRequerimientosService registroService,
+        public RegistroRequerimientosController(IMovimientoService registroService,
                                                 ILogger<RegistroRequerimientosController> logger)
         {
-            _registroService = registroService;
+            _movimientoService = registroService;
             _logger = logger;
         }
 
@@ -26,10 +26,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                var barcos = await _registroService.GetBarcosSelectListAsync();
+                var barcos = await _movimientoService.GetBarcosSelectListAsync();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
-                var registros = await _registroService.GetRegistroRequerimientosAsync(selectedBarco ?? 0);
+                var registros = await _movimientoService.GetRegistroRequerimientosAsync(selectedBarco ?? 0);
                 return View(registros);
             }
             catch (Exception ex)
@@ -40,13 +40,15 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+
+
         // GET: RegistroRequerimientos/Create
         public async Task<IActionResult> Create()
         {
             try
             {
-                ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text");
-                ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text");
+                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text");
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
 
                 var viewModel = new RegistroRequerimientosViewModel
                 {
@@ -81,7 +83,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         cantidadrequerida = (decimal?)viewModel.CantidadRequerida,
                         cantidadcamiones = viewModel.CantidadCamiones
                     };
-                    await _registroService.CreateAsync(movimiento);
+                    await _movimientoService.CreateAsync(movimiento);
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -92,8 +94,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
 
             // Recargar los select lists en caso de error
-            ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-            ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+            ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
+            ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
             return View(viewModel);
         }
 
@@ -106,12 +108,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
             try
             {
-                var viewModel = await _registroService.GetRegistroRequerimientoByIdAsync(id.Value);
+                var viewModel = await _movimientoService.GetRegistroRequerimientoByIdAsync(id.Value);
                 if (viewModel == null)
                     return NotFound();
 
-                ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-                ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -138,7 +140,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 try
                 {
                     var userId = HttpContext.User.GetUserId().ToString();
-                    await _registroService.UpdateAsync(id, viewModel, userId);
+                    await _movimientoService.UpdateAsync(id, viewModel, userId);
                     _logger.LogInformation("Successfully updated movimiento ID: {Id}", id);
                     return RedirectToAction(nameof(Index));
                 }
@@ -151,8 +153,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
             try
             {
-                ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-                ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -169,7 +171,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             if (id == null)
                 return NotFound();
 
-            var viewModel = await _registroService.GetRegistroRequerimientoByIdAsync(id.Value);
+            var viewModel = await _movimientoService.GetRegistroRequerimientoByIdAsync(id.Value);
             if (viewModel == null)
                 return NotFound();
 
@@ -183,7 +185,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                await _registroService.DeleteAsync(id);
+                await _movimientoService.DeleteAsync(id);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)

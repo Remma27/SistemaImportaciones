@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using System.Text.Json;
 
 namespace SistemaDeGestionDeImportaciones.Services
 {
@@ -13,17 +14,36 @@ namespace SistemaDeGestionDeImportaciones.Services
         public RegistroRequerimientosService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Movimientos";
+            _apiUrl = "api/Movimientos";
         }
 
         public async Task<Movimiento> RegistroRequerimientos(int id, Movimiento movimiento)
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/registro-requerimientos/{id}", movimiento);
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadFromJsonAsync<Movimiento>();
-                return result ?? throw new Exception("Error al registrar requerimientos: respuesta nula");
+
+                var url = $"{_apiUrl}/RegistroRequerimientos/{id}";
+                var response = await _httpClient.PostAsJsonAsync(url, movimiento);
+                var content = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"Error al registrar requerimientos: {response.StatusCode}, {content}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+                if (root.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    var movimientoJson = valueElement.GetRawText();
+                    var result = JsonSerializer.Deserialize<Movimiento>(movimientoJson, options);
+                    return result ?? throw new Exception("Error al registrar requerimientos: respuesta nula");
+                }
+                return new Movimiento();
             }
             catch (HttpRequestException ex)
             {
@@ -35,12 +55,40 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<IEnumerable<SelectListItem>>($"{_apiUrl}/barcos");
-                return response ?? Enumerable.Empty<SelectListItem>();
+                var barcoUrl = "/api/Barco/GetAll";
+                var response = await _httpClient.GetAsync(barcoUrl);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                // Parse the JSON response structure
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                // Check if the response has a 'value' property (common in ASP.NET Core API responses)
+                var barcosArray = root.TryGetProperty("value", out var valueElement)
+                    ? valueElement
+                    : root;
+
+                var barcos = JsonSerializer.Deserialize<List<Barco>>(barcosArray.GetRawText(), options);
+
+                return barcos?.Select(b => new SelectListItem
+                {
+                    Value = b.id.ToString(),
+                    Text = b.nombrebarco ?? string.Empty
+                }) ?? Enumerable.Empty<SelectListItem>();
             }
             catch (HttpRequestException ex)
             {
                 throw new Exception($"Error al obtener la lista de barcos: {ex.Message}", ex);
+            }
+            catch (JsonException ex)
+            {
+                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
             }
         }
 
@@ -129,12 +177,46 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<List<RegistroRequerimientosViewModel>>($"{_apiUrl}/by-barco/{barcoId}");
-                return response ?? new List<RegistroRequerimientosViewModel>();
+                // Add logging to debug the API call
+                Console.WriteLine($"Calling API: {_apiUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+
+                var response = await _httpClient.GetAsync($"{_apiUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Response: {content}"); // Debug log
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var registros = JsonSerializer.Deserialize<List<RegistroRequerimientosViewModel>>(
+                        dataElement.GetRawText(),
+                        options
+                    );
+
+                    // Log the number of records deserialized
+                    Console.WriteLine($"Deserialized {registros?.Count ?? 0} records");
+
+                    return registros ?? new List<RegistroRequerimientosViewModel>();
+                }
+
+                throw new Exception($"Estructura de respuesta inválida. Contenido: {content}");
             }
             catch (HttpRequestException ex)
             {
                 throw new Exception($"Error al obtener registros: {ex.Message}", ex);
+            }
+            catch (JsonException ex)
+            {
+                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
             }
         }
 

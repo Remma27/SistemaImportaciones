@@ -1,4 +1,4 @@
-@model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroRequerimientosViewModel>
+@model List<Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroRequerimientosViewModel>
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
@@ -48,13 +48,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if(Model.Any())
+                        @if (Model != null && Model.Any())
                         {
-                            foreach(var item in Model)
+                            foreach (var item in Model)
                             {
                                 <tr>
                                     <td>@item.IdMovimiento</td>
-                                    <td>@string.Format("{0:dd/MM/yyyy HH:mm}", item.FechaHora)</td>
+                                    <td>@(item.FechaHora?.ToString("dd/MM/yyyy HH:mm"))</td>
                                     <td>@item.Importacion</td>
                                     <td>@item.Empresa</td>
                                     <td>@item.CantidadRequerida kg</td>

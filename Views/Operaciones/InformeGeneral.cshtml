@@ -1,16 +1,18 @@
 @model IEnumerable<Sistema_de_Gestion_de_Importaciones.Models.ViewModels.InformeGeneralViewModel>
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
 
 @{
     ViewData["Title"] = "Informe General";
+    var modelData = Model ?? Enumerable.Empty<Sistema_de_Gestion_de_Importaciones.Models.ViewModels.InformeGeneralViewModel>();
     var totales = new
     {
-        RequeridoKg = Model.Sum(x => x.RequeridoKg),
-        DescargaKg = Model.Sum(x => x.DescargaKg),
-        FaltanteKg = Model.Sum(x => x.FaltanteKg),
-        CamionesFaltantes = Model.Sum(x => x.CamionesFaltantes),
-        ConteoPlacas = Model.Sum(x => x.ConteoPlacas),
-        PorcentajePromedio = Model.Any() ? Model.Average(x => x.PorcentajeDescarga) : 0
+        RequeridoKg = modelData.Sum(x => x.RequeridoKg),
+        DescargaKg = modelData.Sum(x => x.DescargaKg),
+        FaltanteKg = modelData.Sum(x => x.FaltanteKg),
+        CamionesFaltantes = modelData.Sum(x => x.CamionesFaltantes),
+        ConteoPlacas = modelData.Sum(x => x.ConteoPlacas),
+        PorcentajePromedio = modelData.Any() ? modelData.Average(x => x.PorcentajeDescarga) : 0
     };
 }
 
@@ -24,8 +26,7 @@
                 <div class="col-md-4">
                     <form method="get" asp-action="InformeGeneral" asp-controller="Movimiento" class="mb-0">
                         <div class="input-group">
-                            <select name="importacionId" class="form-select" asp-items="ViewBag.Importaciones">
-                            </select>
+                            <select name="importacionId" class="form-select" asp-items="ViewBag.Importaciones" asp-option-label="Seleccione una empresa"></select>
                             <button type="submit" class="btn btn-light">
                                 <i class="fas fa-filter me-1"></i> Filtrar
                             </button>
@@ -51,7 +52,7 @@
             </div>
         </div>
         <div class="card-body p-0">
-            @if(!Model.Any())
+            @if(!modelData.Any())
             {
                 <div class="alert alert-info m-3">
                     <i class="fas fa-info-circle me-2"></i> No hay datos para mostrar.
@@ -73,7 +74,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach(var item in Model)
+                            @foreach(var item in modelData)
                             {
                                 <tr>
                                     <td>@item.Empresa</td>

@@ -87,7 +87,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/informe-general/{id}", movimiento);
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/InformeGeneral?importacionId={id}", movimiento);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
                 return result ?? throw new Exception("Error al generar informe general: respuesta nula");
@@ -95,21 +95,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             catch (HttpRequestException ex)
             {
                 throw new Exception($"Error al generar informe general: {ex.Message}", ex);
-            }
-        }
-
-        public async Task<Movimiento> RegistroRequerimientos(int id, Movimiento movimiento)
-        {
-            try
-            {
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/registro-requerimientos/{id}", movimiento);
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadFromJsonAsync<Movimiento>();
-                return result ?? throw new Exception("Error al registrar requerimientos: respuesta nula");
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new Exception($"Error al registrar requerimientos: {ex.Message}", ex);
             }
         }
     }

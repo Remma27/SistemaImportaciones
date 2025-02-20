@@ -10,6 +10,5 @@ namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
         Task<Movimiento> UpdateAsync(int id, Movimiento movimiento);
         Task DeleteAsync(int id);
         Task<Movimiento> InformeGeneral(int importacionId, Movimiento movimiento);
-        Task<Movimiento> RegistroRequerimientos(int selectedBarco, Movimiento movimiento);
     }
 }

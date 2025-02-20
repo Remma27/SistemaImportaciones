@@ -118,6 +118,12 @@ builder.Services.AddScoped<IBodegaService>(sp =>
     return new BodegaService(httpClient, configuration);
 });
 
+// Register IRegistroRequerimientosService
+builder.Services.AddHttpClient<IRegistroRequerimientosService, RegistroRequerimientosService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
+
 var app = builder.Build();
 
 // ----------------------

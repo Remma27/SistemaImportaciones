@@ -221,7 +221,6 @@ namespace API.Controllers
                 {
                     count = result.Count,
                     data = result,
-                    barcos
                 });
             }
             catch (Exception ex)

@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers; // Para GetUserId()
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using API.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -30,26 +26,17 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                _logger.LogInformation("Starting data retrieval for RegistroRequerimientos");
+                var barcos = await _registroService.GetBarcosSelectListAsync();
+                ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
-                // Obtener el select list de barcos a través del service
-                var barcosSelect = await _registroService.GetBarcosSelectListAsync();
-                ViewBag.Barcos = new SelectList(barcosSelect, "Value", "Text", selectedBarco);
-
-                // Si no se ha seleccionado un barco, retornar un listado vacío
-                if (!selectedBarco.HasValue)
-                {
-                    return View(new List<RegistroRequerimientosViewModel>());
-                }
-
-                var result = await _registroService.GetRegistroRequerimientosAsync(selectedBarco.Value);
-                _logger.LogInformation($"Data retrieval successful, returning view with {result?.Count ?? 0} items");
-                return View(result);
+                var registros = await _registroService.GetRegistroRequerimientosAsync(selectedBarco ?? 0);
+                return View(registros);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading registro requerimientos: {Message}", ex.Message);
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                TempData["Error"] = "Error al cargar los registros: " + ex.Message;
+                return View(new List<RegistroRequerimientosViewModel>());
             }
         }
 

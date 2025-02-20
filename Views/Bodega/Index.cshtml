@@ -23,10 +23,7 @@
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>
-                                <i class="fas fa-warehouse me-1"></i>
-                                @Html.DisplayNameFor(model => model.bodega)
-                            </th>
+                            <th><i class="fas fa-warehouse me-1"></i>Nombre</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
@@ -36,7 +33,7 @@
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td>@Html.DisplayFor(modelItem => item.bodega)</td>
+                                <td>@(string.IsNullOrEmpty(item.bodega) ? "SIN NOMBRE" : item.bodega)</td>
                                 <td class="text-end">
                                     <div class="btn-group">
                                         <a asp-action="Edit" asp-route-id="@item.id" 

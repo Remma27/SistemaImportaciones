@@ -2,6 +2,7 @@
 using API.Models;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
+using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 
 
 namespace API.Controllers
@@ -87,34 +88,44 @@ namespace API.Controllers
         {
             try
             {
-                var importaciones = await _context.Importaciones
-                    .Include(i => i.Barco)
-                    .OrderByDescending(i => i.id)
-                    .ToListAsync();
+                var query = from m in _context.Movimientos
+                            join i in _context.Importaciones on m.idimportacion equals i.id
+                            join e in _context.Empresas on m.idempresa equals e.id_empresa
+                            join b in _context.Barcos on i.idbarco equals b.id
+                            where (!importacionId.HasValue || i.idbarco == importacionId)
+                            group m by new { e.id_empresa, e.nombreempresa } into g
+                            select new InformeGeneralViewModel
+                            {
+                                Empresa = g.Key.nombreempresa ?? "Sin Empresa",
+                                RequeridoKg = (double)g.Where(m => m.tipotransaccion == 1)
+                                             .Sum(m => m.cantidadrequerida ?? 0),
+                                DescargaKg = (double)g.Where(m => m.tipotransaccion == 2)
+                                            .Sum(m => m.cantidadentregada ?? 0),
+                                ConteoPlacas = g.Where(m => m.placa != null)
+                                              .Select(m => m.placa)
+                                              .Distinct()
+                                              .Count()
+                            };
 
-                var selectListItems = importaciones.Select(i => new
+                var informeData = await query.ToListAsync();
+
+                // Calculate derived fields
+                foreach (var item in informeData)
                 {
-                    Value = i.id.ToString(),
-                    Text = $"#{i.id} - {(i.Barco?.nombrebarco ?? "Sin Barco")} - ({(i.fechahorasystema.HasValue ? i.fechahorasystema.Value.ToString("dd/MM/yyyy") : "Sin Fecha")})",
-                    Selected = i.id == importacionId
-                }).ToList();
-
-                var informeData = await GetInformeData(importacionId);
-
-                if (informeData == null || informeData.Count == 0)
-                {
-                    return NotFound(new { message = "No se encontraron registros para el informe." });
+                    item.RequeridoTon = item.RequeridoKg / 1000;
+                    item.FaltanteKg = item.RequeridoKg - item.DescargaKg;
+                    item.TonFaltantes = item.FaltanteKg / 1000;
+                    item.CamionesFaltantes = (int)Math.Ceiling(item.FaltanteKg / 30000.0);
+                    item.PorcentajeDescarga = item.RequeridoKg > 0
+                        ? (item.DescargaKg / item.RequeridoKg) * 100
+                        : 0;
                 }
 
-                return Ok(new
-                {
-                    count = informeData.Count,
-                    data = informeData
-                });
+                return Ok(new { data = informeData });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+                return StatusCode(500, new { message = ex.Message });
             }
         }
 
@@ -221,7 +232,6 @@ namespace API.Controllers
                 {
                     count = result.Count,
                     data = result,
-                    barcos
                 });
             }
             catch (Exception ex)

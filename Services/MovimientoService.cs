@@ -1,5 +1,9 @@
+using System.Text.Json;
 using API.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using Sistema_de_Gestion_de_Importaciones.ViewModels;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services
 {
@@ -87,7 +91,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/informe-general/{id}", movimiento);
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/InformeGeneral?importacionId={id}", movimiento);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
                 return result ?? throw new Exception("Error al generar informe general: respuesta nula");
@@ -98,18 +102,284 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
+        //Registro de Requerimientos
         public async Task<Movimiento> RegistroRequerimientos(int id, Movimiento movimiento)
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/registro-requerimientos/{id}", movimiento);
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadFromJsonAsync<Movimiento>();
-                return result ?? throw new Exception("Error al registrar requerimientos: respuesta nula");
+
+                var url = $"{_apiUrl}/RegistroRequerimientos/{id}";
+                var response = await _httpClient.PostAsJsonAsync(url, movimiento);
+                var content = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"Error al registrar requerimientos: {response.StatusCode}, {content}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+                if (root.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    var movimientoJson = valueElement.GetRawText();
+                    var result = JsonSerializer.Deserialize<Movimiento>(movimientoJson, options);
+                    return result ?? throw new Exception("Error al registrar requerimientos: respuesta nula");
+                }
+                return new Movimiento();
             }
             catch (HttpRequestException ex)
             {
                 throw new Exception($"Error al registrar requerimientos: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<IEnumerable<SelectListItem>> GetBarcosSelectListAsync()
+        {
+            try
+            {
+                var barcoUrl = "/api/Barco/GetAll";
+                var response = await _httpClient.GetAsync(barcoUrl);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                // Parse the JSON response structure
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                // Check if the response has a 'value' property (common in ASP.NET Core API responses)
+                var barcosArray = root.TryGetProperty("value", out var valueElement)
+                    ? valueElement
+                    : root;
+
+                var barcos = JsonSerializer.Deserialize<List<Barco>>(barcosArray.GetRawText(), options);
+
+                return barcos?.Select(b => new SelectListItem
+                {
+                    Value = b.id.ToString(),
+                    Text = b.nombrebarco ?? string.Empty
+                }) ?? Enumerable.Empty<SelectListItem>();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener la lista de barcos: {ex.Message}", ex);
+            }
+            catch (JsonException ex)
+            {
+                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<IEnumerable<SelectListItem>> GetImportacionesSelectListAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<IEnumerable<SelectListItem>>($"{_apiUrl}/Importaciones");
+                return response ?? Enumerable.Empty<SelectListItem>();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener la lista de importaciones: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<IEnumerable<SelectListItem>> GetEmpresasSelectListAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<IEnumerable<SelectListItem>>($"{_apiUrl}/Empresa");
+                return response ?? Enumerable.Empty<SelectListItem>();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener la lista de empresas: {ex.Message}", ex);
+            }
+        }
+
+        async Task<List<RegistroRequerimientosViewModel>> IMovimientoService.GetRegistroRequerimientosAsync(int barcoId)
+        {
+            try
+            {
+                // Add logging to debug the API call
+                Console.WriteLine($"Calling API: {_apiUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+
+                var response = await _httpClient.GetAsync($"{_apiUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API Response: {content}"); // Debug log
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var registros = JsonSerializer.Deserialize<List<RegistroRequerimientosViewModel>>(
+                        dataElement.GetRawText(),
+                        options
+                    );
+
+                    // Log the number of records deserialized
+                    Console.WriteLine($"Deserialized {registros?.Count ?? 0} records");
+
+                    return registros ?? new List<RegistroRequerimientosViewModel>();
+                }
+
+                throw new Exception($"Estructura de respuesta inválida. Contenido: {content}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener registros: {ex.Message}", ex);
+            }
+            catch (JsonException ex)
+            {
+                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
+            }
+        }
+
+        async Task<RegistroRequerimientosViewModel> IMovimientoService.GetRegistroRequerimientoByIdAsync(int id)
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<RegistroRequerimientosViewModel>($"{_apiUrl}/{id}");
+                return response ?? throw new Exception($"No se encontró el registro con ID {id}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener el registro: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<InformeGeneralViewModel>> GetInformeGeneralAsync(int barcoId)
+        {
+            try
+            {
+                // Changed importacionId to barcoId to match the endpoint parameter
+                var response = await _httpClient.GetAsync($"{_apiUrl}/InformeGeneral?importacionId={barcoId}");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var informes = JsonSerializer.Deserialize<List<InformeGeneralViewModel>>(
+                        dataElement.GetRawText(),
+                        options
+                    );
+
+                    return informes ?? new List<InformeGeneralViewModel>();
+                }
+
+                throw new Exception($"Estructura de respuesta inválida. Contenido: {content}");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Movimiento>> GetAllMovimientosAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_apiUrl}/GetAll");
+                response.EnsureSuccessStatusCode();
+                var result = await response.Content.ReadFromJsonAsync<IEnumerable<Movimiento>>();
+                return result ?? Enumerable.Empty<Movimiento>();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener todos los movimientos: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Movimiento> GetMovimientoByIdAsync(int id)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_apiUrl}/{id}");
+                response.EnsureSuccessStatusCode();
+                var result = await response.Content.ReadFromJsonAsync<Movimiento>();
+                return result ?? throw new KeyNotFoundException($"No se encontró el movimiento con ID {id}");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al obtener el movimiento {id}: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Movimiento> CreateMovimientoAsync(Movimiento movimiento)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync(_apiUrl, movimiento);
+                response.EnsureSuccessStatusCode();
+                var result = await response.Content.ReadFromJsonAsync<Movimiento>();
+                return result ?? throw new InvalidOperationException("Error al crear el movimiento");
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al crear el movimiento: {ex.Message}", ex);
+            }
+        }
+
+        public async Task UpdateMovimientoAsync(Movimiento movimiento)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{movimiento.id}", movimiento);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al actualizar el movimiento {movimiento.id}: {ex.Message}", ex);
+            }
+        }
+
+        public async Task DeleteMovimientoAsync(int id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"{_apiUrl}/{id}");
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al eliminar el movimiento {id}: {ex.Message}", ex);
+            }
+        }
+
+        public async Task UpdateAsync(int id, RegistroRequerimientosViewModel viewModel, string userId)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{id}?userId={userId}", viewModel);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new Exception($"Error al actualizar el registro {id}: {ex.Message}", ex);
             }
         }
     }

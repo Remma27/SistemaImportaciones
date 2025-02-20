@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using API.Data;
-using API.Services; // Agregar este using
 using SistemaDeGestionDeImportaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Services;
@@ -71,9 +70,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Si tu API y frontend se comunican internamente, configura el HttpClient con el mismo puerto
 string apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5079";
 
+// Keep this HTTP client configuration
 builder.Services.AddHttpClient("API", client =>
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
+    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
+    if (string.IsNullOrEmpty(apiUrl))
+    {
+        throw new InvalidOperationException("API Base URL not configured");
+    }
+    client.BaseAddress = new Uri(apiUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.Accept.Clear();
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 });
 
 builder.Services.AddScoped<IImportacionService>(sp =>
@@ -116,6 +124,14 @@ builder.Services.AddScoped<IBodegaService>(sp =>
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
     return new BodegaService(httpClient, configuration);
+});
+
+// Remove any existing IMovimientoService registration
+builder.Services.AddScoped<IMovimientoService>(sp =>
+{
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    return new MovimientoService(httpClient, configuration);
 });
 
 var app = builder.Build();

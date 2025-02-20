@@ -4,10 +4,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers; // Para GetUserId()
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using API.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -15,13 +11,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
     [Authorize]
     public class RegistroRequerimientosController : Controller
     {
-        private readonly IRegistroRequerimientosService _registroService;
+        private readonly IMovimientoService _movimientoService;
         private readonly ILogger<RegistroRequerimientosController> _logger;
 
-        public RegistroRequerimientosController(IRegistroRequerimientosService registroService,
+        public RegistroRequerimientosController(IMovimientoService registroService,
                                                 ILogger<RegistroRequerimientosController> logger)
         {
-            _registroService = registroService;
+            _movimientoService = registroService;
             _logger = logger;
         }
 
@@ -30,36 +26,29 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                _logger.LogInformation("Starting data retrieval for RegistroRequerimientos");
+                var barcos = await _movimientoService.GetBarcosSelectListAsync();
+                ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
-                // Obtener el select list de barcos a través del service
-                var barcosSelect = await _registroService.GetBarcosSelectListAsync();
-                ViewBag.Barcos = new SelectList(barcosSelect, "Value", "Text", selectedBarco);
-
-                // Si no se ha seleccionado un barco, retornar un listado vacío
-                if (!selectedBarco.HasValue)
-                {
-                    return View(new List<RegistroRequerimientosViewModel>());
-                }
-
-                var result = await _registroService.GetRegistroRequerimientosAsync(selectedBarco.Value);
-                _logger.LogInformation($"Data retrieval successful, returning view with {result?.Count ?? 0} items");
-                return View(result);
+                var registros = await _movimientoService.GetRegistroRequerimientosAsync(selectedBarco ?? 0);
+                return View(registros);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading registro requerimientos: {Message}", ex.Message);
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                TempData["Error"] = "Error al cargar los registros: " + ex.Message;
+                return View(new List<RegistroRequerimientosViewModel>());
             }
         }
+
+
 
         // GET: RegistroRequerimientos/Create
         public async Task<IActionResult> Create()
         {
             try
             {
-                ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text");
-                ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text");
+                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text");
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
 
                 var viewModel = new RegistroRequerimientosViewModel
                 {
@@ -94,7 +83,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         cantidadrequerida = (decimal?)viewModel.CantidadRequerida,
                         cantidadcamiones = viewModel.CantidadCamiones
                     };
-                    await _registroService.CreateAsync(movimiento);
+                    await _movimientoService.CreateAsync(movimiento);
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -105,8 +94,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
 
             // Recargar los select lists en caso de error
-            ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-            ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+            ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
+            ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
             return View(viewModel);
         }
 
@@ -119,12 +108,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
             try
             {
-                var viewModel = await _registroService.GetRegistroRequerimientoByIdAsync(id.Value);
+                var viewModel = await _movimientoService.GetRegistroRequerimientoByIdAsync(id.Value);
                 if (viewModel == null)
                     return NotFound();
 
-                ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-                ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -151,7 +140,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 try
                 {
                     var userId = HttpContext.User.GetUserId().ToString();
-                    await _registroService.UpdateAsync(id, viewModel, userId);
+                    await _movimientoService.UpdateAsync(id, viewModel, userId);
                     _logger.LogInformation("Successfully updated movimiento ID: {Id}", id);
                     return RedirectToAction(nameof(Index));
                 }
@@ -164,8 +153,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
             try
             {
-                ViewBag.Importaciones = new SelectList(await _registroService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-                ViewBag.Empresas = new SelectList(await _registroService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -182,7 +171,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             if (id == null)
                 return NotFound();
 
-            var viewModel = await _registroService.GetRegistroRequerimientoByIdAsync(id.Value);
+            var viewModel = await _movimientoService.GetRegistroRequerimientoByIdAsync(id.Value);
             if (viewModel == null)
                 return NotFound();
 
@@ -196,7 +185,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                await _registroService.DeleteAsync(id);
+                await _movimientoService.DeleteAsync(id);
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)

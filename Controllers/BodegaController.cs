@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 

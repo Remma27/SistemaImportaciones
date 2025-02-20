@@ -10,9 +10,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
+            // Remove any existing IMovimientoService registration if present
             string apiBaseUrl = configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5079";
 
-            // Configuración base del HttpClient
             services.AddHttpClient("API", client =>
             {
                 client.BaseAddress = new Uri(apiBaseUrl);
@@ -49,12 +49,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
             {
                 var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
                 var configuration = sp.GetRequiredService<IConfiguration>();
-                return new BodegaService(httpClient, configuration);
-            });
-
-            services.AddScoped<IBodegaService>(sp =>
-            {
-                var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
                 return new BodegaService(httpClient, configuration);
             });
 

@@ -5,6 +5,7 @@ using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers; // Para GetUserId()
 using API.Models;
+using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -28,14 +29,18 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var barcos = await _movimientoService.GetBarcosSelectListAsync();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
-                var informeGeneral = await _movimientoService.GetInformeGeneralAsync(selectedBarco ?? 0);
+                // Only get data if a barco is selected
+                var informeGeneral = selectedBarco.HasValue
+                    ? await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value)
+                    : new List<InformeGeneralViewModel>();
+
                 return View(informeGeneral);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading registro requerimientos: {Message}", ex.Message);
-                TempData["Error"] = "Error al cargar los registros: " + ex.Message;
-                return View(new List<RegistroRequerimientosViewModel>());
+                _logger.LogError(ex, "Error loading informe general: {Message}", ex.Message);
+                TempData["Error"] = "Error al cargar el informe: " + ex.Message;
+                return View(new List<InformeGeneralViewModel>());
             }
         }
     }

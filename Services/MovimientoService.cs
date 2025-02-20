@@ -268,7 +268,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_apiUrl}/InformeGeneral?selectedBarco={barcoId}");
+                // Changed importacionId to barcoId to match the endpoint parameter
+                var response = await _httpClient.GetAsync($"{_apiUrl}/InformeGeneral?importacionId={barcoId}");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -292,13 +293,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 throw new Exception($"Estructura de respuesta inválida. Contenido: {content}");
             }
-            catch (HttpRequestException ex)
+            catch (Exception)
             {
-                throw new Exception($"Error al obtener informes: {ex.Message}", ex);
-            }
-            catch (JsonException ex)
-            {
-                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
+                throw;
             }
         }
 

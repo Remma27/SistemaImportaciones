@@ -31,7 +31,8 @@
                             <div class="col-sm-8">@Html.DisplayFor(model => model.totalcargakilos) kg</div>
                         </div>
                     </div>
-                    <form asp-action="Delete" class="d-flex justify-content-between">
+                    <form asp-action="Delete" method="post" class="d-flex justify-content-between">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="id" />
                         <a asp-action="Index" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-1"></i>Volver

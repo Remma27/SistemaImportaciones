@@ -12,39 +12,34 @@
                     <h3 class="card-title mb-0">Nuevo Registro de Requerimiento</h3>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create">
+                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="FechaHora" class="form-label">Fecha y Hora</label>
-                                <input asp-for="FechaHora" class="form-control" type="datetime-local" />
+                                <input asp-for="FechaHora" class="form-control" type="datetime-local" required />
                                 <span asp-validation-for="FechaHora" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="IdImportacion" class="form-label">Importación</label>
-                                <select asp-for="IdImportacion" class="form-select" asp-items="ViewBag.Importaciones">
-                                    <option value="">Seleccione una importación</option>
-                                </select>
-                                <span asp-validation-for="IdImportacion" class="text-danger"></span>
+                                <label class="form-label">Importación</label>
+                                <input type="text" class="form-control" value="@ViewBag.NombreBarco" readonly />
+                                <input type="hidden" asp-for="IdImportacion" />
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="IdEmpresa" class="form-label">Empresa</label>
-                                <select asp-for="IdEmpresa" class="form-select" asp-items="ViewBag.Empresas">
+                                <select asp-for="IdEmpresa" class="form-select" asp-items="ViewBag.Empresas" required>
                                     <option value="">Seleccione una empresa</option>
                                 </select>
                                 <span asp-validation-for="IdEmpresa" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="TipoTransaccion" class="form-label">Tipo de Transacción</label>
-                                <select asp-for="TipoTransaccion" class="form-select">
-                                    <option value="">Seleccione tipo</option>
-                                    <option value="1">Entrada</option>
-                                    <option value="2">Salida</option>
-                                </select>
+                                <label class="form-label">Tipo de Transacción</label>
+                                <input type="text" class="form-control" value="Requerimiento" readonly />
+                                <input type="hidden" asp-for="TipoTransaccion" value="1" />
                                 <span asp-validation-for="TipoTransaccion" class="text-danger"></span>
                             </div>
                         </div>
@@ -52,12 +47,12 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label asp-for="CantidadRequerida" class="form-label">Cantidad Requerida (kg)</label>
-                                <input asp-for="CantidadRequerida" class="form-control" type="number" />
+                                <input asp-for="CantidadRequerida" class="form-control" type="number" min="0" step="any" required />
                                 <span asp-validation-for="CantidadRequerida" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="CantidadCamiones" class="form-label">Cantidad de Camiones</label>
-                                <input asp-for="CantidadCamiones" class="form-control" type="number" />
+                                <input asp-for="CantidadCamiones" class="form-control" type="number" min="0" required />
                                 <span asp-validation-for="CantidadCamiones" class="text-danger"></span>
                             </div>
                         </div>

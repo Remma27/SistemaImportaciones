@@ -3,52 +3,78 @@
 
 @{
     ViewData["Title"] = "Registro de Requerimientos";
+    var selectedBarco = Context.Request.Query["selectedBarco"].ToString();
 }
 
-<div class="container my-5">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
+<div class="container-fluid py-4">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary bg-gradient text-white py-3">
             <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h3 class="mb-0">Registro de Requerimientos</h3>
+                <div class="col-md-4">
+                    <h3 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Registro de Requerimientos</h3>
                 </div>
-                <div class="col-md-4 text-md-end">
-                    <a asp-action="Create" class="btn btn-light">
-                        <i class="fas fa-plus me-1"></i> Nuevo Registro
-                    </a>
+                <div class="col-md-4">
+                    <form method="get" asp-action="Index" class="mb-0">
+                        <div class="input-group">
+                            <label class="input-group-text bg-primary text-white border-0">
+                                <i class="fas fa-ship me-1"></i>
+                            </label>
+                            <select name="selectedBarco" 
+                                    class="form-select" 
+                                    asp-items="ViewBag.Barcos"
+                                    onchange="this.form.submit()">
+                                <option value="">Seleccione una Importación</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-4 text-end">
+                    @if (!string.IsNullOrEmpty(selectedBarco))
+                    {
+                        <a asp-action="Create" asp-route-selectedBarco="@selectedBarco" class="btn btn-light">
+                            <i class="fas fa-plus me-1"></i> Nuevo Registro
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-light" disabled>
+                            <i class="fas fa-plus me-1"></i> Nuevo Registro
+                        </button>
+                    }
                 </div>
             </div>
         </div>
         <div class="card-body">
-            <form method="get" asp-action="Index" class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label class="form-label">Seleccione una Importación</label>
-                    <select name="selectedBarco" 
-                            class="form-select" 
-                            asp-items="ViewBag.Barcos"
-                            onchange="this.form.submit()">
-                        <option value="">Seleccione una Importación</option>
-                    </select>
+            @if (string.IsNullOrEmpty(selectedBarco))
+            {
+                <div class="alert alert-info m-4 text-center">
+                    <i class="fas fa-info-circle fa-lg me-2"></i>
+                    Seleccione una importación para ver los registros
                 </div>
-            </form>
-
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>ID</th>
-                            <th>Fecha y Hora</th>
-                            <th>Importación</th>
-                            <th>Empresa</th>
-                            <th>Cantidad Requerida</th>
-                            <th>Cantidad de Camiones</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model != null && Model.Any())
-                        {
-                            foreach (var item in Model)
+            }
+            else if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-warning m-4 text-center">
+                    <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
+                    No hay registros disponibles
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha y Hora</th>
+                                <th>Importación</th>
+                                <th>Empresa</th>
+                                <th>Cantidad Requerida</th>
+                                <th>Cantidad de Camiones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
                             {
                                 <tr>
                                     <td>@item.IdMovimiento</td>
@@ -57,41 +83,25 @@
                                     <td>@item.Empresa</td>
                                     <td>@item.CantidadRequerida kg</td>
                                     <td>@item.CantidadCamiones</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a asp-action="Edit" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-warning">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a asp-action="Delete" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
                                 </tr>
                             }
-                        }
-                        else
+                        </tbody>
+                        @if(Model?.Any() == true)
                         {
-                            <tr>
-                                <td colspan="7" class="text-center">No hay registros disponibles</td>
-                            </tr>
+                            var totalRequerida = Model.Sum(x => x.CantidadRequerida);
+                            var totalCamiones = Model.Sum(x => x.CantidadCamiones);
+                            <tfoot>
+                                <tr class="table-secondary">
+                                    <td colspan="4" class="fw-bold text-end">Totales:</td>
+                                    <td class="fw-bold">@totalRequerida kg</td>
+                                    <td class="fw-bold">@totalCamiones</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
                         }
-                    </tbody>
-                    @if(Model.Any())
-                    {
-                        var totalRequerida = Model.Sum(x => x.CantidadRequerida);
-                        var totalCamiones = Model.Sum(x => x.CantidadCamiones);
-                        <tfoot>
-                            <tr class="table-secondary">
-                                <td colspan="4" class="fw-bold text-end">Totales:</td>
-                                <td class="fw-bold">@totalRequerida kg</td>
-                                <td class="fw-bold">@totalCamiones</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    }
-                </table>
-            </div>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 </div>

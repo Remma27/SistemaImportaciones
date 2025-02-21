@@ -16,7 +16,8 @@ namespace API.Controllers
 
         // Endpoint para crear una nueva Empresa
         [HttpPost]
-        public JsonResult Create(Empresa empresa)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Empresa empresa)
         {
             if (empresa.id_empresa != 0)
             {

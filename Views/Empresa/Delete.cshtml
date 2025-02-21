@@ -4,31 +4,48 @@
     ViewData["Title"] = "Eliminar Empresa";
 }
 
-<div class="container-fluid">
-    <div class="card shadow">
-        <div class="card-header bg-danger text-white py-3">
-            <h3 class="mb-0">Eliminar Empresa</h3>
-        </div>
-        <div class="card-body">
-            <h5>¿Está seguro que desea eliminar esta empresa?</h5>
-            <div class="mt-4">
-                <dl class="row">
-                    <dt class="col-sm-3">Nombre</dt>
-                    <dd class="col-sm-9">@Model.nombreempresa</dd>
-                    <dt class="col-sm-3">Estado</dt>
-                    <dd class="col-sm-9">
-                        @(Model.estatus == 1 ? "Activo" : "Inactivo")
-                    </dd>
-                </dl>
-            </div>
-            <form asp-action="Delete" method="post" class="mt-4">
-                <input type="hidden" asp-for="id_empresa" />
-                @Html.AntiForgeryToken()
-                <div class="d-flex justify-content-end gap-2">
-                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-danger text-white py-3">
+                    <h3 class="mb-0"><i class="fas fa-trash me-2"></i>Eliminar Empresa</h3>
                 </div>
-            </form>
+                <div class="card-body p-4">
+                    <div class="alert alert-warning border-warning shadow-sm">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div>
+                                <h5 class="alert-heading mb-1">¡Atención!</h5>
+                                <p class="mb-0">Esta acción eliminará permanentemente la empresa del sistema.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-light my-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Detalles de la Empresa</h5>
+                            <p class="card-text"><strong>Nombre:</strong> @Model.nombreempresa</p>
+                            <p class="card-text"><strong>Estado:</strong> 
+                                @(Model.estatus == 1 ? "Activo" : "Inactivo")
+                            </p>
+                        </div>
+                    </div>
+
+                    <form asp-action="Delete" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="id_empresa" />
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i>Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

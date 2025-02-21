@@ -6,6 +6,7 @@ using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Middleware;
 using Sistema_de_Gestion_de_Importaciones.Extensions;
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,7 +90,7 @@ builder.Services.AddScoped<IImportacionService>(sp =>
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
     var logger = sp.GetRequiredService<ILogger<ImportacionService>>();
-    return new ImportacionService(httpClient, configuration);
+    return new ImportacionService(httpClient, configuration, logger);
 });
 
 // Registro de IUsuarioService (asegúrate de que UsuarioService implemente IUsuarioService)
@@ -123,15 +124,17 @@ builder.Services.AddScoped<IBodegaService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
-    return new BodegaService(httpClient, configuration);
+    var logger = sp.GetRequiredService<ILogger<BodegaService>>();
+    return new BodegaService(httpClient, configuration, logger);
 });
 
-// Remove any existing IMovimientoService registration
+// Reemplaza el registro existente de IMovimientoService
 builder.Services.AddScoped<IMovimientoService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
-    return new MovimientoService(httpClient, configuration);
+    var logger = sp.GetRequiredService<ILogger<MovimientoService>>();
+    return new MovimientoService(httpClient, configuration, logger);
 });
 
 var app = builder.Build();
@@ -166,15 +169,21 @@ app.UseAuthorization();
 
 // Mapea las rutas MVC
 app.MapControllerRoute(
-    name: "auth",
-    pattern: "Auth/{action=IniciarSesion}",
-    defaults: new { controller = "Auth" }
+    name: "mvc",
+    pattern: "mvc/{controller=Home}/{action=Index}/{id?}"
 );
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 // Mapea también los endpoints API
+app.MapControllerRoute(
+    name: "api",
+    pattern: "api/{controller}/{action}/{id?}"
+);
+
 app.MapControllers();
 
 app.Run();

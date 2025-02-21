@@ -7,13 +7,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services;
 public class BarcoService : IBarcoService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiUrl;
+    private readonly string _apiBaseUrl;
     private readonly ILogger<BarcoService> _logger;
 
     public BarcoService(HttpClient httpClient, IConfiguration configuration, ILogger<BarcoService> logger)
     {
         _httpClient = httpClient;
-        _apiUrl = "api/Barco/";
+        _apiBaseUrl = "api/Barco/";
         _logger = logger;
     }
 
@@ -21,7 +21,7 @@ public class BarcoService : IBarcoService
     {
         try
         {
-            var url = _apiUrl + "GetAll";
+            var url = _apiBaseUrl + "GetAll";
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
 
@@ -55,55 +55,87 @@ public class BarcoService : IBarcoService
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<Barco>($"{_apiUrl}/{id}");
-            return result ?? throw new KeyNotFoundException($"No se encontró el barco con ID {id}");
+            _logger.LogInformation($"Obteniendo barco con ID={id}");
+            var url = _apiBaseUrl + $"Get?id={id}";
+
+
+            var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
+                throw new HttpRequestException($"API error: {response.StatusCode}");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using JsonDocument document = JsonDocument.Parse(content);
+            Barco? barco = null;
+
+            if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+            {
+                barco = JsonSerializer.Deserialize<Barco>(valueElement.GetRawText(), options);
+            }
+            else
+            {
+                barco = JsonSerializer.Deserialize<Barco>(content, options);
+            }
+            return barco;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            throw new Exception($"Error al obtener el barco {id}: {ex.Message}", ex);
+            _logger.LogError(ex, $"Error al obtener el barco con ID {id}");
+            throw;
         }
     }
 
     public async Task<Barco> CreateAsync(Barco barco)
     {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync(_apiUrl, barco);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<Barco>();
-            return result ?? throw new InvalidOperationException("Error al crear el barco");
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new Exception($"Error al crear el barco: {ex.Message}", ex);
-        }
+        var response = await _httpClient.PostAsJsonAsync(_apiBaseUrl + "Create", barco);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Barco>() ?? barco;
     }
 
     public async Task<Barco> UpdateAsync(int id, Barco barco)
     {
         try
         {
-            var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{id}", barco);
+            _logger.LogInformation($"Actualizando barco con ID={id}");
+            var response = await _httpClient.PutAsJsonAsync(_apiBaseUrl + $"Edit", barco);
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<Barco>();
-            return result ?? throw new InvalidOperationException("Error al actualizar el barco");
+
+            var content = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Respuesta del servidor: {content}");
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            return await response.Content.ReadFromJsonAsync<Barco>(options) ?? barco;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            throw new Exception($"Error al actualizar el barco: {ex.Message}", ex);
+            _logger.LogError(ex, $"Error al actualizar el barco con ID {id}");
+            throw;
         }
     }
 
     public async Task DeleteAsync(int id)
     {
-        try
+        var url = _apiBaseUrl + $"Delete?id={id}";
+        _logger.LogInformation($"Eliminando barco con ID={id}");
+        var response = await _httpClient.DeleteAsync(url);
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.DeleteAsync($"{_apiUrl}/{id}");
-            response.EnsureSuccessStatusCode();
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new Exception($"Error al eliminar el barco: {ex.Message}", ex);
+            _logger.LogError($"Error al eliminar el barco con ID={id}");
+            throw new HttpRequestException($"Error al eliminar el barco con ID={id}");
         }
     }
 }

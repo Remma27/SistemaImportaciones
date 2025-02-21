@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using Sistema_de_Gestion_de_Importaciones.Helpers; // Agregar para usar GetUserId
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -38,67 +39,75 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View();
         }
 
-        // POST: Empresa/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Empresa model)
+        public async Task<IActionResult> Create(Empresa empresa)
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                return View(model);
+                try
+                {
+                    empresa.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    await _empresaService.CreateAsync(empresa);
+                    TempData["Success"] = "Empresa creada correctamente.";
+                    return RedirectToAction("Index", "Empresa");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al crear la empresa");
+                    ModelState.AddModelError("", "Ocurrió un error al crear la empresa.");
+                }
             }
-
-            try
-            {
-                await _empresaService.CreateAsync(model);
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al crear la empresa");
-                ModelState.AddModelError("", "Error al crear la empresa. Por favor, intente más tarde.");
-                return View(model);
-            }
+            return View(empresa);
         }
 
         // GET: Empresa/Edit/5
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var empresa = await _empresaService.GetByIdAsync(id);
-            if (empresa == null)
+            try
             {
-                return NotFound();
+                var empresa = await _empresaService.GetByIdAsync(id);
+                if (empresa == null)
+                {
+                    return NotFound();
+                }
+                return View(empresa);
             }
-            return View(empresa);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener la empresa para editar");
+                TempData["Error"] = "Error al cargar la empresa.";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         // POST: Empresa/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Empresa model)
+        public async Task<IActionResult> Edit(int id, [Bind("id_empresa,nombreempresa,estatus")] Empresa empresa)
         {
-            if (id != model.id_empresa)
+            if (id != empresa.id_empresa)
             {
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                return View(model);
+                try
+                {
+                    empresa.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    await _empresaService.UpdateAsync(id, empresa);
+                    TempData["Success"] = "Empresa actualizada correctamente.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al actualizar la empresa");
+                    ModelState.AddModelError("", "Ocurrió un error al actualizar la empresa.");
+                }
             }
-
-            try
-            {
-                await _empresaService.UpdateAsync(id, model);
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar la empresa");
-                ModelState.AddModelError("", "Error al actualizar la empresa. Por favor, intente más tarde.");
-                return View(model);
-            }
+            return View(empresa);
         }
 
         // GET: Empresa/Delete/5
@@ -116,17 +125,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // POST: Empresa/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed([Bind(Prefix = "id_empresa")] int id)
         {
             try
             {
                 await _empresaService.DeleteAsync(id);
+                TempData["Success"] = "Empresa eliminada correctamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar la empresa");
-                return RedirectToAction(nameof(Index));
+                _logger.LogError(ex, "Error al eliminar la empresa con ID {Id}", id);
+                // Recupera la empresa para mostrarla en la vista Delete junto con el error.
+                var empresa = await _empresaService.GetByIdAsync(id);
+                ViewBag.Error = "Ocurrió un error al eliminar la empresa: " + ex.Message;
+                return View("Delete", empresa);
             }
         }
     }

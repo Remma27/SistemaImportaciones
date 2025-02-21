@@ -12,7 +12,7 @@
                     <h3 class="mb-0">Gestión de Bodegas</h3>
                 </div>
                 <div class="col text-end">
-                    <a asp-action="Create" class="btn btn-light">
+                    <a asp-controller="Bodega" asp-action="Create" class="btn btn-light">
                         <i class="fas fa-plus-circle me-1"></i>Nueva Bodega
                     </a>
                 </div>
@@ -36,11 +36,11 @@
                                 <td>@(string.IsNullOrEmpty(item.bodega) ? "SIN NOMBRE" : item.bodega)</td>
                                 <td class="text-end">
                                     <div class="btn-group">
-                                        <a asp-action="Edit" asp-route-id="@item.id" 
+                                        <a asp-controller="Bodega" asp-action="Edit" asp-route-id="@item.id" 
                                         class="btn btn-sm btn-warning" title="Editar">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <a asp-action="Delete" asp-route-id="@item.id" 
+                                        <a asp-controller="Bodega" asp-action="Delete" asp-route-id="@item.id" 
                                         class="btn btn-sm btn-danger" title="Eliminar">
                                             <i class="fas fa-trash"></i>
                                         </a>

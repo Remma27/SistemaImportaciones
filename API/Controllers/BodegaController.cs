@@ -16,8 +16,15 @@ namespace API.Controllers
 
         // Endpoint para crear una nueva Bodega
         [HttpPost]
-        public JsonResult Create(Empresa_Bodegas bodega)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Empresa_Bodegas bodega)
         {
+
+            if (bodega.id != 0)
+            {
+                return new JsonResult(BadRequest("El id debe ser 0 para crear una nueva bodega."));
+            }
+
             _context.Empresa_Bodegas.Add(bodega);
             _context.SaveChanges();
             return new JsonResult(Ok(bodega));

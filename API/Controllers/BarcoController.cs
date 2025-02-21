@@ -17,8 +17,13 @@ namespace API.Controllers
 
         // Endpoint para crear un nuevo Barco
         [HttpPost]
-        public JsonResult Create(Barco barco)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Barco barco)
         {
+            if (barco.id != 0)
+            {
+                return new JsonResult(BadRequest("El id debe ser 0 para crear un nuevo barco."));
+            }
             _context.Barcos.Add(barco);
             _context.SaveChanges();
             return new JsonResult(Ok(barco));

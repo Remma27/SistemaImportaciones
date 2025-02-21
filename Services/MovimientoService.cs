@@ -11,11 +11,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiUrl;
+        private readonly ILogger<MovimientoService> _logger;
 
-        public MovimientoService(HttpClient httpClient, IConfiguration configuration)
+        public MovimientoService(HttpClient httpClient, IConfiguration configuration, ILogger<MovimientoService> logger)
         {
             _httpClient = httpClient;
             _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Movimientos";
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Movimiento>> GetAllAsync()
@@ -48,10 +50,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(_apiUrl, movimiento);
+                // Agregar "/Create" a la URL para llegar al endpoint correcto en la API
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Create", movimiento);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
-                return result ?? throw new InvalidOperationException("Error al crear el movimiento");
+                return result ?? throw new InvalidOperationException("Error al crear el movimiento: respuesta nula");
             }
             catch (HttpRequestException ex)
             {
@@ -182,11 +185,42 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<IEnumerable<SelectListItem>>($"{_apiUrl}/Importaciones");
-                return response ?? Enumerable.Empty<SelectListItem>();
+                _logger.LogInformation("Iniciando solicitud para obtener importaciones");
+
+                // Corregir la URL para usar el endpoint correcto
+                var response = await _httpClient.GetAsync($"{_apiUrl}/GetAll");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Error HTTP {response.StatusCode}: {error}");
+                    throw new HttpRequestException($"Error al obtener importaciones: {response.StatusCode}");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("value", out var valueElement))
+                {
+                    var importaciones = JsonSerializer.Deserialize<List<Importacion>>(valueElement.GetRawText(), options);
+                    return importaciones?.Select(i => new SelectListItem
+                    {
+                        Value = i.id.ToString(),
+                        Text = $"{i.Barco?.nombrebarco} - {i.fechahora:dd/MM/yyyy}"
+                    }) ?? Enumerable.Empty<SelectListItem>();
+                }
+
+                return Enumerable.Empty<SelectListItem>();
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener la lista de importaciones");
                 throw new Exception($"Error al obtener la lista de importaciones: {ex.Message}", ex);
             }
         }
@@ -195,11 +229,36 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<IEnumerable<SelectListItem>>($"{_apiUrl}/Empresa");
-                return response ?? Enumerable.Empty<SelectListItem>();
+                // Change the endpoint to match your API controller
+                var empresaUrl = "/api/Empresa/GetAll";
+                var response = await _httpClient.GetAsync(empresaUrl);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                // Check if the response has a 'value' property
+                var empresasArray = root.TryGetProperty("value", out var valueElement)
+                    ? valueElement
+                    : root;
+
+                var empresas = JsonSerializer.Deserialize<List<Empresa>>(empresasArray.GetRawText(), options);
+
+                return empresas?.Select(e => new SelectListItem
+                {
+                    Value = e.id_empresa.ToString(),
+                    Text = e.nombreempresa ?? string.Empty
+                }) ?? Enumerable.Empty<SelectListItem>();
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, "Error al obtener la lista de empresas");
                 throw new Exception($"Error al obtener la lista de empresas: {ex.Message}", ex);
             }
         }

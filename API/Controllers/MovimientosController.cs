@@ -19,7 +19,8 @@ namespace API.Controllers
 
         // Endpoint para crear un nuevo Movimiento
         [HttpPost]
-        public JsonResult Create(Movimiento movimiento)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Movimiento movimiento)
         {
             if (movimiento.id != 0)
             {

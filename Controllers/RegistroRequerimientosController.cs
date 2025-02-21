@@ -43,60 +43,65 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
 
         // GET: RegistroRequerimientos/Create
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(int? selectedBarco)
         {
-            try
+            if (!selectedBarco.HasValue)
             {
-                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text");
-                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
-
-                var viewModel = new RegistroRequerimientosViewModel
-                {
-                    FechaHora = DateTime.Now
-                };
-
-                return View(viewModel);
+                return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+
+            var barcos = await _movimientoService.GetBarcosSelectListAsync();
+            var selectedBarcoItem = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
+            ViewBag.NombreBarco = selectedBarcoItem != null ? selectedBarcoItem.Text : "Desconocido";
+
+            ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
+
+            var viewModel = new RegistroRequerimientosViewModel
             {
-                _logger.LogError(ex, "Error loading create form for registro requerimientos: {Message}", ex.Message);
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+                FechaHora = DateTime.Now,
+                IdImportacion = selectedBarco.Value,
+                TipoTransaccion = 1 // Se asigna el valor fijo aquí.
+            };
+
+            return View(viewModel);
         }
 
         // POST: RegistroRequerimientos/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("fechahora,idimportacion,idempresa,tipotransaccion,cantidadrequerida,cantidadcamiones")] RegistroRequerimientosViewModel viewModel)
+        public async Task<IActionResult> Create(RegistroRequerimientosViewModel viewModel)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    var userId = HttpContext.User.GetUserId().ToString();
-                    var movimiento = new Movimiento
-                    {
-                        fechahora = viewModel.FechaHora,
-                        idimportacion = viewModel.IdImportacion,
-                        idempresa = viewModel.IdEmpresa,
-                        tipotransaccion = viewModel.TipoTransaccion,
-                        cantidadrequerida = (decimal?)viewModel.CantidadRequerida,
-                        cantidadcamiones = viewModel.CantidadCamiones
-                    };
-                    await _movimientoService.CreateAsync(movimiento);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error creating registro requerimientos: {Message}", ex.Message);
-                    return StatusCode(500, $"Internal server error: {ex.Message}");
-                }
+                // Re-cargar datos de los dropdowns si es necesario...
+                return View(viewModel);
             }
 
-            // Recargar los select lists en caso de error
-            ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-            ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
-            return View(viewModel);
+            // Mapear explícitamente desde el viewModel al modelo Movimiento
+            var movimiento = new Movimiento
+            {
+                // La API espera propiedades en minúscula, por lo que se mapean según se requieren
+                fechahora = viewModel.FechaHora,
+                idimportacion = viewModel.IdImportacion,
+                idempresa = viewModel.IdEmpresa,
+                // Si viewModel.TipoTransaccion es nulo, se asigna 1 (valor fijo)
+                tipotransaccion = viewModel.TipoTransaccion ?? 1,
+                cantidadrequerida = viewModel.CantidadRequerida,
+                cantidadcamiones = viewModel.CantidadCamiones,
+                idusuario = HttpContext.User.GetUserId()
+            };
+
+            try
+            {
+                await _movimientoService.CreateAsync(movimiento);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al crear el movimiento");
+                ModelState.AddModelError("", "Ocurrió un error al crear el movimiento.");
+                return View(viewModel);
+            }
         }
 
         // GET: RegistroRequerimientos/Edit/5

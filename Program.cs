@@ -6,6 +6,7 @@ using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Middleware;
 using Sistema_de_Gestion_de_Importaciones.Extensions;
+using System.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -127,12 +128,13 @@ builder.Services.AddScoped<IBodegaService>(sp =>
     return new BodegaService(httpClient, configuration, logger);
 });
 
-// Remove any existing IMovimientoService registration
+// Reemplaza el registro existente de IMovimientoService
 builder.Services.AddScoped<IMovimientoService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
-    return new MovimientoService(httpClient, configuration);
+    var logger = sp.GetRequiredService<ILogger<MovimientoService>>();
+    return new MovimientoService(httpClient, configuration, logger);
 });
 
 var app = builder.Build();

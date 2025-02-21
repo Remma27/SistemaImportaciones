@@ -22,11 +22,9 @@
                                 <span asp-validation-for="FechaHora" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="IdImportacion" class="form-label">Importación</label>
-                                <select asp-for="IdImportacion" class="form-select" asp-items="ViewBag.Importaciones">
-                                    <option value="">Seleccione una importación</option>
-                                </select>
-                                <span asp-validation-for="IdImportacion" class="text-danger"></span>
+                                <label class="form-label">Importación</label>
+                                <input type="text" class="form-control" value="@ViewBag.NombreBarco" readonly />
+                                <input type="hidden" asp-for="IdImportacion" />
                             </div>
                         </div>
 
@@ -39,12 +37,9 @@
                                 <span asp-validation-for="IdEmpresa" class="text-danger"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="TipoTransaccion" class="form-label">Tipo de Transacción</label>
-                                <select asp-for="TipoTransaccion" class="form-select">
-                                    <option value="">Seleccione tipo</option>
-                                    <option value="1">Entrada</option>
-                                    <option value="2">Salida</option>
-                                </select>
+                                <label class="form-label">Tipo de Transacción</label>
+                                <input type="text" class="form-control" value="Requerimiento" readonly />
+                                <input type="hidden" asp-for="TipoTransaccion" value="1" />
                                 <span asp-validation-for="TipoTransaccion" class="text-danger"></span>
                             </div>
                         </div>

@@ -29,9 +29,18 @@
                     </form>
                 </div>
                 <div class="col-md-4 text-end">
-                    <a asp-action="Create" class="btn btn-light">
-                        <i class="fas fa-plus me-1"></i> Nuevo Registro
-                    </a>
+                    @if (!string.IsNullOrEmpty(selectedBarco))
+                    {
+                        <a asp-action="Create" asp-route-selectedBarco="@selectedBarco" class="btn btn-light">
+                            <i class="fas fa-plus me-1"></i> Nuevo Registro
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-light" disabled>
+                            <i class="fas fa-plus me-1"></i> Nuevo Registro
+                        </button>
+                    }
                 </div>
             </div>
         </div>
@@ -62,7 +71,6 @@
                                 <th>Empresa</th>
                                 <th>Cantidad Requerida</th>
                                 <th>Cantidad de Camiones</th>
-                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,16 +83,6 @@
                                     <td>@item.Empresa</td>
                                     <td>@item.CantidadRequerida kg</td>
                                     <td>@item.CantidadCamiones</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a asp-action="Edit" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-warning">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a asp-action="Delete" asp-route-id="@item.IdMovimiento" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
                                 </tr>
                             }
                         </tbody>

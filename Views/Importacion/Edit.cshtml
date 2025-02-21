@@ -12,17 +12,18 @@
                     <h3 class="card-title mb-0">Editar Importación</h3>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Edit">
+                    <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="id" />
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label asp-for="fechahora" class="form-label">Fecha y Hora</label>
-                                <input asp-for="fechahora" class="form-control" type="datetime-local" />
+                                <input asp-for="fechahora" class="form-control" type="datetime-local" required />
                                 <span asp-validation-for="fechahora" class="text-danger"></span>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label asp-for="idbarco" class="form-label">Barco</label>
-                                <select asp-for="idbarco" class="form-select" asp-items="ViewBag.Barcos">
+                                <select asp-for="idbarco" class="form-select" asp-items="ViewBag.Barcos" required>
                                     <option value="">Seleccione un barco</option>
                                 </select>
                                 <span asp-validation-for="idbarco" class="text-danger"></span>
@@ -31,7 +32,7 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label asp-for="totalcargakilos" class="form-label">Total Carga (Kilos)</label>
-                                <input asp-for="totalcargakilos" class="form-control" type="number" />
+                                <input asp-for="totalcargakilos" class="form-control" type="number" min="0" step="any" required />
                                 <span asp-validation-for="totalcargakilos" class="text-danger"></span>
                             </div>
                         </div>
@@ -49,3 +50,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

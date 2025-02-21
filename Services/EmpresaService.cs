@@ -64,7 +64,47 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
         public async Task<Empresa?> GetByIdAsync(int id)
         {
-            return await _httpClient.GetFromJsonAsync<Empresa>(_apiBaseUrl + $"Get?id={id}");
+            try
+            {
+                _logger.LogInformation($"Iniciando solicitud GetByIdAsync para id={id}");
+                var url = _apiBaseUrl + $"Get?id={id}";
+
+                var response = await _httpClient.GetAsync(url);
+                var content = await response.Content.ReadAsStringAsync();
+
+                _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}, Content={content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument jsonDocument = JsonDocument.Parse(content);
+                Empresa? empresa = null;
+
+                // Si existe la propiedad "value", la usamos; de lo contrario, deserializamos el documento completo.
+                if (jsonDocument.RootElement.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    empresa = JsonSerializer.Deserialize<Empresa>(valueElement.GetRawText(), options);
+                }
+                else
+                {
+                    empresa = JsonSerializer.Deserialize<Empresa>(content, options);
+                }
+
+                return empresa;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al obtener empresa con ID {id}");
+                throw;
+            }
         }
 
         public async Task<Empresa> CreateAsync(Empresa empresa)
@@ -76,15 +116,39 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
         public async Task<Empresa> UpdateAsync(int id, Empresa empresa)
         {
-            var response = await _httpClient.PutAsJsonAsync(_apiBaseUrl + "Edit", empresa);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<Empresa>() ?? empresa;
+            try
+            {
+                _logger.LogInformation($"Actualizando empresa con ID {id}");
+                var response = await _httpClient.PutAsJsonAsync(_apiBaseUrl + $"Edit", empresa);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta del servidor: {content}");
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                return await response.Content.ReadFromJsonAsync<Empresa>(options) ?? empresa;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al actualizar empresa con ID {id}");
+                throw;
+            }
         }
 
         public async Task DeleteAsync(int id)
         {
-            var response = await _httpClient.DeleteAsync(_apiBaseUrl + $"Delete?id={id}");
-            response.EnsureSuccessStatusCode();
+            var url = _apiBaseUrl + $"Delete?id={id}";
+            _logger.LogInformation($"Eliminando empresa con URL: {url}");
+            var response = await _httpClient.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException($"Error al eliminar: Status={response.StatusCode}. Detalles: {content}");
+            }
         }
     }
 }

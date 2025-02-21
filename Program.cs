@@ -166,15 +166,21 @@ app.UseAuthorization();
 
 // Mapea las rutas MVC
 app.MapControllerRoute(
-    name: "auth",
-    pattern: "Auth/{action=IniciarSesion}",
-    defaults: new { controller = "Auth" }
+    name: "mvc",
+    pattern: "mvc/{controller=Home}/{action=Index}/{id?}"
 );
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}"
+);
 
 // Mapea también los endpoints API
+app.MapControllerRoute(
+    name: "api",
+    pattern: "api/{controller}/{action}/{id?}"
+);
+
 app.MapControllers();
 
 app.Run();

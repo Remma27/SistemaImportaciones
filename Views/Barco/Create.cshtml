@@ -12,7 +12,8 @@
                     <h3 class="card-title mb-0">Registrar Nuevo Barco</h3>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post">
+                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label asp-for="nombrebarco" class="form-label"></label>
@@ -91,4 +92,6 @@
             });
         });
     </script>
+
+    <partial name="_ValidationScriptsPartial" />
 }

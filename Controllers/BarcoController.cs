@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -32,78 +33,84 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         // GET: Muestra el formulario para crear un nuevo barco
-        public IActionResult Crear()
+        public IActionResult Create()
         {
-            return View(new Barco());
+            return View();
         }
 
         // POST: Crea un nuevo barco consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Crear(Barco model)
+        public async Task<IActionResult> Create(Barco barco)
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                return View(model);
-            }
-
-            try
-            {
-                if (string.IsNullOrWhiteSpace(model.nombrebarco))
+                try
                 {
-                    ModelState.AddModelError("nombrebarco", "El nombre del barco es requerido");
-                    return View(model);
+                    barco.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    await _barcoService.CreateAsync(barco);
+                    TempData["Success"] = "Barco creado correctamente.";
+                    return RedirectToAction("Index", "Barco");
                 }
-
-                await _barcoService.CreateAsync(model);
-                _logger.LogInformation($"Barco '{model.nombrebarco}' creado exitosamente.");
-                return RedirectToAction(nameof(Index));
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al crear el barco");
+                    ModelState.AddModelError("", "Ocurrió un error al crear el barco.");
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error al crear el barco '{model.nombrebarco}'.");
-                ModelState.AddModelError("", "Ocurrió un error al crear el barco.");
-                return View(model);
-            }
+            return View(barco);
         }
 
         // GET: Muestra el formulario para editar un barco
-        public async Task<IActionResult> Editar(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var barco = await _barcoService.GetByIdAsync(id);
-            if (barco == null)
+            try
             {
-                return NotFound();
+                var barco = await _barcoService.GetByIdAsync(id);
+                if (barco == null)
+                {
+                    return NotFound();
+                }
+                return View(barco);
             }
-            return View(barco);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al obtener el barco con ID: {id}");
+                TempData["Error"] = "Ocurrió un error al obtener el barco.";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         // POST: Edita un barco consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Editar(Barco model)
+        public async Task<IActionResult> Edit(int id, Barco barco)
         {
-            if (!ModelState.IsValid)
+            if (id != barco.id)
             {
-                return View(model);
+                return NotFound();
             }
 
-            try
+            if (ModelState.IsValid)
             {
-                await _barcoService.UpdateAsync(model.id, model);
-                _logger.LogInformation("Barco actualizado exitosamente.");
-                return RedirectToAction("Index");
+                try
+                {
+                    barco.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    await _barcoService.UpdateAsync(id, barco);
+                    TempData["Success"] = "Barco actualizado correctamente.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error al actualizar el barco con ID: {id}");
+                    ModelState.AddModelError("", "Ocurrió un error al actualizar el barco.");
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar el barco.");
-                ModelState.AddModelError("", "Ocurrió un error al actualizar el barco.");
-                return View(model);
-            }
+            return View(barco);
         }
 
         // GET: Muestra el formulario para eliminar un barco
-        public async Task<IActionResult> Eliminar(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var barco = await _barcoService.GetByIdAsync(id);
             if (barco == null)
@@ -116,19 +123,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // POST: Elimina un barco consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EliminarConfirmado(int id)
+        [ActionName("Delete")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
             {
-                var barco = await _barcoService.GetByIdAsync(id);
-                if (barco == null)
-                {
-                    _logger.LogWarning($"Intento de eliminar barco inexistente con ID: {id}");
-                    return NotFound();
-                }
-
                 await _barcoService.DeleteAsync(id);
-                _logger.LogInformation($"Barco '{barco.nombrebarco}' eliminado exitosamente.");
                 TempData["Success"] = "Barco eliminado correctamente.";
                 return RedirectToAction(nameof(Index));
             }

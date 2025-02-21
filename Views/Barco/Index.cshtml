@@ -12,7 +12,7 @@
                     <h3 class="mb-0">Gestión de Barcos</h3>
                 </div>
                 <div class="col text-end">
-                    <a asp-action="Create" class="btn btn-light">
+                    <a asp-controller="Barco" asp-action="Create" class="btn btn-light hover-shadow" title="Agregar nuevo barco">
                         <i class="fas fa-plus-circle me-1"></i>Nuevo Barco
                     </a>
                 </div>
@@ -45,10 +45,10 @@
                                 </div>
                             </td>
                             <td class="text-end">
-                                <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-sm btn-warning">
+                                <a asp-controller="Barco" asp-action="Edit" asp-route-id="@item.id" class="btn btn-sm btn-warning" title="Editar barco">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@item.id" class="btn btn-sm btn-danger">
+                                <a asp-controller="Barco" asp-action="Delete" asp-route-id="@item.id" class="btn btn-sm btn-danger" title="Eliminar barco">
                                     <i class="fas fa-trash"></i>
                                 </a>
                             </td>

@@ -50,7 +50,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
             {
                 var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
                 var configuration = sp.GetRequiredService<IConfiguration>();
-                return new BodegaService(httpClient, configuration);
+                var logger = sp.GetRequiredService<ILogger<BodegaService>>();
+                return new BodegaService(httpClient, configuration, logger);
             });
 
             services.AddScoped<PasswordHashService>();

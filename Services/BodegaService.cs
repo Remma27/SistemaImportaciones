@@ -8,20 +8,22 @@ public class BodegaService : IBodegaService
 {
 
     private readonly HttpClient _httpClient;
-    private readonly string _apiUrl;
+    private readonly string _apiBaseUrl;
+    private readonly ILogger<BodegaService> _logger;
 
-    public BodegaService(HttpClient httpClient, IConfiguration configuration)
+
+    public BodegaService(HttpClient httpClient, IConfiguration configuration, ILogger<BodegaService> logger)
     {
         _httpClient = httpClient;
-        // Add /GetAll to match the API controller action
-        _apiUrl = "api/Bodega/";
+        _apiBaseUrl = "api/Bodega/";
+        _logger = logger;
     }
 
     public async Task<IEnumerable<Empresa_Bodegas>> GetAllAsync()
     {
         try
         {
-            var url = _apiUrl + "GetAll";
+            var url = _apiBaseUrl + "GetAll";
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
 
@@ -56,10 +58,38 @@ public class BodegaService : IBodegaService
     {
         try
         {
-            var result = await _httpClient.GetFromJsonAsync<Empresa_Bodegas>($"{_apiUrl}/{id}");
-            return result ?? throw new KeyNotFoundException($"No se encontró la bodega con ID {id}");
+            _logger.LogInformation($"Iniciando solicitud GetByIdAsync para la bodega {id}");
+            var url = _apiBaseUrl + $"Get?id={id}";
+            var response = await _httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
+                throw new HttpRequestException($"API error: {response.StatusCode}");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using JsonDocument jsonDocument = JsonDocument.Parse(content);
+            Empresa_Bodegas? bodega = null;
+
+            if (jsonDocument.RootElement.TryGetProperty("value", out JsonElement valueElement))
+            {
+                bodega = JsonSerializer.Deserialize<Empresa_Bodegas>(valueElement.GetRawText(), options);
+            }
+            else
+            {
+                bodega = JsonSerializer.Deserialize<Empresa_Bodegas>(content, options);
+            }
+            return bodega ?? throw new InvalidOperationException("Error al obtener la bodega");
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
             throw new Exception($"Error al obtener la bodega {id}: {ex.Message}", ex);
         }
@@ -67,29 +97,31 @@ public class BodegaService : IBodegaService
 
     public async Task<Empresa_Bodegas> CreateAsync(Empresa_Bodegas bodega)
     {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync(_apiUrl, bodega);
-            response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<Empresa_Bodegas>();
-            return result ?? throw new InvalidOperationException("Error al crear la bodega");
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new Exception($"Error al crear la bodega: {ex.Message}", ex);
-        }
+        var response = await _httpClient.PostAsJsonAsync(_apiBaseUrl + "Create", bodega);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<Empresa_Bodegas>();
+        return result ?? throw new InvalidOperationException("Error al crear la bodega");
     }
 
     public async Task<Empresa_Bodegas> UpdateAsync(int id, Empresa_Bodegas bodega)
     {
         try
         {
-            var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{id}", bodega);
+            _logger.LogInformation($"Iniciando solicitud UpdateAsync para la bodega {id}");
+            var response = await _httpClient.PutAsJsonAsync(_apiBaseUrl + $"Edit", bodega);
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<Empresa_Bodegas>();
-            return result ?? throw new InvalidOperationException("Error al actualizar la bodega");
+
+            var content = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}, Content={content}");
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            return await response.Content.ReadFromJsonAsync<Empresa_Bodegas>(options) ?? bodega;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
             throw new Exception($"Error al actualizar la bodega: {ex.Message}", ex);
         }
@@ -97,14 +129,13 @@ public class BodegaService : IBodegaService
 
     public async Task DeleteAsync(int id)
     {
-        try
+        var url = _apiBaseUrl + $"Delete?id={id}";
+        _logger.LogInformation($"Iniciando solicitud DeleteAsync para la bodega {id}");
+        var response = await _httpClient.DeleteAsync(url);
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.DeleteAsync($"{_apiUrl}/{id}");
-            response.EnsureSuccessStatusCode();
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new Exception($"Error al eliminar la bodega: {ex.Message}", ex);
+            var content = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"Error al eliminar la bodega: Status={response.StatusCode}. Detalles: {content}");
         }
     }
 }

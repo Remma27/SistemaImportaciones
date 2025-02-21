@@ -123,7 +123,8 @@ builder.Services.AddScoped<IBodegaService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
-    return new BodegaService(httpClient, configuration);
+    var logger = sp.GetRequiredService<ILogger<BodegaService>>();
+    return new BodegaService(httpClient, configuration, logger);
 });
 
 // Remove any existing IMovimientoService registration

@@ -17,7 +17,8 @@ namespace API.Controllers
 
         // Endpoint para crear una nueva Importacion
         [HttpPost]
-        public JsonResult Create(Importacion importacion)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Importacion importacion)
         {
             if (importacion.id != 0)
             {

@@ -89,7 +89,7 @@ builder.Services.AddScoped<IImportacionService>(sp =>
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
     var logger = sp.GetRequiredService<ILogger<ImportacionService>>();
-    return new ImportacionService(httpClient, configuration);
+    return new ImportacionService(httpClient, configuration, logger);
 });
 
 // Registro de IUsuarioService (asegúrate de que UsuarioService implemente IUsuarioService)

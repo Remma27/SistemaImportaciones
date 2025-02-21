@@ -22,7 +22,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
             services.AddScoped<IImportacionService>(sp =>
             {
                 var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
-                return new ImportacionService(httpClient, configuration);
+                var logger = sp.GetRequiredService<ILogger<ImportacionService>>();
+                return new ImportacionService(httpClient, configuration, logger);
             });
 
             services.AddHttpClient<IUsuarioService, UsuarioService>(client =>

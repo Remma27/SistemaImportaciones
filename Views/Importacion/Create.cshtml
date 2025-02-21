@@ -16,7 +16,8 @@
                     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
                 }
                 <div class="card-body">
-                    <form asp-action="Create">
+                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label asp-for="fechahora" class="form-label">Fecha y Hora</label>

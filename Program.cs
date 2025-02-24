@@ -137,6 +137,8 @@ builder.Services.AddScoped<IMovimientoService>(sp =>
     return new MovimientoService(httpClient, configuration, logger);
 });
 
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 
 // ----------------------

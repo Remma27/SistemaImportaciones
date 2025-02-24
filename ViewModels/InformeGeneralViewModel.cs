@@ -8,7 +8,7 @@ public class InformeGeneralViewModel
     public double DescargaKg { get; set; }
     public double FaltanteKg { get; set; }
     public double TonFaltantes { get; set; }
-    public int CamionesFaltantes { get; set; }
+    public double CamionesFaltantes { get; set; }
     public int ConteoPlacas { get; set; }
     public double PorcentajeDescarga { get; set; }
 }

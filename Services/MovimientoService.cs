@@ -144,40 +144,36 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var barcoUrl = "/api/Barco/GetAll";
-                var response = await _httpClient.GetAsync(barcoUrl);
+                var response = await _httpClient.GetAsync("/api/Importaciones/GetAll");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"API Response: {content}");
+
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Parse the JSON response structure
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
-                // Check if the response has a 'value' property (common in ASP.NET Core API responses)
-                var barcosArray = root.TryGetProperty("value", out var valueElement)
-                    ? valueElement
-                    : root;
-
-                var barcos = JsonSerializer.Deserialize<List<Barco>>(barcosArray.GetRawText(), options);
-
-                return barcos?.Select(b => new SelectListItem
+                if (root.TryGetProperty("value", out var importacionesElement))
                 {
-                    Value = b.id.ToString(),
-                    Text = b.nombrebarco ?? string.Empty
-                }) ?? Enumerable.Empty<SelectListItem>();
+                    var importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesElement.GetRawText(), options);
+                    return importaciones?.Select(i => new SelectListItem
+                    {
+                        Value = i.id.ToString(),
+                        Text = $"ID: {i.id} - {i.Barco?.nombrebarco ?? "Sin barco"} - {i.fechahora:dd/MM/yyyy}"
+                    }) ?? Enumerable.Empty<SelectListItem>();
+                }
+
+                return Enumerable.Empty<SelectListItem>();
             }
             catch (HttpRequestException ex)
             {
-                throw new Exception($"Error al obtener la lista de barcos: {ex.Message}", ex);
-            }
-            catch (JsonException ex)
-            {
-                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
+                _logger.LogError(ex, "Error al obtener la lista de importaciones");
+                throw new Exception($"Error al obtener la lista de importaciones: {ex.Message}", ex);
             }
         }
 
@@ -439,6 +435,55 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             catch (HttpRequestException ex)
             {
                 throw new Exception($"Error al actualizar el registro {id}: {ex.Message}", ex);
+            }
+        }
+        public async Task<List<Movimiento>> CalculoMovimientos(int importacionId, int idempresa)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_apiUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}");
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"API Response: {content}");
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("data", out JsonElement dataElement))
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                    };
+
+                    var movimientosDtos = JsonSerializer.Deserialize<List<MovimientosCumulatedDto>>(dataElement.GetRawText(), options);
+
+                    if (movimientosDtos != null && movimientosDtos.Any())
+                    {
+                        return movimientosDtos.Select(m => new Movimiento
+                        {
+                            bodega = int.TryParse(m.bodega, out int bod) ? bod : 0,
+                            guia = int.TryParse(m.guia, out int gui) ? gui : 0,
+                            placa = m.placa,
+                            cantidadrequerida = m.cantidadrequerida,
+                            cantidadentregada = m.cantidadentregada,
+                            peso_faltante = m.peso_faltante,
+                            porcentaje = m.porcentaje
+                        }).ToList();
+                    }
+
+                    // Si no hay movimientos, retornar lista vacía
+                    return new List<Movimiento>();
+                }
+
+                throw new Exception("Respuesta inválida: propiedad 'data' no encontrada.");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error al calcular los movimientos");
+                throw new Exception($"Error al calcular los movimientos: {ex.Message}", ex);
             }
         }
     }

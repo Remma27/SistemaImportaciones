@@ -21,5 +21,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
         Task<List<InformeGeneralViewModel>> GetInformeGeneralAsync(int barcoId);
         Task<Movimiento> RegistroRequerimientos(int id, Movimiento movimiento);
         Task<Movimiento> InformeGeneral(int id, Movimiento movimiento);
+        Task<List<Movimiento>> CalculoMovimientos(int importacionId, int idempresa);
     }
 }

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using Sistema_de_Gestion_de_Importaciones.Services;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -28,7 +27,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         // GET: RegistroPesajes/Index
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId)
         {
-            // Cargar dropdown de barcos
+            // Cargar dropdowns
             var barcosList = await _movimientoService.GetBarcosSelectListAsync();
             ViewBag.Barcos = new SelectList(barcosList, "Value", "Text", selectedBarco);
             ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", empresaId);
@@ -37,11 +36,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 Tabla1Data = new List<RegistroPesajesIndividual>(),
                 Tabla2Data = new List<RegistroPesajesAgregado>(),
-                TotalesPorBodega = new List<TotalesPorBodegaViewModel>()
+                TotalesPorBodega = new List<TotalesPorBodegaViewModel>(),
+                EscotillasData = new List<EscotillaViewModel>()
             };
 
             if (selectedBarco.HasValue)
             {
+                // Primero obtener el informe general para tener los totales
                 int importacionId = selectedBarco.Value;
                 var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
                 viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
@@ -57,15 +58,85 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
                 }).ToList();
 
+                // Luego obtener información del barco
+                var importacion = await _importacionService.GetByIdAsync(selectedBarco.Value);
+                if (importacion?.Barco != null)
+                {
+                    var barco = importacion.Barco;
+                    viewModel.Barco = barco;
+
+                    // Obtener totales (descargado se suma de las empresas)
+                    decimal totalDescargado = viewModel.Tabla2Data.Sum(x => x.DescargaKilos);
+                    decimal totalRequerido = viewModel.Tabla2Data.Sum(x => x.KilosRequeridos);
+
+                    // Calcular capacidad total del barco (es decir, la suma de las escotillas)
+                    decimal capacidadTotal = 0;
+                    var escotillasActivas = new Dictionary<int, decimal>();
+
+                    // Iterar hasta escotilla7 (según se tenga configurado)
+                    for (int i = 1; i <= 7; i++)
+                    {
+                        var capacidad = (decimal?)barco.GetType().GetProperty($"escotilla{i}")?.GetValue(barco) ?? 0;
+                        if (capacidad > 0)
+                        {
+                            escotillasActivas.Add(i, capacidad);
+                            capacidadTotal += capacidad;
+                        }
+                    }
+
+                    // Distribuir la descarga total de forma proporcional al valor de cada escotilla
+                    viewModel.EscotillasData = new List<EscotillaViewModel>();
+                    foreach (var escotilla in escotillasActivas)
+                    {
+                        // El valor "requerido" para la escotilla es su capacidad
+                        decimal requeridaEscotilla = escotilla.Value;
+
+                        // Proporción que representa la escotilla en el total
+                        decimal proporcion = capacidadTotal > 0 ? escotilla.Value / capacidadTotal : 0;
+
+                        // Se distribuye la descarga total según la misma proporción
+                        decimal descargaReal = Math.Round(totalDescargado * proporcion, 0);
+
+                        // Diferencia: faltante (positivo) o excedente (negativo)
+                        decimal diferencia = requeridaEscotilla - descargaReal;
+
+                        // Porcentaje de descarga para la escotilla (evitar división por cero)
+                        decimal porcentaje = requeridaEscotilla > 0
+                            ? Math.Round((descargaReal * 100.0M / requeridaEscotilla), 2)
+                            : 0;
+
+                        viewModel.EscotillasData.Add(new EscotillaViewModel
+                        {
+                            Numero = escotilla.Key,
+                            Capacidad = escotilla.Value,
+                            DescargaEsperada = requeridaEscotilla,
+                            DescargaReal = descargaReal,
+                            Diferencia = diferencia,
+                            Porcentaje = porcentaje
+                        });
+                    }
+
+                    // Actualizar totales del barco
+                    viewModel.TotalKilosRequeridos = capacidadTotal;
+                    viewModel.TotalDescargaKilos = totalDescargado;
+                    viewModel.TotalKilosFaltantes = capacidadTotal - totalDescargado;
+                    viewModel.PorcentajeTotal = capacidadTotal > 0
+                        ? Math.Round((totalDescargado * 100.0M / capacidadTotal), 2)
+                        : 0;
+                }
+
+                // Procesar datos de empresa si está seleccionada
                 if (empresaId.HasValue)
                 {
+                    // Obtener y calcular datos por empresa
                     var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId.Value);
                     if (calculo != null)
                     {
-                        // Obtener lista de bodegas para mapear IDs a nombres
+                        // Mapear nombres de bodegas
                         var bodegas = await _bodegaService.GetAllAsync();
                         var bodegasDict = bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
 
+                        // Generar datos para Tabla1
                         viewModel.Tabla1Data = calculo.Select(c => new RegistroPesajesIndividual
                         {
                             Id = c.id,

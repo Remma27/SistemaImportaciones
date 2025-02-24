@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using API.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.ViewModels
@@ -12,6 +13,20 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public List<RegistroPesajesAgregado> Tabla2Data { get; set; } = new();
 
         public List<TotalesPorBodegaViewModel> TotalesPorBodega { get; set; } = new();
+
+        public required List<EscotillaViewModel> EscotillasData { get; set; }
+        public Barco? Barco { get; set; }
+        public Dictionary<int, decimal> DescargaPorEscotilla { get; set; } = new();
+        public double? TotalCargaKilos { get; set; }
+        public decimal TotalRequerido => Tabla2Data.Sum(x => x.KilosRequeridos);
+        public decimal TotalDescargado => Tabla2Data.Sum(x => x.DescargaKilos);
+        public decimal TotalFaltante => TotalRequerido - TotalDescargado;
+        public decimal FaltanteTotal { get; set; }
+        public decimal PorcentajeTotal { get; set; }
+
+        public decimal TotalKilosRequeridos { get; set; }
+        public decimal TotalDescargaKilos { get; set; }
+        public decimal TotalKilosFaltantes { get; set; }
     }
 
     public class RegistroPesajesIndividual
@@ -24,6 +39,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal PesoEntregado { get; set; }
         public decimal PesoFaltante { get; set; }
         public decimal Porcentaje { get; set; }
+
     }
 
     public class RegistroPesajesAgregado
@@ -37,6 +53,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal CamionesFaltantes { get; set; }
         public int ConteoPlacas { get; set; }
         public decimal PorcentajeDescarga { get; set; }
+
     }
 
     public class TotalesPorBodegaViewModel
@@ -44,5 +61,17 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public string Bodega { get; set; } = string.Empty;
         public decimal TotalKilos { get; set; }
         public int CantidadMovimientos { get; set; }
+
+    }
+
+    public class EscotillaViewModel
+    {
+        public int Numero { get; set; }
+        public decimal Capacidad { get; set; }
+        public decimal DescargaEsperada { get; set; }
+        public decimal DescargaReal { get; set; }
+        public decimal Diferencia { get; set; }
+        public decimal Porcentaje { get; set; }
+        public bool EsSobrante { get; set; }
     }
 }

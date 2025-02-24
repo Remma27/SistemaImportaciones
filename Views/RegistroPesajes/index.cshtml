@@ -91,7 +91,7 @@
                                             <td class="text-end">@item.ToneladasRequeridas.ToString("N2")</td>
                                             <td class="text-end">@item.DescargaKilos.ToString("N0")</td>
                                             <td class="text-end">@item.FaltanteKilos.ToString("N0")</td>
-                                            <td class="text-end">@item.ToneladasFaltantes.ToString("N0")</td>
+                                            <td class="text-end">@item.ToneladasFaltantes.ToString("N2")</td>
                                             <td class="text-end">@item.CamionesFaltantes.ToString("N2")</td>
                                             <td class="text-center">@item.ConteoPlacas</td>
                                             <td class="text-end">@item.PorcentajeDescarga.ToString("N2")%</td>
@@ -108,12 +108,102 @@
                                     <td class="text-end">@Model.Tabla2Data.Sum(x => x.FaltanteKilos).ToString("N0")</td>
                                     <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasFaltantes).ToString("N2")</td>
                                     <td class="text-end">@Model.Tabla2Data.Sum(x => x.CamionesFaltantes).ToString("N2")</td>
-                                    <td class="text-center">@(Model.Tabla2Data.Any() ? Model.Tabla2Data.Last().ConteoPlacas : 0)</td>
-                                    <td class="text-end">@(Model.Tabla2Data.Any() ? Model.Tabla2Data.Last().PorcentajeDescarga.ToString("N2") : "0.00")%</td>
+                                    <td class="text-center">@Model.Tabla2Data.Sum(x => x.ConteoPlacas)</td>
+                                    <td class="text-end">
+                                        @{
+                                            var kilosRequeridos = Model.Tabla2Data.Sum(x => x.KilosRequeridos);
+                                            var porcentaje = kilosRequeridos > 0 
+                                                ? (Model.Tabla2Data.Sum(x => x.DescargaKilos) * 100.0M / kilosRequeridos) 
+                                                : 0;
+                                        }
+                                        @porcentaje.ToString("N2")%
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General y Escotillas -->
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-gradient bg-light py-3">
+                    <h5 class="mb-0 text-primary"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive mt-3">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th>Escotilla</th>
+                <th class="text-end">Capacidad (Kg)</th>
+                <th class="text-end">Descarga Real (Kg)</th>
+                <th class="text-end">Diferencia (Kg)</th>
+                <th class="text-end">% Descarga</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.EscotillasData.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center py-4">
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>No hay datos de escotillas disponibles
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var escotilla in Model.EscotillasData)
+                {
+                    <tr>
+                        <td>Escotilla @escotilla.Numero</td>
+                        <td class="text-end">@escotilla.Capacidad.ToString("N0")</td>
+                        <td class="text-end">@escotilla.DescargaReal.ToString("N0")</td>
+                        <td class="text-end text-@(escotilla.Diferencia > 0 ? "danger" : "success")">
+                            @Math.Abs(escotilla.Diferencia).ToString("N0")
+                            @(escotilla.Diferencia < 0 ? " (Sobrante)" : " (Faltante)")
+                        </td>
+                        <td class="text-end">
+                            @{
+                                var porcentajeEscotilla = escotilla.Capacidad > 0 
+                                    ? Math.Round((escotilla.DescargaReal * 100.0M / escotilla.Capacidad), 2)
+                                    : 0;
+                            }
+                            @porcentajeEscotilla.ToString("N2")%
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+        @if (Model.EscotillasData.Any())
+        {
+            <tfoot class="table-dark fw-bold">
+                <tr>
+                    <td>Totales</td>
+                    <td class="text-end">@Model.TotalKilosRequeridos.ToString("N0")</td>
+                    <td class="text-end">@Model.TotalDescargaKilos.ToString("N0")</td>
+                    <td class="text-end text-@(Model.TotalKilosFaltantes > 0 ? "danger" : "success")">
+                        @Math.Abs(Model.TotalKilosFaltantes).ToString("N0")
+                        @(Model.TotalKilosFaltantes < 0 ? " (Sobrante)" : " (Faltante)")
+                    </td>
+                    <td class="text-end">
+                        @{
+                            var porcentajeTotal = Model.TotalKilosRequeridos > 0 
+                                ? Math.Round((Model.TotalDescargaKilos * 100.0M / Model.TotalKilosRequeridos), 2)
+                                : 0;
+                        }
+                        @porcentajeTotal.ToString("N2")%
+                    </td>
+                </tr>
+            </tfoot>
+        }
+    </table>
+</div>
+
                 </div>
             </div>
         </div>
@@ -147,7 +237,7 @@
                                             <div class="alert alert-info mb-0">
                                                 <i class="fas fa-info-circle me-2"></i>No hay registros disponibles
                                             </div>
-                                        </td>
+                                   </td>
                                     </tr>
                                 }
                                 else
@@ -181,8 +271,22 @@
                                     <td colspan="3">Totales</td>
                                     <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoRequerido).ToString("N0")</td>
                                     <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoEntregado).ToString("N0")</td>
-                                    <td class="text-end">@(Model.Tabla1Data.Any() ? Model.Tabla1Data.Last().PesoFaltante.ToString("N0") : "0.00")</td>
-                                    <td class="text-end">@(Model.Tabla1Data.Any() ? Model.Tabla1Data.Last().Porcentaje.ToString("N2") : "0.00")%</td>
+                                    <td class="text-end">
+                                        @{
+                                            var pesoFaltante = Model.Tabla1Data.Any() 
+                                                ? Model.Tabla1Data.Last().PesoFaltante 
+                                                : 0;
+                                        }
+                                        @pesoFaltante.ToString("N0")
+                                    </td>
+                                    <td class="text-end">
+                                        @{
+                                            var porcentajeTabla1 = Model.Tabla1Data.Any() 
+                                                ? Model.Tabla1Data.Last().Porcentaje 
+                                                : 0;
+                                        }
+                                        @porcentajeTabla1.ToString("N2")%
+                                    </td>
                                     <td></td>
                                 </tr>
                             </tfoot>

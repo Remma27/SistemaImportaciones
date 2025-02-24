@@ -41,5 +41,12 @@ namespace API.Models
 
         [ForeignKey("idusuario")]
         public virtual Usuario? Usuario { get; set; }
+
+        // Si estos valores son calculados, se pueden marcar como no mapeados:
+        [NotMapped]
+        public decimal peso_faltante { get; set; }
+
+        [NotMapped]
+        public decimal porcentaje { get; set; }
     }
 }

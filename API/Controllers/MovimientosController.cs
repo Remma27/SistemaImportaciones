@@ -93,7 +93,7 @@ namespace API.Controllers
                             join i in _context.Importaciones on m.idimportacion equals i.id
                             join e in _context.Empresas on m.idempresa equals e.id_empresa
                             join b in _context.Barcos on i.idbarco equals b.id
-                            where (!importacionId.HasValue || i.idbarco == importacionId)
+                            where (!importacionId.HasValue || i.id == importacionId)
                             group m by new { e.id_empresa, e.nombreempresa } into g
                             select new InformeGeneralViewModel
                             {
@@ -116,7 +116,8 @@ namespace API.Controllers
                     item.RequeridoTon = item.RequeridoKg / 1000;
                     item.FaltanteKg = item.RequeridoKg - item.DescargaKg;
                     item.TonFaltantes = item.FaltanteKg / 1000;
-                    item.CamionesFaltantes = (int)Math.Ceiling(item.FaltanteKg / 30000.0);
+                    // Reemplazamos: ya no se redondea hacia arriba y se deja a 2 decimales, permitiendo negativos
+                    item.CamionesFaltantes = Math.Round(item.FaltanteKg / 30000.0, 2);
                     item.PorcentajeDescarga = item.RequeridoKg > 0
                         ? (item.DescargaKg / item.RequeridoKg) * 100
                         : 0;
@@ -128,60 +129,6 @@ namespace API.Controllers
             {
                 return StatusCode(500, new { message = ex.Message });
             }
-        }
-
-        private async Task<List<object>> GetInformeData(int? importacionId)
-        {
-            var analysis = await _context.Movimientos
-                .Include(m => m.Empresa)
-                .Where(m => !importacionId.HasValue || m.idimportacion == importacionId)
-                .Select(m => new
-                {
-                    m.idempresa,
-                    EmpresaNombre = m.Empresa != null ? m.Empresa.nombreempresa : "Sin Empresa",
-                    m.idimportacion,
-                    m.cantidadrequerida,
-                    m.cantidadentregada,
-                })
-                .ToListAsync();
-
-            // Agrupar por empresa
-            var groupedByEmpresa = analysis
-                .GroupBy(m => new { m.idempresa, m.EmpresaNombre })
-                .Select(g => new
-                {
-                    g.Key.idempresa,
-                    g.Key.EmpresaNombre,
-                    ImportacionesCount = g.Select(x => x.idimportacion).Distinct().Count(),
-                    MovimientosCount = g.Count(),
-                    TotalRequerido = g.Sum(x => x.cantidadrequerida ?? 0),
-                    TotalEntregado = g.Sum(x => x.cantidadentregada ?? 0)
-                })
-                .ToList();
-
-            var informeData = groupedByEmpresa
-                .Select(g => new
-                {
-                    Empresa = g.EmpresaNombre ?? "Sin Empresa",
-                    RequeridoKg = g.TotalRequerido,
-                    DescargaKg = g.TotalEntregado,
-                    RequeridoTon = g.TotalRequerido / 1000,
-                    FaltanteKg = g.TotalRequerido - g.TotalEntregado,
-                    TonFaltantes = (g.TotalRequerido - g.TotalEntregado) / 1000,
-                    CamionesFaltantes = (int)Math.Ceiling((g.TotalRequerido - g.TotalEntregado) / 30000.0m),
-                    ConteoPlacas = _context.Movimientos
-                        .Where(m => m.idempresa == g.idempresa && m.placa != null)
-                        .Select(m => m.placa)
-                        .Distinct()
-                        .Count(),
-                    PorcentajeDescarga = g.TotalRequerido > 0
-                        ? (g.TotalEntregado / g.TotalRequerido) * 100
-                        : 0
-                })
-                .OrderBy(x => x.Empresa)
-                .ToList();
-
-            return informeData.Cast<object>().ToList();
         }
 
         // Endpoint para obtener el registro de requerimientos sin usar RegistroRequerimientosViewModel
@@ -238,6 +185,71 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+            }
+        }
+
+        // Endpoint que ejecuta el query acumulativo
+        [HttpGet]
+        public async Task<IActionResult> CalculoMovimientos([FromQuery] int importacionId, [FromQuery] int idempresa)
+        {
+            try
+            {
+                // Obtener y ordenar los movimientos directamente en la consulta
+                var movimientosList = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId && m.idempresa == idempresa)
+                    .ToListAsync();
+
+                // Ordenar la lista usando ordenamiento numérico para las guías
+                movimientosList = movimientosList
+                    .OrderBy(m =>
+                    {
+                        if (string.IsNullOrEmpty(m.guia?.ToString())) return int.MinValue;
+                        return int.TryParse(m.guia.ToString(), out int numero) ? numero : int.MinValue;
+                    })
+                    .ToList();
+
+                if (!movimientosList.Any())
+                {
+                    return Ok(new { count = 0, data = new List<MovimientosCumulatedDto>() });
+                }
+
+                // Resto del código igual...
+                decimal initialRequired = movimientosList.First().cantidadrequerida ?? 0;
+
+                if (initialRequired <= 0)
+                {
+                    return BadRequest(new { message = "El primer movimiento no tiene una cantidad requerida válida." });
+                }
+
+                decimal cumulativeDelivered = 0;
+                var result = new List<MovimientosCumulatedDto>();
+
+                foreach (var m in movimientosList)
+                {
+                    decimal delivered = m.cantidadentregada ?? 0;
+                    cumulativeDelivered += delivered;
+                    // Peso faltante: valor inicial menos lo acumulado
+                    decimal pesoFaltante = initialRequired - cumulativeDelivered;
+                    // Porcentaje de entrega
+                    decimal porcentaje = initialRequired > 0 ? (cumulativeDelivered / initialRequired) * 100 : 0;
+
+                    result.Add(new MovimientosCumulatedDto
+                    {
+                        bodega = m.bodega?.ToString() ?? string.Empty,
+                        guia = m.guia?.ToString() ?? string.Empty,
+                        placa = m.placa ?? string.Empty,
+                        cantidadrequerida = m.cantidadrequerida ?? 0,
+                        cantidadentregada = delivered,
+                        peso_faltante = pesoFaltante,
+                        porcentaje = Math.Round(porcentaje, 2)
+                    });
+                }
+
+                return Ok(new { count = result.Count, data = result });
+            }
+            catch (HttpRequestException ex)
+            {
+                return StatusCode(500, new { message = $"Error al calcular los movimientos: {ex.Message}" });
             }
         }
     }

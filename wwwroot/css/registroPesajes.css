@@ -1,0 +1,75 @@
+/* Table Styles */
+.table > :not(caption) > * > * {
+    padding: 1rem;
+}
+
+.table > thead > tr > th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Table Header Styles */
+.table > thead.table-dark > tr > th {
+    background-color: #212529 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* Table Footer Styles */
+.table > tfoot.table-dark > tr > td {
+    background-color: #212529 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* Totals Row in Table Body */
+.table > tbody > tr.table-dark > td {
+    background-color: #212529 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* Card Styles */
+.bg-gradient {
+    background: linear-gradient(to right, #f8f9fa, #ffffff);
+}
+
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+/* Card Header Styles */
+.card-header.bg-gradient.bg-light {
+    background: linear-gradient(to right, #f8f9fa, #ffffff) !important;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-header .text-primary {
+    color: #0d6efd !important;
+    font-weight: 600;
+}
+
+/* Form Control Styles */
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    background: linear-gradient(to right, #0d6efd, #0b5ed7);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(to right, #0b5ed7, #0a58ca);
+}

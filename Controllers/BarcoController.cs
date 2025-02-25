@@ -32,13 +32,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: Muestra el formulario para crear un nuevo barco
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Crea un nuevo barco consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Barco barco)
@@ -47,7 +45,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    barco.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    barco.idusuario = User.GetUserId();
                     await _barcoService.CreateAsync(barco);
                     TempData["Success"] = "Barco creado correctamente.";
                     return RedirectToAction("Index", "Barco");
@@ -61,7 +59,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(barco);
         }
 
-        // GET: Muestra el formulario para editar un barco
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -81,7 +78,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: Edita un barco consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Barco barco)
@@ -95,7 +91,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    barco.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    barco.idusuario = User.GetUserId();
                     await _barcoService.UpdateAsync(id, barco);
                     TempData["Success"] = "Barco actualizado correctamente.";
                     return RedirectToAction(nameof(Index));
@@ -109,7 +105,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(barco);
         }
 
-        // GET: Muestra el formulario para eliminar un barco
         public async Task<IActionResult> Delete(int id)
         {
             var barco = await _barcoService.GetByIdAsync(id);
@@ -120,7 +115,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(barco);
         }
 
-        // POST: Elimina un barco consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ActionName("Delete")]

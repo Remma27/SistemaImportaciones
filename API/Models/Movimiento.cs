@@ -9,23 +9,28 @@ namespace API.Models
         [Key]
         [Required]
         public int id { get; set; }
-        public DateTime? fechahora { get; set; }
-        public DateTime? fechahorasistema { get; set; }
+
+        [Required]
+        public DateTime fechahora { get; set; }
 
         [ForeignKey("Importacion")]
-        public int? idimportacion { get; set; }
+        [Required]
+        public int idimportacion { get; set; }
         public virtual Importacion? Importacion { get; set; }
 
         [ForeignKey("Empresa")]
-        public int? idempresa { get; set; }
+        [Required]
+        public int idempresa { get; set; }
         public virtual Empresa? Empresa { get; set; }
 
-        public int? tipotransaccion { get; set; }
+        [Required]
+        public int tipotransaccion { get; set; }
         public int? cantidadcamiones { get; set; }
 
         public decimal? cantidadrequerida { get; set; }
 
-        public decimal? cantidadentregada { get; set; }
+        [Required]
+        public decimal cantidadentregada { get; set; }
         public string? placa { get; set; }
 
         public string? placa_alterna { get; set; }

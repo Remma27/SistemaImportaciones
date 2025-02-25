@@ -10,13 +10,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
     public class MovimientoService : IMovimientoService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
+        private readonly string _apiBaseUrl;
         private readonly ILogger<MovimientoService> _logger;
 
         public MovimientoService(HttpClient httpClient, IConfiguration configuration, ILogger<MovimientoService> logger)
         {
             _httpClient = httpClient;
-            _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Movimientos";
+            _apiBaseUrl = configuration["ApiSettings:BaseUrl"] + "/api/Movimientos";
             _logger = logger;
         }
 
@@ -24,7 +24,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var result = await _httpClient.GetFromJsonAsync<IEnumerable<Movimiento>>(_apiUrl);
+                var result = await _httpClient.GetFromJsonAsync<IEnumerable<Movimiento>>(_apiBaseUrl);
                 return result ?? Enumerable.Empty<Movimiento>();
             }
             catch (HttpRequestException ex)
@@ -37,11 +37,44 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var result = await _httpClient.GetFromJsonAsync<Movimiento>($"{_apiUrl}/{id}");
-                return result ?? throw new KeyNotFoundException($"No se encontró el movimiento con ID {id}");
+                _logger.LogInformation($"Solicitando movimiento con ID: {id}");
+                var url = $"{_apiBaseUrl}/Get?id={id}";
+                _logger.LogInformation($"URL de la solicitud: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta de la API: {content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = TryGetErrorMessage(content);
+                    _logger.LogError($"Error al obtener movimiento {id}: {errorMessage}");
+                    throw new HttpRequestException($"Error al obtener el movimiento {id}: {response.StatusCode}, {content}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument document = JsonDocument.Parse(content);
+                Movimiento? movimiento = null;
+
+                if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    var movimientoJson = valueElement.GetRawText();
+                    movimiento = JsonSerializer.Deserialize<Movimiento>(movimientoJson, options);
+                }
+                else
+                {
+                    movimiento = JsonSerializer.Deserialize<Movimiento>(content, options);
+                }
+
+                return movimiento ?? throw new InvalidOperationException($"No se encontró el movimiento con ID {id}");
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, $"Error de HTTP al obtener el movimiento {id}");
                 throw new Exception($"Error al obtener el movimiento {id}: {ex.Message}", ex);
             }
         }
@@ -50,14 +83,23 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Agregar "/Create" a la URL para llegar al endpoint correcto en la API
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Create", movimiento);
-                response.EnsureSuccessStatusCode();
+                _logger.LogInformation($"Enviando movimiento a API: {JsonSerializer.Serialize(movimiento)}");
+
+                var response = await _httpClient.PostAsJsonAsync($"{_apiBaseUrl}/Create", movimiento);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Error API ({response.StatusCode}): {error}");
+                    throw new HttpRequestException($"Error al crear movimiento: {response.StatusCode} - {error}");
+                }
+
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
-                return result ?? throw new InvalidOperationException("Error al crear el movimiento: respuesta nula");
+                return result ?? throw new InvalidOperationException("La API devolvió un resultado nulo");
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al crear el movimiento");
                 throw new Exception($"Error al crear el movimiento: {ex.Message}", ex);
             }
         }
@@ -66,13 +108,24 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{id}", movimiento);
-                response.EnsureSuccessStatusCode();
+                _logger.LogInformation($"Actualizando movimiento {id}: {JsonSerializer.Serialize(movimiento)}");
+
+                var url = $"{_apiBaseUrl}/Edit";
+                var response = await _httpClient.PutAsJsonAsync(url, movimiento);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Error al actualizar movimiento: {content}");
+                    throw new HttpRequestException($"Error al actualizar: {response.StatusCode} - {content}");
+                }
+
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
-                return result ?? throw new InvalidOperationException($"Error al actualizar el movimiento con ID {id}");
+                return result ?? throw new InvalidOperationException($"Error al actualizar el movimiento {id}");
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"Error al actualizar movimiento {id}");
                 throw new Exception($"Error al actualizar el movimiento {id}: {ex.Message}", ex);
             }
         }
@@ -81,12 +134,24 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.DeleteAsync($"{_apiUrl}/{id}");
-                response.EnsureSuccessStatusCode();
+                _logger.LogInformation($"Iniciando eliminación del movimiento {id}");
+                var url = $"{_apiBaseUrl}/Delete?id={id}";
+                _logger.LogInformation($"URL de eliminación: {url}");
+
+                var response = await _httpClient.DeleteAsync(url);
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta del servidor: Status={response.StatusCode}, Content={content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error al eliminar: Status={response.StatusCode}, Content={content}");
+                    throw new HttpRequestException($"Error al eliminar el movimiento: {response.StatusCode}");
+                }
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                throw new Exception($"Error al eliminar el movimiento {id}: {ex.Message}", ex);
+                _logger.LogError(ex, $"Error al eliminar el movimiento {id}");
+                throw;
             }
         }
 
@@ -94,7 +159,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/InformeGeneral?importacionId={id}", movimiento);
+                var response = await _httpClient.PostAsJsonAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={id}", movimiento);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
                 return result ?? throw new Exception("Error al generar informe general: respuesta nula");
@@ -111,7 +176,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             try
             {
 
-                var url = $"{_apiUrl}/RegistroRequerimientos/{id}";
+                var url = $"{_apiBaseUrl}/RegistroRequerimientos/{id}";
                 var response = await _httpClient.PostAsJsonAsync(url, movimiento);
                 var content = await response.Content.ReadAsStringAsync();
                 if (!response.IsSuccessStatusCode)
@@ -183,8 +248,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             {
                 _logger.LogInformation("Iniciando solicitud para obtener importaciones");
 
-                // Corregir la URL para usar el endpoint correcto
-                var response = await _httpClient.GetAsync($"{_apiUrl}/GetAll");
+                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/GetAll");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -225,7 +289,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Change the endpoint to match your API controller
                 var empresaUrl = "/api/Empresa/GetAll";
                 var response = await _httpClient.GetAsync(empresaUrl);
                 response.EnsureSuccessStatusCode();
@@ -239,7 +302,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
-                // Check if the response has a 'value' property
                 var empresasArray = root.TryGetProperty("value", out var valueElement)
                     ? valueElement
                     : root;
@@ -263,10 +325,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Add logging to debug the API call
-                Console.WriteLine($"Calling API: {_apiUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+                Console.WriteLine($"Calling API: {_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
 
-                var response = await _httpClient.GetAsync($"{_apiUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -288,7 +349,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         options
                     );
 
-                    // Log the number of records deserialized
                     Console.WriteLine($"Deserialized {registros?.Count ?? 0} records");
 
                     return registros ?? new List<RegistroRequerimientosViewModel>();
@@ -310,7 +370,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<RegistroRequerimientosViewModel>($"{_apiUrl}/{id}");
+                var response = await _httpClient.GetFromJsonAsync<RegistroRequerimientosViewModel>($"{_apiBaseUrl}/{id}");
                 return response ?? throw new Exception($"No se encontró el registro con ID {id}");
             }
             catch (HttpRequestException ex)
@@ -323,8 +383,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Changed importacionId to barcoId to match the endpoint parameter
-                var response = await _httpClient.GetAsync($"{_apiUrl}/InformeGeneral?importacionId={barcoId}");
+                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -358,7 +417,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_apiUrl}/GetAll");
+                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/GetAll");
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<IEnumerable<Movimiento>>();
                 return result ?? Enumerable.Empty<Movimiento>();
@@ -373,7 +432,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_apiUrl}/{id}");
+                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/{id}");
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
                 return result ?? throw new KeyNotFoundException($"No se encontró el movimiento con ID {id}");
@@ -388,7 +447,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(_apiUrl, movimiento);
+                var response = await _httpClient.PostAsJsonAsync(_apiBaseUrl, movimiento);
                 response.EnsureSuccessStatusCode();
                 var result = await response.Content.ReadFromJsonAsync<Movimiento>();
                 return result ?? throw new InvalidOperationException("Error al crear el movimiento");
@@ -403,7 +462,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{movimiento.id}", movimiento);
+                var response = await _httpClient.PutAsJsonAsync($"{_apiBaseUrl}/{movimiento.id}", movimiento);
                 response.EnsureSuccessStatusCode();
             }
             catch (HttpRequestException ex)
@@ -416,7 +475,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.DeleteAsync($"{_apiUrl}/{id}");
+                var response = await _httpClient.DeleteAsync($"{_apiBaseUrl}/{id}");
                 response.EnsureSuccessStatusCode();
             }
             catch (HttpRequestException ex)
@@ -429,7 +488,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/{id}?userId={userId}", viewModel);
+                var response = await _httpClient.PutAsJsonAsync($"{_apiBaseUrl}/{id}?userId={userId}", viewModel);
                 response.EnsureSuccessStatusCode();
             }
             catch (HttpRequestException ex)
@@ -441,11 +500,20 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_apiUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}");
-                response.EnsureSuccessStatusCode();
+                _logger.LogInformation($"Solicitando cálculo de movimientos para importación {importacionId} y empresa {idempresa}");
 
+                var url = $"{_apiBaseUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}";
+                _logger.LogInformation($"URL de la solicitud: {url}");
+
+                var response = await _httpClient.GetAsync(url);
                 var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"API Response: {content}");
+                _logger.LogInformation($"Respuesta API: {content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = TryGetErrorMessage(content);
+                    throw new HttpRequestException($"Error del servidor: {errorMessage}");
+                }
 
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
@@ -454,36 +522,126 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 {
                     var options = new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true,
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                        PropertyNameCaseInsensitive = true
                     };
 
                     var movimientosDtos = JsonSerializer.Deserialize<List<MovimientosCumulatedDto>>(dataElement.GetRawText(), options);
 
-                    if (movimientosDtos != null && movimientosDtos.Any())
+                    if (movimientosDtos == null || !movimientosDtos.Any())
                     {
-                        return movimientosDtos.Select(m => new Movimiento
-                        {
-                            bodega = int.TryParse(m.bodega, out int bod) ? bod : 0,
-                            guia = int.TryParse(m.guia, out int gui) ? gui : 0,
-                            placa = m.placa,
-                            cantidadrequerida = m.cantidadrequerida,
-                            cantidadentregada = m.cantidadentregada,
-                            peso_faltante = m.peso_faltante,
-                            porcentaje = m.porcentaje
-                        }).ToList();
+                        _logger.LogInformation("No se encontraron movimientos para procesar");
+                        return new List<Movimiento>();
                     }
 
-                    // Si no hay movimientos, retornar lista vacía
-                    return new List<Movimiento>();
+                    return movimientosDtos.Select(m => new Movimiento
+                    {
+                        id = m.id,
+                        bodega = int.TryParse(m.bodega, out int bod) ? bod : null,
+                        guia = int.TryParse(m.guia, out int gui) ? gui : null,
+                        guia_alterna = m.guia_alterna,
+                        placa = m.placa,
+                        placa_alterna = m.placa_alterna,
+                        cantidadrequerida = m.cantidadrequerida,
+                        cantidadentregada = m.cantidadentregada,
+                        peso_faltante = m.peso_faltante,
+                        porcentaje = m.porcentaje
+                    }).ToList();
                 }
 
-                throw new Exception("Respuesta inválida: propiedad 'data' no encontrada.");
+                return new List<Movimiento>();
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al calcular los movimientos");
+                _logger.LogError(ex, "Error al calcular los movimientos: {Message}", ex.Message);
                 throw new Exception($"Error al calcular los movimientos: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<EscotillaApiResponse> GetEscotillasApiDataAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/CalculoEscotillas?importacionId={importacionId}";
+                var response = await _httpClient.GetAsync(url);
+
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                return JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
+                    ?? new EscotillaApiResponse();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de escotillas");
+                throw;
+            }
+        }
+
+        private string TryGetErrorMessage(string content)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("message", out var messageElement))
+                {
+                    return messageElement.GetString() ?? "Error desconocido";
+                }
+
+                return content;
+            }
+            catch
+            {
+                return content;
+            }
+        }
+
+        public async Task<EscotillasResumenViewModel> GetEscotillasDataAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/CalculoEscotillas?importacionId={importacionId}";
+                var response = await _httpClient.GetAsync(url);
+
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var apiResponse = JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
+                    ?? new EscotillaApiResponse();
+
+                return new EscotillasResumenViewModel
+                {
+                    Escotillas = apiResponse.Escotillas.Select(e => new EscotillaViewModel
+                    {
+                        NumeroEscotilla = e.NumeroEscotilla,
+                        CapacidadKg = e.CapacidadKg,
+                        DescargaRealKg = e.DescargaRealKg,
+                        DiferenciaKg = e.DiferenciaKg,
+                        Porcentaje = e.Porcentaje,
+                        Estado = e.Estado
+                    }).ToList(),
+                    CapacidadTotal = apiResponse.Totales.CapacidadTotal,
+                    DescargaTotal = apiResponse.Totales.DescargaTotal,
+                    DiferenciaTotal = apiResponse.Totales.DiferenciaTotal,
+                    PorcentajeTotal = apiResponse.Totales.PorcentajeTotal,
+                    EstadoGeneral = apiResponse.Totales.EstadoGeneral
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de escotillas");
+                throw;
             }
         }
     }

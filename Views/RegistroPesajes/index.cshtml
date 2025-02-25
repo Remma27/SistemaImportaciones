@@ -5,42 +5,61 @@
 }
 
 <div class="container-fluid px-4">
-    <!-- Header Card -->
-    <div class="card mb-4 shadow">
-        <div class="card-header bg-gradient bg-primary text-white py-3">
-            <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Registro de Pesajes</h4>
-        </div>
-        <div class="card-body bg-light">
-            <div class="row g-4 align-items-end">
-                <div class="col-md-8">
-                    <form method="get" class="needs-validation" novalidate>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <select name="selectedBarco" class="form-select shadow-sm" asp-items="ViewBag.Barcos" onchange="this.form.submit()" required>
-                                        <option value="">Seleccione una Importación</option>
-                                    </select>
-                                    <label><i class="fas fa-ship me-2"></i>Importación</label>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(Context.Request.Query["selectedBarco"]))
-                            {
+    <div class="table-responsive-custom">
+        <!-- Header Card -->
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-gradient bg-primary text-white py-3">
+                <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Registro de Pesajes</h4>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row gy-3">
+                    <div class="col-lg-8">
+                        <form method="get" class="needs-validation" novalidate>
+                            <div class="row gy-3">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <select name="empresaId" class="form-select shadow-sm" asp-items="ViewBag.Empresas" onchange="this.form.submit()" required>
-                                            <option value="">Seleccione una Empresa</option>
+                                        <select name="selectedBarco" 
+                                                class="form-select" 
+                                                asp-items="ViewBag.Barcos" 
+                                                onchange="this.form.submit()" 
+                                                required>
+                                            <option value="">Seleccione una Importación</option>
                                         </select>
-                                        <label><i class="fas fa-building me-2"></i>Empresa</label>
+                                        <label><i class="fas fa-ship me-2"></i>Importación</label>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una importación
+                                        </div>
                                     </div>
                                 </div>
-                            }
-                        </div>
-                    </form>
-                </div>
-                <div class="col-md-4 text-end">
-                    <button id="btnAgregar" class="btn btn-primary btn-lg shadow-sm">
-                        <i class="fas fa-plus-circle me-2"></i>Agregar Nuevo Registro
-                    </button>
+                                @if (!string.IsNullOrEmpty(Context.Request.Query["selectedBarco"]))
+                                {
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select name="empresaId" 
+                                                    class="form-select" 
+                                                    asp-items="ViewBag.Empresas" 
+                                                    onchange="this.form.submit()" 
+                                                    required>
+                                                <option value="">Seleccione una Empresa</option>
+                                            </select>
+                                            <label><i class="fas fa-building me-2"></i>Empresa</label>
+                                            <div class="invalid-feedback">
+                                                Por favor seleccione una empresa
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+                        <button id="btnAgregar" 
+                                class="btn btn-primary btn-lg w-100 w-lg-auto" 
+                                @(String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString()) || 
+                                  String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString()) ? "disabled" : "")>
+                            <i class="fas fa-plus-circle me-2"></i>Agregar Nuevo Registro
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -48,35 +67,36 @@
 
     <!-- Tables Container -->
     <div class="row g-4">
-        <!-- Tabla 2: Resumen Agregado -->
+        <!-- Resumen Agregado -->
         <div class="col-12">
             <div class="card shadow">
-                <div class="card-header bg-gradient bg-light py-3">
-                    <h5 class="mb-0 text-primary"><i class="fas fa-chart-bar me-2"></i>Resumen Agregado</h5>
+                <div class="card-header bg-gradient bg-purple py-3">
+                    <h5 class="mb-0 text-white"><i class="fas fa-chart-bar me-2"></i>Resumen Agregado</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table id="tabla2" class="table table-hover align-middle mb-0">
-                            <thead class="table-dark">
-                                <tr>
+                <div class="card-body">
+                    <div class="table-responsive-custom">
+                        <table id="tabla2" class="table table-hover align-middle">
+                            <thead>
+                                <tr class="bg-purple text-white">
                                     <th>Agroindustria</th>
-                                    <th class="text-end">Kilos Requeridos</th>
-                                    <th class="text-end">Toneladas Requeridas</th>
-                                    <th class="text-end">Descarga Kilos</th>
-                                    <th class="text-end">Faltante Kilos</th>
-                                    <th class="text-end">Toneladas Faltantes</th>
-                                    <th class="text-end">Camiones Faltantes</th>
-                                    <th class="text-center">Conteo Placas</th>
-                                    <th class="text-end">% Descarga</th>
+                                    <th class="text-end column-md">Kilos Req.</th>
+                                    <th class="text-end column-sm">Ton. Req.</th>
+                                    <th class="text-end column-md">Desc. Kilos</th>
+                                    <th class="text-end column-md">Falt. Kilos</th>
+                                    <th class="text-end column-sm">Ton. Falt.</th>
+                                    <th class="text-end column-sm">Cam. Falt.</th>
+                                    <th class="text-center column-sm">Placas</th>
+                                    <th class="text-end column-sm">% Desc.</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if (!Model.Tabla2Data.Any())
                                 {
                                     <tr>
-                                        <td colspan="9" class="text-center py-4">
+                                        <td colspan="10" class="text-center">
                                             <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle me-2"></i>No hay datos agregados disponibles
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>No hay registros disponibles</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -99,27 +119,30 @@
                                     }
                                 }
                             </tbody>
-                            <tfoot class="table-dark fw-bold">
-                                <tr>
-                                    <td>Totales</td>
-                                    <td class="text-end">@Model.Tabla2Data.Sum(x => x.KilosRequeridos).ToString("N0")</td>
-                                    <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasRequeridas).ToString("N2")</td>
-                                    <td class="text-end">@Model.Tabla2Data.Sum(x => x.DescargaKilos).ToString("N0")</td>
-                                    <td class="text-end">@Model.Tabla2Data.Sum(x => x.FaltanteKilos).ToString("N0")</td>
-                                    <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasFaltantes).ToString("N2")</td>
-                                    <td class="text-end">@Model.Tabla2Data.Sum(x => x.CamionesFaltantes).ToString("N2")</td>
-                                    <td class="text-center">@Model.Tabla2Data.Sum(x => x.ConteoPlacas)</td>
-                                    <td class="text-end">
-                                        @{
-                                            var kilosRequeridos = Model.Tabla2Data.Sum(x => x.KilosRequeridos);
-                                            var porcentaje = kilosRequeridos > 0 
-                                                ? (Model.Tabla2Data.Sum(x => x.DescargaKilos) * 100.0M / kilosRequeridos) 
-                                                : 0;
-                                        }
-                                        @porcentaje.ToString("N2")%
-                                    </td>
-                                </tr>
-                            </tfoot>
+                            @if (Model.Tabla2Data.Any())
+                            {
+                                <tfoot>
+                                    <tr class="table-purple">
+                                        <td>Totales</td>
+                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.KilosRequeridos).ToString("N0")</td>
+                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasRequeridas).ToString("N2")</td>
+                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.DescargaKilos).ToString("N0")</td>
+                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.FaltanteKilos).ToString("N0")</td>
+                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasFaltantes).ToString("N2")</td>
+                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.CamionesFaltantes).ToString("N2")</td>
+                                        <td class="text-center">@Model.Tabla2Data.Sum(x => x.ConteoPlacas)</td>
+                                        <td class="text-end">
+                                            @{
+                                                var kilosRequeridos = Model.Tabla2Data.Sum(x => x.KilosRequeridos);
+                                                var porcentaje = kilosRequeridos > 0 
+                                                    ? (Model.Tabla2Data.Sum(x => x.DescargaKilos) * 100.0M / kilosRequeridos) 
+                                                    : 0;
+                                            }
+                                            @porcentaje.ToString("N2")%
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            }
                         </table>
                     </div>
                 </div>
@@ -129,301 +152,255 @@
         <!-- Resumen General y Escotillas -->
         <div class="col-12">
             <div class="card shadow">
-                <div class="card-header bg-gradient bg-light py-3">
-                    <h5 class="mb-0 text-primary"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
+                <div class="card-header bg-gradient bg-success py-3">
+                    <h5 class="mb-0 text-white"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive mt-3">
-    <table class="table table-hover align-middle mb-0">
-        <thead class="table-dark">
-            <tr>
-                <th>Escotilla</th>
-                <th class="text-end">Capacidad (Kg)</th>
-                <th class="text-end">Descarga Real (Kg)</th>
-                <th class="text-end">Diferencia (Kg)</th>
-                <th class="text-end">% Descarga</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (!Model.EscotillasData.Any())
-            {
-                <tr>
-                    <td colspan="5" class="text-center py-4">
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle me-2"></i>No hay datos de escotillas disponibles
-                        </div>
-                    </td>
-                </tr>
-            }
-            else
-            {
-                @foreach (var escotilla in Model.EscotillasData)
-                {
-                    <tr>
-                        <td>Escotilla @escotilla.Numero</td>
-                        <td class="text-end">@escotilla.Capacidad.ToString("N0")</td>
-                        <td class="text-end">@escotilla.DescargaReal.ToString("N0")</td>
-                        <td class="text-end text-@(escotilla.Diferencia > 0 ? "danger" : "success")">
-                            @Math.Abs(escotilla.Diferencia).ToString("N0")
-                            @(escotilla.Diferencia < 0 ? " (Sobrante)" : " (Faltante)")
-                        </td>
-                        <td class="text-end">
-                            @{
-                                var porcentajeEscotilla = escotilla.Capacidad > 0 
-                                    ? Math.Round((escotilla.DescargaReal * 100.0M / escotilla.Capacidad), 2)
-                                    : 0;
-                            }
-                            @porcentajeEscotilla.ToString("N2")%
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-        @if (Model.EscotillasData.Any())
-        {
-            <tfoot class="table-dark fw-bold">
-                <tr>
-                    <td>Totales</td>
-                    <td class="text-end">@Model.TotalKilosRequeridos.ToString("N0")</td>
-                    <td class="text-end">@Model.TotalDescargaKilos.ToString("N0")</td>
-                    <td class="text-end text-@(Model.TotalKilosFaltantes > 0 ? "danger" : "success")">
-                        @Math.Abs(Model.TotalKilosFaltantes).ToString("N0")
-                        @(Model.TotalKilosFaltantes < 0 ? " (Sobrante)" : " (Faltante)")
-                    </td>
-                    <td class="text-end">
-                        @{
-                            var porcentajeTotal = Model.TotalKilosRequeridos > 0 
-                                ? Math.Round((Model.TotalDescargaKilos * 100.0M / Model.TotalKilosRequeridos), 2)
-                                : 0;
-                        }
-                        @porcentajeTotal.ToString("N2")%
-                    </td>
-                </tr>
-            </tfoot>
-        }
-    </table>
-</div>
-
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabla 1: Registros Individuales -->
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-gradient bg-light py-3">
-                    <h5 class="mb-0 text-primary"><i class="fas fa-table me-2"></i>Registros Individuales</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table id="tabla1" class="table table-hover align-middle mb-0">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Bodega</th>
-                                    <th>Guía</th>
-                                    <th>Placa</th>
-                                    <th>Peso Requerido</th>
-                                    <th>Peso Entregado</th>
-                                    <th>Peso Faltante</th>
-                                    <th>Porcentaje</th>
-                                    <th>Acciones</th>
+                <div class="card-body">
+                    <div class="table-responsive-custom">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr class="table-success-dark">
+                                    <th>Escotilla</th>
+                                    <th class="text-end">Capacidad (Kg)</th>
+                                    <th class="text-end">Descarga (Kg)</th>
+                                    <th class="text-end">Diferencia (Kg)</th>
+                                    <th class="text-end">% Descarga</th>
+                                    <th>Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (!Model.Tabla1Data.Any())
+                                @if (!Model.EscotillasData.Any())
                                 {
                                     <tr>
-                                        <td colspan="8" class="text-center py-4">
+                                        <td colspan="10" class="text-center">
                                             <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle me-2"></i>No hay registros disponibles
-                                            </div>
-                                   </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    @foreach (var item in Model.Tabla1Data)
-                                    {
-                                        <tr>
-                                            <td>@item.Bodega</td>
-                                            <td>@item.Guia</td>
-                                            <td>@item.Placa</td>
-                                            <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
-                                            <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
-                                            <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
-                                            <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                            <tfoot class="table-dark fw-bold">
-                                <tr>
-                                    <td colspan="3">Totales</td>
-                                    <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoRequerido).ToString("N0")</td>
-                                    <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoEntregado).ToString("N0")</td>
-                                    <td class="text-end">
-                                        @{
-                                            var pesoFaltante = Model.Tabla1Data.Any() 
-                                                ? Model.Tabla1Data.Last().PesoFaltante 
-                                                : 0;
-                                        }
-                                        @pesoFaltante.ToString("N0")
-                                    </td>
-                                    <td class="text-end">
-                                        @{
-                                            var porcentajeTabla1 = Model.Tabla1Data.Any() 
-                                                ? Model.Tabla1Data.Last().Porcentaje 
-                                                : 0;
-                                        }
-                                        @porcentajeTabla1.ToString("N2")%
-                                    </td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabla 3: Totales por Bodega -->
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-gradient bg-light py-3">
-                    <h5 class="mb-0 text-primary"><i class="fas fa-warehouse me-2"></i>Totales por Bodega</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table id="tabla3" class="table table-hover align-middle mb-0">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Bodega</th>
-                                    <th class="text-end">Total Kilos</th>
-                                    <th class="text-center">Cantidad de Traslados</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (!Model.TotalesPorBodega.Any())
-                                {
-                                    <tr>
-                                        <td colspan="3" class="text-center py-4">
-                                            <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle me-2"></i>No hay datos disponibles
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>No hay registros disponibles</span>
                                             </div>
                                         </td>
                                     </tr>
                                 }
                                 else
                                 {
-                                    @foreach (var item in Model.TotalesPorBodega)
+                                    @foreach (var escotilla in Model.EscotillasData)
                                     {
                                         <tr>
-                                            <td>@item.Bodega</td>
-                                            <td class="text-end">@item.TotalKilos.ToString("N2")</td>
-                                            <td class="text-center">@item.CantidadMovimientos</td>
+                                            <td>Escotilla @escotilla.NumeroEscotilla</td>
+                                            <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.DiferenciaKg.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.Porcentaje.ToString("N2")%</td>
+                                            <td>@escotilla.Estado</td>
                                         </tr>
                                     }
-                                    <!-- Fila de totales -->
-                                    <tr class="table-dark fw-bold">
-                                        <td>Totales</td>
-                                        <td class="text-end">@Model.TotalesPorBodega.Sum(x => x.TotalKilos).ToString("N2")</td>
-                                        <td class="text-center">@Model.TotalesPorBodega.Sum(x => x.CantidadMovimientos)</td>
-                                    </tr>
                                 }
                             </tbody>
+                            @if (Model.EscotillasData.Any())
+                            {
+                                <tfoot>
+                                    <tr class="table-success-dark">
+                                        <td>Totales</td>
+                                        <td class="text-end">@Model.CapacidadTotal.ToString("N0")</td>
+                                        <td class="text-end">@Model.DescargaTotal.ToString("N0")</td>
+                                        <td class="text-end">@Model.DiferenciaTotal.ToString("N0")</td>
+                                        <td class="text-end">@Model.PorcentajeTotal.ToString("N2")%</td>
+                                        <td>@Model.EstadoGeneral</td>
+                                    </tr>
+                                </tfoot>
+                            }
                         </table>
+                        <div class="p-3 bg-light border-top text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
+                            </small>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Tabla 1: Registros Individuales -->
+<div class="col-12">
+    <div class="card shadow">
+        <div class="card-header bg-gradient bg-info py-3">
+            <h5 class="mb-0 text-white"><i class="fas fa-table me-2"></i>Registros Individuales</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-scroll">
+                <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
+                    <thead>
+                        <tr class="table-info-dark">
+                            <th>Bodega</th>
+                            <th>Guía</th>
+                            <th>Guía Alterna</th>
+                            <th>Placa</th>
+                            <th>Placa Alterna</th>
+                            <th>Peso Requerido</th>
+                            <th>Peso Entregado</th>
+                            <th>Peso Faltante</th>
+                            <th>Porcentaje</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        @if (!Model.Tabla1Data.Any())
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No hay registros disponibles</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Tabla1Data)
+                            {
+                                <tr>
+                                    <td>@item.Bodega</td>
+                                    <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
+                                    <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
+                                    <td>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</td>
+                                    <td>@(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</td>
+                                    <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
+                                    <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
+                                    <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
+                                    <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-controller="RegistroPesajes" 
+                                            asp-action="Edit" 
+                                            asp-route-id="@item.Id"
+                                            asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
+                                            asp-route-empresaId="@Context.Request.Query["empresaId"]"
+                                            class="btn btn-warning btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-controller="RegistroPesajes" 
+                                            asp-action="Delete" 
+                                            asp-route-id="@item.Id"
+                                            asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
+                                            asp-route-empresaId="@Context.Request.Query["empresaId"]"
+                                            class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    @if (Model.Tabla1Data.Any())
+                    {
+                        <tfoot class="table-group-divider">
+                            <tr class="table-info-dark">
+                                <td>Totales</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoRequerido).ToString("N0")</td>
+                                <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoEntregado).ToString("N0")</td>
+                                <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.PesoFaltante.ToString("N0") ?? "0")</td>
+                                <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.Porcentaje.ToString("N2") ?? "0")%</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
             </div>
         </div>
     </div>
 </div>
 
+        <!-- Tabla 3: Totales por Bodega -->
+@{
+    var empresaSeleccionadaId = Context.Request.Query["empresaId"].ToString();
+    var empresasList = (IEnumerable<SelectListItem>)ViewBag.Empresas;
+    var selectedEmpresa = empresasList?.FirstOrDefault(e => e.Value == empresaSeleccionadaId);
+    var empresaSeleccionadaNombre = selectedEmpresa?.Text;
+    
+    // Debugging
+    System.Diagnostics.Debug.WriteLine($"Empresa seleccionada: {empresaSeleccionadaNombre}");
+    var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) && 
+                             empresaSeleccionadaNombre.Trim().Equals("COMERCIALIZADORA INTER-GLOBAL INTERGLO, S.R.L.", 
+                                                                    StringComparison.OrdinalIgnoreCase);
+    System.Diagnostics.Debug.WriteLine($"Mostrar tabla bodegas: {mostrarTablaBodegas}");
+    System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
+}
+
+<!-- Mostrar tabla de bodegas solo si es la empresa correcta -->
+@if (mostrarTablaBodegas && Model.TotalesPorBodega?.Any() == true)
+{
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-gradient bg-warning py-3">
+                <h5 class="mb-0 text-dark"><i class="fas fa-warehouse me-2"></i>Totales por Bodega</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-container">
+                    <table id="tabla3" class="table table-hover align-middle mb-0 table-fixed-header">
+                        <thead>
+                            <tr class="table-warning-dark">
+                                <th>Bodega</th>
+                                <th class="text-end">Total Kilos</th>
+                                <th class="text-center">Cantidad de Traslados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.TotalesPorBodega.Any())
+                            {
+                                <tr>
+                                    <td colspan="10" class="text-center">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>No hay registros disponibles</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.TotalesPorBodega)
+                                {
+                                    <tr>
+                                        <td>@item.Bodega</td>
+                                        <td class="text-end">@item.TotalKilos.ToString("N2")</td>
+                                        <td class="text-center">@item.CantidadMovimientos</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        @if (Model.TotalesPorBodega.Any())
+                        {
+                            <tfoot>
+                                <tr class="table-warning-dark">
+                                    <td>Totales</td>
+                                    <td class="text-end">@Model.TotalesPorBodega.Sum(x => x.TotalKilos).ToString("N2")</td>
+                                    <td class="text-center">@Model.TotalesPorBodega.Sum(x => x.CantidadMovimientos)</td>
+                                </tr>
+                            </tfoot>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+    </div>
+</div>
+
 @section Scripts {
+    <script src="~/js/registroPesajes.js"></script>
     <script>
-        // Función para cargar importaciones vía AJAX
-        function cargarImportaciones() {
-            $.ajax({
-                url: '/api/Importaciones/GetAll', // Asegúrate de que este endpoint retorne JSON con la lista
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    // Suponemos que la respuesta tiene la propiedad "value" o es directamente un array
-                    let importaciones = response.value || response;
-                    let select = $('#selectImportacion');
-                    select.empty();
-                    select.append($('<option>', { value: '', text: 'Seleccione una importación' }));
-                    $.each(importaciones, function(index, importacion) {
-                        // Se espera que cada objeto tenga properties 'Value' y 'Text'
-                        select.append($('<option>', { value: importacion.Value, text: importacion.Text }));
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error cargando importaciones: " + error);
-                }
-            });
-        }
-
-        // Función para cargar empresas según la importación seleccionada vía AJAX
-        function cargarEmpresas(importacionId) {
-            $.ajax({
-                url: '/api/Empresas/GetAll', // Actualiza la ruta según tu API
-                type: 'GET',
-                dataType: 'json',
-                data: { importacionId: importacionId },
-                success: function(response) {
-                    let empresas = response.value || response;
-                    let select = $('#selectEmpresa');
-                    select.empty();
-                    select.append($('<option>', { value: '', text: 'Seleccione una empresa' }));
-                    $.each(empresas, function(index, empresa) {
-                        // Se espera que cada objeto tenga properties 'Value' y 'Text'
-                        select.append($('<option>', { value: empresa.Value, text: empresa.Text }));
-                    });
-                    select.prop('disabled', false);
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error cargando empresas: " + error);
-                }
-            });
-        }
-
-        // Al cargar la página se obtienen las importaciones
-        $(document).ready(function () {
-            cargarImportaciones();
-            
-            $('#selectImportacion').on('change', function () {
-                var importacionId = $(this).val();
-                if (importacionId) {
-                    cargarEmpresas(importacionId);
-                } else {
-                    $('#selectEmpresa').empty().append($('<option>', { value: '', text: 'Seleccione una empresa' })).prop('disabled', true);
-                }
-            });
-
-            // Event handler for Agregar button
-            $('#btnAgregar').on('click', function() {
-                var importacionId = $('#selectImportacion').val();
-                var empresaId = $('#selectEmpresa').val();
-                
-                if (!importacionId || !empresaId) {
-                    alert('Por favor seleccione una importación y una empresa');
-                    return;
-                }
-
-                // Add your logic here to process the selected values
-                window.location.href = '/RegistroPesajes/Create?importacionId=' + importacionId + '&empresaId=' + empresaId;
-            });
+        $(document).ready(function() {
+            initializeServerData(
+                '@Context.Request.Query["selectedBarco"]',
+                '@Context.Request.Query["empresaId"]'
+            );
         });
     </script>
 }

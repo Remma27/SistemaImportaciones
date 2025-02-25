@@ -24,7 +24,7 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         [HttpGet]
         public IActionResult IniciarSesion()
         {
-            return View(); // Asegúrate de tener Views/Auth/IniciarSesion.cshtml
+            return View();
         }
 
         [HttpGet]
@@ -76,7 +76,7 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         }
 
         [HttpPost]
-        [IgnoreAntiforgeryToken] // O usar [ValidateAntiForgeryToken] conforme al formulario
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> IniciarSesion(LoginViewModel model)
         {
             if (!ModelState.IsValid)
@@ -109,11 +109,10 @@ namespace SistemaDeGestionDeImportaciones.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true, // Ajusta según sea necesario
+                IsPersistent = true,
                 ExpiresUtc = DateTimeOffset.UtcNow.AddHours(12)
             };
 
-            // Firmar al usuario para crear la cookie
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),

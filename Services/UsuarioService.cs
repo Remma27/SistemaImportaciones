@@ -13,11 +13,8 @@ namespace SistemaDeGestionDeImportaciones.Services
         public UsuarioService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            // Si ApiSettings:BaseUrl es "http://localhost:5079",
-            // entonces _apiUrl será "http://localhost:5079/api/Usuario"
             var baseUrl = configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5079";
             _apiUrl = baseUrl.EndsWith("/") ? $"{baseUrl}api/Usuario" : $"{baseUrl}/api/Usuario";
-            // Opcional: registrar en el log para verificar _apiUrl
             Console.WriteLine($"[Debug] _apiUrl: {_apiUrl}");
         }
 
@@ -90,18 +87,16 @@ namespace SistemaDeGestionDeImportaciones.Services
             }
         }
 
-        // Implementación de IUsuarioService para registrar usuario
         public async Task<OperationResult> RegistrarUsuarioAsync(RegistroViewModel model)
         {
             try
             {
-                // Mapear RegistroViewModel a Usuario.
                 var usuarioToCreate = new Usuario
                 {
-                    id = 0, // debe ser 0 para crear un nuevo usuario.
+                    id = 0,
                     nombre = model.Nombre,
                     email = model.Email,
-                    password_hash = model.Password, // Aquí podrías aplicar un hash si es necesario.
+                    password_hash = model.Password,
                     fecha_creacion = DateTime.Now,
                     activo = true
                 };
@@ -121,7 +116,6 @@ namespace SistemaDeGestionDeImportaciones.Services
             }
         }
 
-        // Implementación de IUsuarioService para iniciar sesión
         public async Task<OperationResult> IniciarSesionAsync(LoginViewModel model)
         {
             try

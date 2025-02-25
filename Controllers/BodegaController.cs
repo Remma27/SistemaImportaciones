@@ -16,7 +16,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
-        // GET: Show list of bodegas
         public async Task<IActionResult> Index()
         {
             try
@@ -26,19 +25,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
             catch (Exception)
             {
-                //_logger.LogError(ex, "Error al obtener las bodegas");
                 ViewBag.Error = "Error al cargar las bodegas. Por favor, intente más tarde.";
                 return View(new List<Empresa_Bodegas>());
             }
         }
 
-        // GET: Show the create form for a new bodega
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Create a new bodega using the service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Empresa_Bodegas nuevaBodega)
@@ -47,7 +43,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    nuevaBodega.idusuario = User.GetUserId(); // Assign the ID of the authenticated user
+                    nuevaBodega.idusuario = User.GetUserId();
                     await _bodegaService.CreateAsync(nuevaBodega);
                     TempData["Success"] = "Bodega creada correctamente.";
                     return RedirectToAction("Index", "Bodega");
@@ -61,7 +57,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(nuevaBodega);
         }
 
-        // GET: Muestra el formulario para editar una bodega
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -82,7 +77,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: Edita una bodega consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Empresa_Bodegas updatedBodega)
@@ -96,7 +90,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    updatedBodega.idusuario = User.GetUserId(); // Asignar el ID del usuario autenticado
+                    updatedBodega.idusuario = User.GetUserId();
                     await _bodegaService.UpdateAsync(id, updatedBodega);
                     TempData["Success"] = "Bodega actualizada correctamente.";
                     return RedirectToAction("Index", "Bodega");
@@ -110,7 +104,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(updatedBodega);
         }
 
-        // GET: Muestra el formulario para eliminar una bodega
         public async Task<IActionResult> Delete(int id)
         {
             var bodega = await _bodegaService.GetByIdAsync(id);
@@ -121,7 +114,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(bodega);
         }
 
-        // POST: Elimina una bodega consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

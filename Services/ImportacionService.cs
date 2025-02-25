@@ -14,7 +14,6 @@ public class ImportacionService : IImportacionService
     public ImportacionService(HttpClient httpClient, IConfiguration configuration, ILogger<ImportacionService> logger)
     {
         _httpClient = httpClient;
-        // Change the API route to match the controller
         _apiBaseUrl = "api/Importaciones/";
         _logger = logger;
     }

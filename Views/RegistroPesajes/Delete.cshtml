@@ -1,0 +1,57 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroPesajesIndividual
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white">
+            <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ¿Está seguro que desea eliminar este registro?
+            </div>
+
+            <dl class="row">
+                <dt class="col-sm-3">Guía</dt>
+                <dd class="col-sm-9">@(Model.Guia ?? "N/A")</dd>
+
+                <dt class="col-sm-3">Guía Alterna</dt>
+                <dd class="col-sm-9">@(Model.GuiaAlterna ?? "N/A")</dd>
+
+                <dt class="col-sm-3">Placa</dt>
+                <dd class="col-sm-9">@(Model.Placa ?? "N/A")</dd>
+
+                <dt class="col-sm-3">Placa Alterna</dt>
+                <dd class="col-sm-9">@(Model.PlacaAlterna ?? "N/A")</dd>
+
+                <dt class="col-sm-3">Peso Entregado</dt>
+                <dd class="col-sm-9">@Model.PesoEntregado.ToString("N0") kg</dd>
+
+                <dt class="col-sm-3">Escotilla</dt>
+                <dd class="col-sm-9">@Model.Escotilla</dd>
+
+                <dt class="col-sm-3">Bodega</dt>
+                <dd class="col-sm-9">@(Model.Bodega ?? "N/A")</dd>
+            </dl>
+
+            <form asp-action="DeleteConfirmed" method="post" class="mt-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" name="selectedBarco" value="@Model.IdImportacion" />
+                <input type="hidden" name="empresaId" value="@Model.IdEmpresa" />
+                
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>Eliminar
+                    </button>
+                    <a asp-action="Index" 
+                       asp-route-selectedBarco="@Model.IdImportacion" 
+                       asp-route-empresaId="@Model.IdEmpresa" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

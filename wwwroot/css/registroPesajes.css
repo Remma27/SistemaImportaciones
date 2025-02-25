@@ -3,6 +3,10 @@
     padding: 1rem;
 }
 
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
 .table > thead > tr > th {
     background-color: #f8f9fa;
     border-bottom: 2px solid #dee2e6;
@@ -72,4 +76,52 @@
 
 .btn-primary:hover {
     background: linear-gradient(to right, #0b5ed7, #0a58ca);
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+.table-purple {
+    background-color: #6f42c1 !important;
+    color: white !important;
+}
+.table-success-dark {
+    background-color: #198754 !important;
+    color: white !important;
+}
+.table-info-dark {
+    background-color: #0dcaf0 !important;
+    color: white !important;
+}
+.table-warning-dark {
+    background-color: #ffc107 !important;
+    color: black !important;
+}
+
+.table-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.table-fixed-header {
+    position: relative;
+}
+
+.table-fixed-header thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: inherit;
+}
+
+.table-fixed-header tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background-color: inherit;
+}
+
+.table td,
+.table th {
+    white-space: nowrap;
 }

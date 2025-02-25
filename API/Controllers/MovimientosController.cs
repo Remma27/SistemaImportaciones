@@ -3,6 +3,7 @@ using API.Models;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
+using Microsoft.Build.Framework;
 
 
 namespace API.Controllers
@@ -101,7 +102,7 @@ namespace API.Controllers
                                 RequeridoKg = (double)g.Where(m => m.tipotransaccion == 1)
                                              .Sum(m => m.cantidadrequerida ?? 0),
                                 DescargaKg = (double)g.Where(m => m.tipotransaccion == 2)
-                                            .Sum(m => m.cantidadentregada ?? 0),
+                                            .Sum(m => m.cantidadentregada),
                                 ConteoPlacas = g.Where(m => m.placa != null)
                                               .Select(m => m.placa)
                                               .Distinct()
@@ -170,7 +171,7 @@ namespace API.Controllers
                                         Importacion = b.nombrebarco ?? string.Empty,
                                         IdEmpresa = m.idempresa,
                                         Empresa = e.nombreempresa ?? string.Empty,
-                                        TipoTransaccion = m.tipotransaccion ?? 0,
+                                        TipoTransaccion = m.tipotransaccion,
                                         CantidadRequerida = m.cantidadrequerida ?? 0,
                                         CantidadCamiones = m.cantidadcamiones ?? 0
                                     })
@@ -194,62 +195,81 @@ namespace API.Controllers
         {
             try
             {
-                // Obtener y ordenar los movimientos directamente en la consulta
-                var movimientosList = await _context.Movimientos
-                    .Where(m => m.idimportacion == importacionId && m.idempresa == idempresa)
-                    .ToListAsync();
+                if (importacionId <= 0 || idempresa <= 0)
+                {
+                    return BadRequest(new { message = "ImportacionId y idempresa deben ser mayores a 0" });
+                }
 
-                // Ordenar la lista usando ordenamiento numérico para las guías
-                movimientosList = movimientosList
-                    .OrderBy(m =>
-                    {
-                        if (string.IsNullOrEmpty(m.guia?.ToString())) return int.MinValue;
-                        return int.TryParse(m.guia.ToString(), out int numero) ? numero : int.MinValue;
-                    })
-                    .ToList();
+                // Obtener y ordenar los movimientos
+                var movimientosList = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId &&
+                               m.idempresa == idempresa)
+                    .OrderBy(m => m.fechahora)
+                    .ToListAsync();
 
                 if (!movimientosList.Any())
                 {
-                    return Ok(new { count = 0, data = new List<MovimientosCumulatedDto>() });
-                }
-
-                // Resto del código igual...
-                decimal initialRequired = movimientosList.First().cantidadrequerida ?? 0;
-
-                if (initialRequired <= 0)
-                {
-                    return BadRequest(new { message = "El primer movimiento no tiene una cantidad requerida válida." });
-                }
-
-                decimal cumulativeDelivered = 0;
-                var result = new List<MovimientosCumulatedDto>();
-
-                foreach (var m in movimientosList)
-                {
-                    decimal delivered = m.cantidadentregada ?? 0;
-                    cumulativeDelivered += delivered;
-                    // Peso faltante: valor inicial menos lo acumulado
-                    decimal pesoFaltante = initialRequired - cumulativeDelivered;
-                    // Porcentaje de entrega
-                    decimal porcentaje = initialRequired > 0 ? (cumulativeDelivered / initialRequired) * 100 : 0;
-
-                    result.Add(new MovimientosCumulatedDto
+                    return Ok(new
                     {
-                        bodega = m.bodega?.ToString() ?? string.Empty,
-                        guia = m.guia?.ToString() ?? string.Empty,
-                        placa = m.placa ?? string.Empty,
-                        cantidadrequerida = m.cantidadrequerida ?? 0,
-                        cantidadentregada = delivered,
-                        peso_faltante = pesoFaltante,
-                        porcentaje = Math.Round(porcentaje, 2)
+                        count = 0,
+                        data = new List<MovimientosCumulatedDto>(),
+                        message = "No hay movimientos registrados para esta combinación de importación y empresa"
                     });
                 }
 
-                return Ok(new { count = result.Count, data = result });
+                // Obtener el requerimiento inicial
+                var requerimiento = await _context.Movimientos
+                    .FirstOrDefaultAsync(m => m.idimportacion == importacionId &&
+                                            m.idempresa == idempresa &&
+                                            m.tipotransaccion == 1);
+
+                // Si no hay requerimiento, usar valores por defecto
+                decimal requeridoTotal = requerimiento?.cantidadrequerida ?? 0;
+
+                var result = new List<MovimientosCumulatedDto>();
+                decimal acumulado = 0;
+
+                // Procesar solo los movimientos de tipo 2 (entregas)
+                foreach (var mov in movimientosList.Where(m => m.tipotransaccion == 2))
+                {
+                    acumulado += mov.cantidadentregada;
+
+                    result.Add(new MovimientosCumulatedDto
+                    {
+                        id = mov.id,
+                        bodega = mov.bodega?.ToString() ?? "",
+                        guia = mov.guia?.ToString() ?? "",
+                        guia_alterna = mov.guia_alterna ?? "",
+                        placa = mov.placa ?? "",
+                        placa_alterna = mov.placa_alterna ?? "",
+                        cantidadrequerida = requeridoTotal,
+                        cantidadentregada = mov.cantidadentregada,
+                        peso_faltante = requeridoTotal - acumulado,
+                        porcentaje = requeridoTotal > 0
+                            ? Math.Round((acumulado * 100 / requeridoTotal), 2)
+                            : 0
+                    });
+                }
+
+                return Ok(new
+                {
+                    count = result.Count,
+                    data = result,
+                    requerimiento = requerimiento != null,
+                    requeridoTotal = requeridoTotal,
+                    message = requerimiento == null
+                        ? "No se encontró un requerimiento inicial, mostrando entregas sin requerimiento"
+                        : null
+                });
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                return StatusCode(500, new { message = $"Error al calcular los movimientos: {ex.Message}" });
+                return StatusCode(500, new
+                {
+                    message = "Error al procesar la solicitud",
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
             }
         }
     }

@@ -81,9 +81,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var movimiento = new Movimiento
             {
                 // La API espera propiedades en minúscula, por lo que se mapean según se requieren
-                fechahora = viewModel.FechaHora,
-                idimportacion = viewModel.IdImportacion,
-                idempresa = viewModel.IdEmpresa,
+                fechahora = viewModel.FechaHora ?? DateTime.Now,
+                idimportacion = viewModel.IdImportacion ?? 0,
+                idempresa = viewModel.IdEmpresa ?? 0,
                 // Si viewModel.TipoTransaccion es nulo, se asigna 1 (valor fijo)
                 tipotransaccion = viewModel.TipoTransaccion ?? 1,
                 cantidadrequerida = viewModel.CantidadRequerida,

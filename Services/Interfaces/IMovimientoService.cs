@@ -22,5 +22,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
         Task<Movimiento> RegistroRequerimientos(int id, Movimiento movimiento);
         Task<Movimiento> InformeGeneral(int id, Movimiento movimiento);
         Task<List<Movimiento>> CalculoMovimientos(int importacionId, int idempresa);
+        Task<EscotillasResumenViewModel> GetEscotillasDataAsync(int importacionId);
     }
 }

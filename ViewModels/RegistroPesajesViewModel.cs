@@ -15,7 +15,14 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 
         public List<TotalesPorBodegaViewModel> TotalesPorBodega { get; set; } = new();
 
-        public required List<EscotillaViewModel> EscotillasData { get; set; }
+        // Propiedades para el resumen de escotillas
+        public List<EscotillaViewModel> EscotillasData { get; set; } = new();
+        public decimal CapacidadTotal { get; set; }
+        public decimal DescargaTotal { get; set; }
+        public decimal DiferenciaTotal { get; set; }
+        public decimal PorcentajeTotal { get; set; }
+        public string EstadoGeneral { get; set; } = string.Empty;
+
         public Barco? Barco { get; set; }
         public Dictionary<int, decimal> DescargaPorEscotilla { get; set; } = new();
         public double? TotalCargaKilos { get; set; }
@@ -23,7 +30,6 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal TotalDescargado => Tabla2Data.Sum(x => x.DescargaKilos);
         public decimal TotalFaltante => TotalRequerido - TotalDescargado;
         public decimal FaltanteTotal { get; set; }
-        public decimal PorcentajeTotal { get; set; }
 
         public decimal TotalKilosRequeridos { get; set; }
         public decimal TotalDescargaKilos { get; set; }
@@ -88,16 +94,5 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal TotalKilos { get; set; }
         public int CantidadMovimientos { get; set; }
 
-    }
-
-    public class EscotillaViewModel
-    {
-        public int Numero { get; set; }
-        public decimal Capacidad { get; set; }
-        public decimal DescargaEsperada { get; set; }
-        public decimal DescargaReal { get; set; }
-        public decimal Diferencia { get; set; }
-        public decimal Porcentaje { get; set; }
-        public bool EsSobrante { get; set; }
     }
 }

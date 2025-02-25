@@ -5,43 +5,61 @@
 }
 
 <div class="container-fluid px-4">
-    <!-- Header Card -->
-    <div class="card mb-4 shadow">
-        <div class="card-header bg-gradient bg-primary text-white py-3">
-            <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Registro de Pesajes</h4>
-        </div>
-        <div class="card-body bg-light">
-            <div class="row g-4 align-items-end">
-                <div class="col-md-8">
-                    <form method="get" class="needs-validation" novalidate>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <select name="selectedBarco" class="form-select shadow-sm" asp-items="ViewBag.Barcos" onchange="this.form.submit()" required>
-                                        <option value="">Seleccione una Importación</option>
-                                    </select>
-                                    <label><i class="fas fa-ship me-2"></i>Importación</label>
-                                </div>
-                            </div>
-                            @if (!string.IsNullOrEmpty(Context.Request.Query["selectedBarco"]))
-                            {
+    <div class="table-responsive-custom">
+        <!-- Header Card -->
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-gradient bg-primary text-white py-3">
+                <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Registro de Pesajes</h4>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row gy-3">
+                    <div class="col-lg-8">
+                        <form method="get" class="needs-validation" novalidate>
+                            <div class="row gy-3">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <select name="empresaId" class="form-select shadow-sm" asp-items="ViewBag.Empresas" onchange="this.form.submit()" required>
-                                            <option value="">Seleccione una Empresa</option>
+                                        <select name="selectedBarco" 
+                                                class="form-select" 
+                                                asp-items="ViewBag.Barcos" 
+                                                onchange="this.form.submit()" 
+                                                required>
+                                            <option value="">Seleccione una Importación</option>
                                         </select>
-                                        <label><i class="fas fa-building me-2"></i>Empresa</label>
+                                        <label><i class="fas fa-ship me-2"></i>Importación</label>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una importación
+                                        </div>
                                     </div>
                                 </div>
-                            }
-                        </div>
-                    </form>
-                </div>
-                <div class="col-md-4 text-end">
-                    <button id="btnAgregar" class="btn btn-primary btn-lg shadow-sm" 
-                            @(String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString()) || String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString()) ? "disabled" : "")>
-                        <i class="fas fa-plus-circle me-2"></i>Agregar Nuevo Registro
-                    </button>
+                                @if (!string.IsNullOrEmpty(Context.Request.Query["selectedBarco"]))
+                                {
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select name="empresaId" 
+                                                    class="form-select" 
+                                                    asp-items="ViewBag.Empresas" 
+                                                    onchange="this.form.submit()" 
+                                                    required>
+                                                <option value="">Seleccione una Empresa</option>
+                                            </select>
+                                            <label><i class="fas fa-building me-2"></i>Empresa</label>
+                                            <div class="invalid-feedback">
+                                                Por favor seleccione una empresa
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+                        <button id="btnAgregar" 
+                                class="btn btn-primary btn-lg w-100 w-lg-auto" 
+                                @(String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString()) || 
+                                  String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString()) ? "disabled" : "")>
+                            <i class="fas fa-plus-circle me-2"></i>Agregar Nuevo Registro
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -49,35 +67,36 @@
 
     <!-- Tables Container -->
     <div class="row g-4">
-        <!-- Tabla 2: Resumen Agregado -->
+        <!-- Resumen Agregado -->
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header bg-gradient bg-purple py-3">
                     <h5 class="mb-0 text-white"><i class="fas fa-chart-bar me-2"></i>Resumen Agregado</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-container">
-                        <table id="tabla2" class="table table-hover align-middle mb-0 table-fixed-header">
+                <div class="card-body">
+                    <div class="table-responsive-custom">
+                        <table id="tabla2" class="table table-hover align-middle">
                             <thead>
-                                <tr class="table-purple">
+                                <tr class="bg-purple text-white">
                                     <th>Agroindustria</th>
-                                    <th class="text-end">Kilos Requeridos</th>
-                                    <th class="text-end">Toneladas Requeridas</th>
-                                    <th class="text-end">Descarga Kilos</th>
-                                    <th class="text-end">Faltante Kilos</th>
-                                    <th class="text-end">Toneladas Faltantes</th>
-                                    <th class="text-end">Camiones Faltantes</th>
-                                    <th class="text-center">Conteo Placas</th>
-                                    <th class="text-end">% Descarga</th>
+                                    <th class="text-end column-md">Kilos Req.</th>
+                                    <th class="text-end column-sm">Ton. Req.</th>
+                                    <th class="text-end column-md">Desc. Kilos</th>
+                                    <th class="text-end column-md">Falt. Kilos</th>
+                                    <th class="text-end column-sm">Ton. Falt.</th>
+                                    <th class="text-end column-sm">Cam. Falt.</th>
+                                    <th class="text-center column-sm">Placas</th>
+                                    <th class="text-end column-sm">% Desc.</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if (!Model.Tabla2Data.Any())
                                 {
                                     <tr>
-                                        <td colspan="9" class="text-center py-4">
+                                        <td colspan="10" class="text-center">
                                             <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle me-2"></i>No hay datos agregados disponibles
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>No hay registros disponibles</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -136,78 +155,67 @@
                 <div class="card-header bg-gradient bg-success py-3">
                     <h5 class="mb-0 text-white"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive mt-3">
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr class="table-success-dark">
-                <th>Escotilla</th>
-                <th class="text-end">Capacidad (Kg)</th>
-                <th class="text-end">Descarga Real (Kg)</th>
-                <th class="text-end">Diferencia (Kg)</th>
-                <th class="text-end">% Descarga</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (!Model.EscotillasData.Any())
-            {
-                <tr>
-                    <td colspan="5" class="text-center py-4">
-                        <div class="alert alert-info mb-0">
-                            <i class="fas fa-info-circle me-2"></i>No hay datos de escotillas disponibles
-                        </div>
-                    </td>
-                </tr>
-            }
-            else
-            {
-                @foreach (var escotilla in Model.EscotillasData)
-                {
-                    <tr>
-                        <td>Escotilla @escotilla.Numero</td>
-                        <td class="text-end">@escotilla.Capacidad.ToString("N0")</td>
-                        <td class="text-end">@escotilla.DescargaReal.ToString("N0")</td>
-                        <td class="text-end text-@(escotilla.Diferencia > 0 ? "danger" : "success")">
-                            @Math.Abs(escotilla.Diferencia).ToString("N0")
-                            @(escotilla.Diferencia < 0 ? " (Sobrante)" : " (Faltante)")
-                        </td>
-                        <td class="text-end">
-                            @{
-                                var porcentajeEscotilla = escotilla.Capacidad > 0 
-                                    ? Math.Round((escotilla.DescargaReal * 100.0M / escotilla.Capacidad), 2)
-                                    : 0;
+                <div class="card-body">
+                    <div class="table-responsive-custom">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr class="table-success-dark">
+                                    <th>Escotilla</th>
+                                    <th class="text-end">Capacidad (Kg)</th>
+                                    <th class="text-end">Descarga (Kg)</th>
+                                    <th class="text-end">Diferencia (Kg)</th>
+                                    <th class="text-end">% Descarga</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.EscotillasData.Any())
+                                {
+                                    <tr>
+                                        <td colspan="10" class="text-center">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>No hay registros disponibles</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var escotilla in Model.EscotillasData)
+                                    {
+                                        <tr>
+                                            <td>Escotilla @escotilla.NumeroEscotilla</td>
+                                            <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.DiferenciaKg.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.Porcentaje.ToString("N2")%</td>
+                                            <td>@escotilla.Estado</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            @if (Model.EscotillasData.Any())
+                            {
+                                <tfoot>
+                                    <tr class="table-success-dark">
+                                        <td>Totales</td>
+                                        <td class="text-end">@Model.CapacidadTotal.ToString("N0")</td>
+                                        <td class="text-end">@Model.DescargaTotal.ToString("N0")</td>
+                                        <td class="text-end">@Model.DiferenciaTotal.ToString("N0")</td>
+                                        <td class="text-end">@Model.PorcentajeTotal.ToString("N2")%</td>
+                                        <td>@Model.EstadoGeneral</td>
+                                    </tr>
+                                </tfoot>
                             }
-                            @porcentajeEscotilla.ToString("N2")%
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-        @if (Model.EscotillasData.Any())
-        {
-            <tfoot>
-                <tr class="table-success-dark">
-                    <td>Totales</td>
-                    <td class="text-end">@Model.TotalKilosRequeridos.ToString("N0")</td>
-                    <td class="text-end">@Model.TotalDescargaKilos.ToString("N0")</td>
-                    <td class="text-end text-@(Model.TotalKilosFaltantes > 0 ? "danger" : "success")">
-                        @Math.Abs(Model.TotalKilosFaltantes).ToString("N0")
-                        @(Model.TotalKilosFaltantes < 0 ? " (Sobrante)" : " (Faltante)")
-                    </td>
-                    <td class="text-end">
-                        @{
-                            var porcentajeTotal = Model.TotalKilosRequeridos > 0 
-                                ? Math.Round((Model.TotalDescargaKilos * 100.0M / Model.TotalKilosRequeridos), 2)
-                                : 0;
-                        }
-                        @porcentajeTotal.ToString("N2")%
-                    </td>
-                </tr>
-            </tfoot>
-        }
-    </table>
-</div>
-
+                        </table>
+                        <div class="p-3 bg-light border-top text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
+                            </small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -219,7 +227,7 @@
             <h5 class="mb-0 text-white"><i class="fas fa-table me-2"></i>Registros Individuales</h5>
         </div>
         <div class="card-body p-0">
-            <div class="table-container">
+            <div class="table-scroll">
                 <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
                     <thead>
                         <tr class="table-info-dark">
@@ -235,13 +243,14 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="table-group-divider">
                         @if (!Model.Tabla1Data.Any())
                         {
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="10" class="text-center">
                                     <div class="alert alert-info mb-0">
-                                        <i class="fas fa-info-circle me-2"></i>No hay registros disponibles
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No hay registros disponibles</span>
                                     </div>
                                 </td>
                             </tr>
@@ -286,7 +295,7 @@
                     </tbody>
                     @if (Model.Tabla1Data.Any())
                     {
-                        <tfoot>
+                        <tfoot class="table-group-divider">
                             <tr class="table-info-dark">
                                 <td>Totales</td>
                                 <td></td>
@@ -324,7 +333,7 @@
 }
 
 <!-- Mostrar tabla de bodegas solo si es la empresa correcta -->
-@if (mostrarTablaBodegas && Model.TotalesPorBodega.Any())
+@if (mostrarTablaBodegas && Model.TotalesPorBodega?.Any() == true)
 {
     <div class="col-12">
         <div class="card shadow">
@@ -345,9 +354,10 @@
                             @if (!Model.TotalesPorBodega.Any())
                             {
                                 <tr>
-                                    <td colspan="3" class="text-center py-4">
+                                    <td colspan="10" class="text-center">
                                         <div class="alert alert-info mb-0">
-                                            <i class="fas fa-info-circle me-2"></i>No hay datos disponibles
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>No hay registros disponibles</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -384,115 +394,13 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/registroPesajes.js"></script>
     <script>
-        // Función para cargar importaciones vía AJAX
-        function cargarImportaciones() {
-            $.ajax({
-                url: '/api/Importaciones/GetAll', // Asegúrate de que este endpoint retorne JSON con la lista
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    // Suponemos que la respuesta tiene la propiedad "value" o es directamente un array
-                    let importaciones = response.value || response;
-                    let select = $('#selectImportacion');
-                    select.empty();
-                    select.append($('<option>', { value: '', text: 'Seleccione una importación' }));
-                    $.each(importaciones, function(index, importacion) {
-                        // Se espera que cada objeto tenga properties 'Value' y 'Text'
-                        select.append($('<option>', { value: importacion.Value, text: importacion.Text }));
-                    });
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error cargando importaciones: " + error);
-                }
-            });
-        }
-
-        // Función para cargar empresas según la importación seleccionada vía AJAX
-        function cargarEmpresas(importacionId) {
-            $.ajax({
-                url: '/api/Empresas/GetAll', // Actualiza la ruta según tu API
-                type: 'GET',
-                dataType: 'json',
-                data: { importacionId: importacionId },
-                success: function(response) {
-                    let empresas = response.value || response;
-                    let select = $('#selectEmpresa');
-                    select.empty();
-                    select.append($('<option>', { value: '', text: 'Seleccione una empresa' }));
-                    $.each(empresas, function(index, empresa) {
-                        // Se espera que cada objeto tenga properties 'Value' y 'Text'
-                        select.append($('<option>', { value: empresa.Value, text: empresa.Text }));
-                    });
-                    select.prop('disabled', false);
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error cargando empresas: " + error);
-                }
-            });
-        }
-
-        // Al cargar la página se obtienen las importaciones
-        $(document).ready(function () {
-            cargarImportaciones();
-            
-            $('#selectImportacion').on('change', function () {
-                var importacionId = $(this).val();
-                if (importacionId) {
-                    cargarEmpresas(importacionId);
-                } else {
-                    $('#selectEmpresa').empty().append($('<option>', { value: '', text: 'Seleccione una empresa' })).prop('disabled', true);
-                }
-            });
-
-            // Event handler for Agregar button
-            $('#btnAgregar').on('click', function() {
-                var selectedBarco = '@Context.Request.Query["selectedBarco"]';
-                var empresaId = '@Context.Request.Query["empresaId"]';
-                
-                if (!selectedBarco || !empresaId) {
-                    alert('Por favor seleccione una importación y una empresa');
-                    return;
-                }
-
-                window.location.href = '/RegistroPesajes/Create?selectedBarco=' + selectedBarco + '&empresaId=' + empresaId;
-            });
-        });
-
-        // Función para igualar anchos de columnas
-        function ajustarAnchoColumnas(tableId) {
-            const $table = $(`#${tableId}`);
-            const $headers = $table.find('thead th');
-            const $rows = $table.find('tbody tr:first td');
-            
-            // Si no hay filas en el body, no ajustar
-            if ($rows.length === 0) return;
-            
-            $headers.each((index, header) => {
-                const headerWidth = $(header).width();
-                const cellWidth = $rows.eq(index).width();
-                const maxWidth = Math.max(headerWidth, cellWidth);
-                
-                $table.find(`tr > *:nth-child(${index + 1})`).width(maxWidth);
-            });
-        }
-
-        // Aplicar a todas las tablas
-        ['tabla1', 'tabla2', 'tabla3'].forEach(tableId => {
-            // Solo ajustar si la tabla existe
-            if ($(`#${tableId}`).length > 0) {
-                ajustarAnchoColumnas(tableId);
-            }
-        });
-
-        // Reajustar cuando cambia el tamaño de la ventana
-        $(window).resize(() => {
-            ['tabla1', 'tabla2', 'tabla3'].forEach(tableId => {
-                // Solo ajustar si la tabla existe
-                if ($(`#${tableId}`).length > 0) {
-                    ajustarAnchoColumnas(tableId);
-                }
-            });
+        $(document).ready(function() {
+            initializeServerData(
+                '@Context.Request.Query["selectedBarco"]',
+                '@Context.Request.Query["empresaId"]'
+            );
         });
     </script>
 }

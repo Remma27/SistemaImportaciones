@@ -22,19 +22,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
-        // GET: Show list of importaciones
         public async Task<IActionResult> Index()
         {
             var importaciones = await _importacionService.GetAllAsync();
             return View(importaciones);
         }
 
-        // GET: Show the create form for a new importacion
         public async Task<IActionResult> Create()
         {
             try
             {
-                // Obtener la lista de barcos y convertirla a SelectListItems
                 var barcos = await _barcoService.GetAllAsync();
                 ViewBag.Barcos = new SelectList(barcos, "id", "nombrebarco");
                 return View();
@@ -47,7 +44,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: Create a new importacion using the service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Importacion importacion)
@@ -56,7 +52,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    importacion.idusuario = User.GetUserId(); // Assign the ID of the authenticated user
+                    importacion.idusuario = User.GetUserId();
                     await _importacionService.CreateAsync(importacion);
                     TempData["Success"] = "Importacion creada correctamente.";
                     return RedirectToAction("Index", "Importacion");
@@ -70,7 +66,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(importacion);
         }
 
-        // GET: Show the edit form for an importacion
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -82,15 +77,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return NotFound();
                 }
 
-                // Obtener todos los barcos
                 var barcos = await _barcoService.GetAllAsync();
 
-                // Crear SelectList manteniendo el barco seleccionado
                 ViewBag.Barcos = new SelectList(
                     barcos,
-                    "id",  // Value field
-                    "nombrebarco",  // Text field
-                    importacion.idbarco  // Selected value
+                    "id",
+                    "nombrebarco",
+                    importacion.idbarco
                 );
 
                 return View(importacion);
@@ -103,7 +96,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: Edit an importacion using the service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Importacion importacion)
@@ -117,7 +109,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    importacion.idusuario = User.GetUserId(); // Assign the ID of the authenticated user
+                    importacion.idusuario = User.GetUserId();
                     await _importacionService.UpdateAsync(id, importacion);
                     TempData["Success"] = "Importacion actualizada correctamente.";
                     return RedirectToAction(nameof(Index));
@@ -131,7 +123,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(importacion);
         }
 
-        // GET: Show the delete confirmation page for an importacion
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {

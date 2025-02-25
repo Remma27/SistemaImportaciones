@@ -38,7 +38,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             try
             {
                 _logger.LogInformation($"Solicitando movimiento con ID: {id}");
-                var url = $"{_apiBaseUrl}/Get?id={id}";  // Fixed URL format
+                var url = $"{_apiBaseUrl}/Get?id={id}";
                 _logger.LogInformation($"URL de la solicitud: {url}");
 
                 var response = await _httpClient.GetAsync(url);
@@ -248,7 +248,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             {
                 _logger.LogInformation("Iniciando solicitud para obtener importaciones");
 
-                // Corregir la URL para usar el endpoint correcto
                 var response = await _httpClient.GetAsync($"{_apiBaseUrl}/GetAll");
 
                 if (!response.IsSuccessStatusCode)
@@ -290,7 +289,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Change the endpoint to match your API controller
                 var empresaUrl = "/api/Empresa/GetAll";
                 var response = await _httpClient.GetAsync(empresaUrl);
                 response.EnsureSuccessStatusCode();
@@ -304,7 +302,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
-                // Check if the response has a 'value' property
                 var empresasArray = root.TryGetProperty("value", out var valueElement)
                     ? valueElement
                     : root;
@@ -328,7 +325,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Add logging to debug the API call
                 Console.WriteLine($"Calling API: {_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
 
                 var response = await _httpClient.GetAsync($"{_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
@@ -353,7 +349,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         options
                     );
 
-                    // Log the number of records deserialized
                     Console.WriteLine($"Deserialized {registros?.Count ?? 0} records");
 
                     return registros ?? new List<RegistroRequerimientosViewModel>();
@@ -388,7 +383,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                // Changed importacionId to barcoId to match the endpoint parameter
                 var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}");
                 response.EnsureSuccessStatusCode();
 
@@ -508,7 +502,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             {
                 _logger.LogInformation($"Solicitando cálculo de movimientos para importación {importacionId} y empresa {idempresa}");
 
-                // Asegúrate de que la URL sea correcta
                 var url = $"{_apiBaseUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}";
                 _logger.LogInformation($"URL de la solicitud: {url}");
 
@@ -516,7 +509,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation($"Respuesta API: {content}");
 
-                // Si hay error, captura el mensaje específico
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMessage = TryGetErrorMessage(content);
@@ -565,6 +557,31 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
+        public async Task<EscotillaApiResponse> GetEscotillasApiDataAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/CalculoEscotillas?importacionId={importacionId}";
+                var response = await _httpClient.GetAsync(url);
+
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                return JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
+                    ?? new EscotillaApiResponse();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de escotillas");
+                throw;
+            }
+        }
+
         private string TryGetErrorMessage(string content)
         {
             try
@@ -582,6 +599,49 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             catch
             {
                 return content;
+            }
+        }
+
+        public async Task<EscotillasResumenViewModel> GetEscotillasDataAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/CalculoEscotillas?importacionId={importacionId}";
+                var response = await _httpClient.GetAsync(url);
+
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var apiResponse = JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
+                    ?? new EscotillaApiResponse();
+
+                return new EscotillasResumenViewModel
+                {
+                    Escotillas = apiResponse.Escotillas.Select(e => new EscotillaViewModel
+                    {
+                        NumeroEscotilla = e.NumeroEscotilla,
+                        CapacidadKg = e.CapacidadKg,
+                        DescargaRealKg = e.DescargaRealKg,
+                        DiferenciaKg = e.DiferenciaKg,
+                        Porcentaje = e.Porcentaje,
+                        Estado = e.Estado
+                    }).ToList(),
+                    CapacidadTotal = apiResponse.Totales.CapacidadTotal,
+                    DescargaTotal = apiResponse.Totales.DescargaTotal,
+                    DiferenciaTotal = apiResponse.Totales.DiferenciaTotal,
+                    PorcentajeTotal = apiResponse.Totales.PorcentajeTotal,
+                    EstadoGeneral = apiResponse.Totales.EstadoGeneral
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de escotillas");
+                throw;
             }
         }
     }

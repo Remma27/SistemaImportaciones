@@ -27,7 +27,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _importacionService = importacionService;
         }
 
-        // GET: RegistroPesajes/Index
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId)
         {
             try
@@ -49,7 +48,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     int importacionId = selectedBarco.Value;
 
-                    // Cargar datos generales que no dependen de la empresa
                     var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
                     viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
                     {
@@ -64,22 +62,44 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
                     }).ToList();
 
+                    using (var client = new HttpClient())
+                    {
+                        try
+                        {
+                            var response = await client.GetAsync($"http://localhost:5079/api/Movimientos/CalculoEscotillas?importacionId={importacionId}");
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var result = await response.Content.ReadFromJsonAsync<EscotillasResponse>();
+                                if (result != null)
+                                {
+                                    viewModel.EscotillasData = result.escotillas;
+                                    viewModel.CapacidadTotal = result.totales.capacidadTotal;
+                                    viewModel.DescargaTotal = result.totales.descargaTotal;
+                                    viewModel.DiferenciaTotal = result.totales.diferenciaTotal;
+                                    viewModel.PorcentajeTotal = result.totales.porcentajeTotal;
+                                    viewModel.EstadoGeneral = result.totales.estadoGeneral;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error al obtener datos de escotillas");
+                        }
+                    }
+
                     if (empresaId.HasValue)
                     {
                         try
                         {
-                            // Obtener datos específicos de la empresa
                             var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId.Value);
 
                             if (calculo != null && calculo.Any())
                             {
                                 _logger.LogInformation($"Datos recibidos: {calculo.Count()} registros");
 
-                                // Mapear nombres de bodegas
                                 var bodegas = await _bodegaService.GetAllAsync();
                                 var bodegasDict = bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
 
-                                // Generar datos para Tabla1 (Registros Individuales)
                                 viewModel.Tabla1Data = calculo
                                     .Select(c => new RegistroPesajesIndividual
                                     {
@@ -102,7 +122,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                                     })
                                     .ToList();
 
-                                // Generar datos para TotalesPorBodega sin filtrar por tipo de transacción
                                 viewModel.TotalesPorBodega = calculo
                                     .Where(c => c.bodega.HasValue)
                                     .GroupBy(c => c.bodega)
@@ -124,73 +143,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                             _logger.LogError(ex, "Error al cargar datos específicos de la empresa");
                         }
                     }
-
-                    // Mantener el código existente para la información del barco y escotillas
-                    var importacion = await _importacionService.GetByIdAsync(selectedBarco.Value);
-                    if (importacion?.Barco != null)
-                    {
-                        var barco = importacion.Barco;
-                        viewModel.Barco = barco;
-
-                        // Obtener totales (descargado se suma de las empresas)
-                        decimal totalDescargado = viewModel.Tabla2Data.Sum(x => x.DescargaKilos);
-                        decimal totalRequerido = viewModel.Tabla2Data.Sum(x => x.KilosRequeridos);
-
-                        // Calcular capacidad total del barco (es decir, la suma de las escotillas)
-                        decimal capacidadTotal = 0;
-                        var escotillasActivas = new Dictionary<int, decimal>();
-
-                        // Iterar hasta escotilla7 (según se tenga configurado)
-                        for (int i = 1; i <= 7; i++)
-                        {
-                            var capacidad = (decimal?)barco.GetType().GetProperty($"escotilla{i}")?.GetValue(barco) ?? 0;
-                            if (capacidad > 0)
-                            {
-                                escotillasActivas.Add(i, capacidad);
-                                capacidadTotal += capacidad;
-                            }
-                        }
-
-                        // Distribuir la descarga total de forma proporcional al valor de cada escotilla
-                        viewModel.EscotillasData = new List<EscotillaViewModel>();
-                        foreach (var escotilla in escotillasActivas)
-                        {
-                            // El valor "requerido" para la escotilla es su capacidad
-                            decimal requeridaEscotilla = escotilla.Value;
-
-                            // Proporción que representa la escotilla en el total
-                            decimal proporcion = capacidadTotal > 0 ? escotilla.Value / capacidadTotal : 0;
-
-                            // Se distribuye la descarga total según la misma proporción
-                            decimal descargaReal = Math.Round(totalDescargado * proporcion, 0);
-
-                            // Diferencia: faltante (positivo) o excedente (negativo)
-                            decimal diferencia = requeridaEscotilla - descargaReal;
-
-                            // Porcentaje de descarga para la escotilla (evitar división por cero)
-                            decimal porcentaje = requeridaEscotilla > 0
-                                ? Math.Round((descargaReal * 100.0M / requeridaEscotilla), 2)
-                                : 0;
-
-                            viewModel.EscotillasData.Add(new EscotillaViewModel
-                            {
-                                Numero = escotilla.Key,
-                                Capacidad = escotilla.Value,
-                                DescargaEsperada = requeridaEscotilla,
-                                DescargaReal = descargaReal,
-                                Diferencia = diferencia,
-                                Porcentaje = porcentaje
-                            });
-                        }
-
-                        // Actualizar totales del barco
-                        viewModel.TotalKilosRequeridos = capacidadTotal;
-                        viewModel.TotalDescargaKilos = totalDescargado;
-                        viewModel.TotalKilosFaltantes = capacidadTotal - totalDescargado;
-                        viewModel.PorcentajeTotal = capacidadTotal > 0
-                            ? Math.Round((totalDescargado * 100.0M / capacidadTotal), 2)
-                            : 0;
-                    }
                 }
 
                 return View(viewModel);
@@ -205,7 +157,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: RegistroPesajes/Create
         public async Task<IActionResult> Create(int? selectedBarco, int? empresaId)
         {
             if (!selectedBarco.HasValue || !empresaId.HasValue)
@@ -213,16 +164,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Cargar información del barco seleccionado
             var barcos = await _movimientoService.GetBarcosSelectListAsync();
             var selectedBarcoItem = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
             ViewBag.NombreBarco = selectedBarcoItem?.Text ?? "Desconocido";
 
-            // Cargar lista de bodegas
             var bodegas = await _bodegaService.GetAllAsync();
             ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega");
 
-            // Preparar el viewModel con los datos necesarios
             var viewModel = new RegistroPesajesIndividual
             {
                 FechaHora = DateTime.Now,
@@ -234,7 +182,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(viewModel);
         }
 
-        // POST: RegistroPesajes/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RegistroPesajesIndividual viewModel)
@@ -283,7 +230,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: RegistroPesajes/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -328,7 +274,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: RegistroPesajes/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, RegistroPesajesIndividual viewModel)
@@ -381,7 +326,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: RegistroPesajes/Delete/5
         public async Task<IActionResult> Delete(int? id, int? selectedBarco, int? empresaId)
         {
             if (id == null)
@@ -411,7 +355,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     Escotilla = movimiento.escotilla ?? 0
                 };
 
-                // Get bodega name for display
                 if (movimiento.bodega.HasValue)
                 {
                     var bodegas = await _bodegaService.GetAllAsync();
@@ -429,7 +372,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: RegistroPesajes/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id, int selectedBarco, int empresaId)
@@ -438,7 +380,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 _logger.LogInformation($"Iniciando proceso de eliminación para registro {id}");
 
-                // Verificar que el registro existe antes de intentar eliminarlo
                 var movimiento = await _movimientoService.GetByIdAsync(id);
                 if (movimiento == null)
                 {

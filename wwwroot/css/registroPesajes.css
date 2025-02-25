@@ -1,71 +1,253 @@
-/* Table Styles */
+/* Base Table Styles */
+.table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
 .table > :not(caption) > * > * {
-    padding: 1rem;
+    padding: 0.75rem;
 }
 
-.bg-purple {
-    background-color: #6f42c1 !important;
+.table td,
+.table th {
+    white-space: nowrap;
 }
 
+/* Table Container Styles */
+.table-responsive-custom,
+.table-container {
+    width: 100%;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+/* Scrollbar Styles */
+.table-responsive-custom::-webkit-scrollbar,
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-responsive-custom::-webkit-scrollbar-track,
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-responsive-custom::-webkit-scrollbar-thumb,
+.table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-responsive-custom::-webkit-scrollbar-thumb:hover,
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Table Header Styles */
 .table > thead > tr > th {
     background-color: #f8f9fa;
     border-bottom: 2px solid #dee2e6;
 }
 
+/* Table Hover Effect */
 .table-hover tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Table Header Styles */
-.table > thead.table-dark > tr > th {
-    background-color: #212529 !important;
-    color: #ffffff !important;
-    font-weight: 600;
+/* Table Color Variants - Update colors to match */
+.table-purple,
+.table-success-dark,
+.table-info-dark,
+.table-warning-dark {
+    color: white !important;
 }
 
-/* Table Footer Styles */
-.table > tfoot.table-dark > tr > td {
-    background-color: #212529 !important;
-    color: #ffffff !important;
-    font-weight: 600;
+/* Table Color Variables */
+:root {
+    --purple-color: #6f42c1;
+    --success-color: #198754;
+    --info-color: #0dcaf0;
+    --warning-color: #ffc107;
+    --border-color: #dee2e6;
 }
 
-/* Totals Row in Table Body */
-.table > tbody > tr.table-dark > td {
-    background-color: #212529 !important;
-    color: #ffffff !important;
-    font-weight: 600;
+/* Table Headers Background Colors */
+.bg-purple,
+.table-purple thead tr,
+.table-purple thead th {
+    background-color: var(--purple-color) !important;
+    color: white !important;
+}
+
+.bg-success,
+.table-success-dark thead tr,
+.table-success-dark thead th {
+    background-color: var(--success-color) !important;
+    color: white !important;
+}
+
+.bg-info,
+.table-info-dark thead tr,
+.table-info-dark thead th {
+    background-color: var(--info-color) !important;
+    color: white !important;
+}
+
+.bg-warning,
+.table-warning-dark thead tr,
+.table-warning-dark thead th {
+    background-color: var(--warning-color) !important;
+    color: black !important;
+}
+
+/* Table Headers Background Colors */
+.table-purple thead tr {
+    background-color: var(--purple-color) !important;
+}
+
+.table-success-dark thead tr {
+    background-color: var(--success-color) !important;
+}
+
+.table-info-dark thead tr {
+    background-color: var(--info-color) !important;
+}
+
+.table-warning-dark thead tr {
+    background-color: var(--warning-color) !important;
+}
+
+.table-purple {
+    background-color: transparent !important;
+}
+
+.table-success-dark {
+    background-color: transparent !important;
+}
+
+.table-info-dark {
+    background-color: transparent !important;
+}
+
+.table-warning-dark {
+    background-color: transparent !important;
+}
+
+/* Fixed Header Table */
+.table-fixed-header thead,
+.table-fixed-header tfoot {
+    position: sticky;
+    background-color: inherit;
+    z-index: 1;
+}
+
+.table-fixed-header thead {
+    top: 0;
+}
+
+.table-fixed-header tfoot {
+    bottom: 0;
+}
+
+/* Column Sizes */
+.column-sm {
+    width: 8%;
+}
+
+.column-md {
+    width: 12%;
+}
+
+.column-lg {
+    width: 15%;
 }
 
 /* Card Styles */
-.bg-gradient {
-    background: linear-gradient(to right, #f8f9fa, #ffffff);
-}
-
 .card {
     border: none;
     border-radius: 0.5rem;
+    overflow: visible;
+    width: 100%;
 }
 
 .card-header {
     border-bottom: none;
+    position: relative;
+    z-index: 1;
 }
 
-/* Card Header Styles */
-.card-header.bg-gradient.bg-light {
-    background: linear-gradient(to right, #f8f9fa, #ffffff) !important;
-    border-bottom: 1px solid #dee2e6;
+.card-body {
+    padding: 1rem;
 }
 
-.card-header .text-primary {
-    color: #0d6efd !important;
-    font-weight: 600;
+.card-body .table-responsive-custom,
+.card-body .table-scroll,
+.card-body .table-container {
+    margin-bottom: 0;
 }
 
-/* Form Control Styles */
-.form-select:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+@media (max-width: 767.98px) {
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .card-body {
+        padding: 1.5rem;
+    }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1199.98px) {
+    #tabla1 {
+        min-width: 1200px;
+    }
+
+    #tabla2,
+    .table-responsive-custom .table {
+        min-width: 1000px;
+    }
+
+    #tabla3 {
+        min-width: 800px;
+    }
+
+    .card {
+        min-width: 1000px;
+    }
+
+    .container-fluid {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Form and Button */
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+
+    .btn-lg {
+        width: 100%;
+        margin-top: 1rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    #tabla1,
+    #tabla2,
+    #tabla3,
+    .table-responsive-custom .table {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .card {
+        min-width: auto;
+        width: 100%;
+    }
 }
 
 /* Button Styles */
@@ -78,50 +260,429 @@
     background: linear-gradient(to right, #0b5ed7, #0a58ca);
 }
 
-.bg-purple {
-    background-color: #6f42c1 !important;
+/* Button Responsive Styles */
+@media (max-width: 991.98px) {
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
 }
-.table-purple {
-    background-color: #6f42c1 !important;
+
+@media (min-width: 992px) {
+    .w-lg-auto {
+        width: auto !important;
+    }
+}
+
+/* Form Styles */
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Form Responsive Styles */
+.form-floating {
+    position: relative;
+    margin-bottom: 0;
+}
+
+.form-select {
+    height: calc(3.5rem + 2px);
+    line-height: 1.25;
+}
+
+.form-floating label {
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > .form-select {
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+}
+
+@media (max-width: 991.98px) {
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+
+    .btn-lg {
+        width: 100%;
+        margin-top: 1rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .w-lg-auto {
+        width: auto !important;
+    }
+
+    .justify-content-lg-end {
+        justify-content: flex-end !important;
+    }
+}
+
+/* Table Container with Fixed Header/Footer */
+.table-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: auto;
+    margin-bottom: 0;
+    position: relative;
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1;
+}
+
+/* Sticky Header and Footer */
+.table-fixed-header thead th,
+.table-fixed-header tfoot td {
+    position: sticky;
+    background-color: inherit;
+    z-index: 1;
+}
+
+.table-fixed-header thead th {
+    top: 0;
+}
+
+.table-fixed-header tfoot td {
+    bottom: 0;
+}
+
+/* Ensure proper border rendering */
+.table-fixed-header {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Fixed header and footer */
+.table-fixed-header {
+    position: relative;
+    border-collapse: separate;
+    border-spacing: 0;
+    z-index: 2;
+}
+
+.table-fixed-header thead tr th,
+.table-fixed-header tfoot tr td {
+    position: sticky;
+    z-index: 3;
+    color: black;
+}
+
+.table-fixed-header thead tr th {
+    top: 0;
+    background-color: var(--info-color) !important;
     color: white !important;
+    border-bottom: 2px solid var(--border-color);
 }
-.table-success-dark {
-    background-color: #198754 !important;
-    color: white !important;
+
+.table-fixed-header tfoot tr td {
+    bottom: 0;
+    background-color: white !important;
+    color: black !important;
+    border-top: 2px solid var(--border-color);
 }
-.table-info-dark {
-    background-color: #0dcaf0 !important;
-    color: white !important;
+
+/* Ensure proper borders */
+.table-fixed-header tbody td {
+    border-bottom: 1px solid #dee2e6;
 }
-.table-warning-dark {
-    background-color: #ffc107 !important;
+
+/* Custom scrollbar */
+.table-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Empty state styling */
+.table tbody tr td[colspan] {
+    padding: 1rem !important;
+    height: auto !important;
+    vertical-align: middle;
+}
+
+.table tbody tr td[colspan] .alert {
+    max-width: 300px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.table:not(.table-fixed-header) tbody tr td[colspan] {
+    height: auto;
+}
+
+/* Table backgrounds */
+.table-purple th,
+.table-purple td,
+.table-success-dark th,
+.table-success-dark td,
+.table-info-dark th,
+.table-info-dark td,
+.table-warning-dark th,
+.table-warning-dark td {
+    background-color: inherit !important;
+}
+
+/* Footer Styles */
+.table tfoot tr,
+.table-fixed-header tfoot tr {
+    background-color: white !important;
+}
+
+.table tfoot tr td,
+.table-fixed-header tfoot tr td {
+    background-color: white !important;
+    color: black !important;
+    font-weight: bold;
+    border-top: 2px solid var(--border-color);
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+}
+
+/* Remove conflicting styles */
+.table-fixed-header tfoot tr td {
+    background-color: white !important;
+}
+
+/* Remove any other footer background colors */
+.table-info-dark tfoot tr,
+.table-warning-dark tfoot tr {
+    background-color: white !important;
+}
+
+.table-info-dark tfoot tr td,
+.table-warning-dark tfoot tr td {
+    background-color: white !important;
     color: black !important;
 }
 
-.table-container {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.table-fixed-header {
-    position: relative;
-}
-
-.table-fixed-header thead {
+/* Table Fixed Header */
+.table-fixed-header thead th {
     position: sticky;
     top: 0;
-    z-index: 1;
-    background-color: inherit;
+    z-index: 2;
 }
 
-.table-fixed-header tfoot {
+.table-fixed-header tfoot td {
     position: sticky;
     bottom: 0;
-    z-index: 1;
-    background-color: inherit;
+    z-index: 2;
+    background-color: black !important;
 }
 
-.table td,
-.table th {
-    white-space: nowrap;
+.alert-info {
+    margin: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+/* Responsive adjustments for empty state */
+@media (max-width: 767.98px) {
+    .table tbody tr td[colspan] {
+        white-space: normal;
+        min-width: 200px;
+    }
+
+    .table-scroll,
+    .table-responsive-custom,
+    .table-container {
+        min-height: 100px;
+    }
+}
+
+/* Header Colors */
+.bg-purple {
+    background: var(--purple-color) !important;
+}
+
+.table-purple thead tr,
+.table-purple thead th {
+    background-color: var(--purple-color) !important;
+    color: black !important;
+    border-color: var(--purple-color) !important;
+}
+
+/* Responsive Container */
+.container-fluid {
+    max-width: 100%;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Table Responsive */
+.table-responsive-custom {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+
+/* Form Grid Spacing */
+.row.gy-3 {
+    --bs-gutter-y: 1rem;
+}
+
+@media (min-width: 768px) {
+    .row.gy-3 {
+        --bs-gutter-y: 1.5rem;
+    }
+}
+
+/* Button Responsive */
+.btn-primary.btn-lg {
+    padding: 0.75rem 1.5rem;
+}
+
+@media (max-width: 991.98px) {
+    .btn-primary.btn-lg {
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Ensure text colors are consistent */
+.table thead th {
+    color: white !important;
+}
+
+.table-warning-dark thead th {
+    color: black !important;
+}
+
+/* Table Borders */
+.table > :not(:first-child) {
+    border-top: 2px solid var(--border-color);
+}
+
+.table td {
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Remove any conflicting background colors */
+.table-info-dark thead tr th {
+    background-color: var(--info-color) !important;
+}
+
+/* Fixed header specific styles */
+.table-fixed-header thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: white !important;
+    color: black !important;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Override any conflicting styles */
+.table-info-dark thead tr th,
+.table thead th,
+.table-fixed-header thead tr th {
+    background-color: white !important;
+    color: black !important;
+}
+
+/* Remove color classes that might interfere */
+.table-purple thead tr th,
+.table-success-dark thead tr th,
+.table-info-dark thead tr th,
+.table-warning-dark thead tr th {
+    background-color: white !important;
+    color: black !important;
+}
+
+/* Ensure proper z-index and borders */
+.table-fixed-header {
+    position: relative;
+    z-index: 2;
+}
+
+.table-fixed-header thead tr th {
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Container consistency */
+.container-fluid {
+    max-width: 100%;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Card consistency */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    overflow: visible;
+    width: 100%;
+}
+
+/* Form container consistency */
+.form-container {
+    min-width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1199.98px) {
+    .card {
+        min-width: 1000px;
+    }
+
+    .container-fluid {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (min-width: 1200px) {
+    .card {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+/* Ensure header card stays full width */
+.card.mb-4 {
+    min-width: auto !important;
+    width: 100% !important;
+}
+
+/* Table scroll containers */
+.table-scroll,
+.table-responsive-custom,
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 576px) {
+    .table th,
+    .table td {
+        font-size: 0.8rem;
+        padding: 0.5rem;
+    }
+
+    .card-header h4,
+    .card-header h5 {
+        font-size: 1rem;
+    }
 }

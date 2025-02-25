@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using Sistema_de_Gestion_de_Importaciones.Helpers; // Para GetUserId()
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 using API.Models;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -21,7 +21,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
-        // GET: RegistroRequerimientos
         public async Task<IActionResult> Index(int? selectedBarco)
         {
             try
@@ -42,7 +41,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
 
 
-        // GET: RegistroRequerimientos/Create
         public async Task<IActionResult> Create(int? selectedBarco)
         {
             if (!selectedBarco.HasValue)
@@ -60,31 +58,26 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 FechaHora = DateTime.Now,
                 IdImportacion = selectedBarco.Value,
-                TipoTransaccion = 1 // Se asigna el valor fijo aquí.
+                TipoTransaccion = 1
             };
 
             return View(viewModel);
         }
 
-        // POST: RegistroRequerimientos/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RegistroRequerimientosViewModel viewModel)
         {
             if (!ModelState.IsValid)
             {
-                // Re-cargar datos de los dropdowns si es necesario...
                 return View(viewModel);
             }
 
-            // Mapear explícitamente desde el viewModel al modelo Movimiento
             var movimiento = new Movimiento
             {
-                // La API espera propiedades en minúscula, por lo que se mapean según se requieren
                 fechahora = viewModel.FechaHora ?? DateTime.Now,
                 idimportacion = viewModel.IdImportacion ?? 0,
                 idempresa = viewModel.IdEmpresa ?? 0,
-                // Si viewModel.TipoTransaccion es nulo, se asigna 1 (valor fijo)
                 tipotransaccion = viewModel.TipoTransaccion ?? 1,
                 cantidadrequerida = viewModel.CantidadRequerida,
                 cantidadcamiones = viewModel.CantidadCamiones,
@@ -104,7 +97,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: RegistroRequerimientos/Edit/5
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -128,7 +120,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // POST: RegistroRequerimientos/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("[controller]/Edit/{id}")]
@@ -169,7 +160,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: RegistroRequerimientos/Delete/5
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -183,7 +173,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(viewModel);
         }
 
-        // POST: RegistroRequerimientos/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)

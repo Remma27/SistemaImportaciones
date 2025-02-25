@@ -40,7 +40,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Deserializar primero a un objeto dinámico para acceder a la propiedad "value"
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
@@ -88,7 +87,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using JsonDocument jsonDocument = JsonDocument.Parse(content);
                 Empresa? empresa = null;
 
-                // Si existe la propiedad "value", la usamos; de lo contrario, deserializamos el documento completo.
                 if (jsonDocument.RootElement.TryGetProperty("value", out JsonElement valueElement))
                 {
                     empresa = JsonSerializer.Deserialize<Empresa>(valueElement.GetRawText(), options);

@@ -15,20 +15,17 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
-        // GET: Muestra la lista de movimientos
         public async Task<IActionResult> Index()
         {
             var movimientos = await _movimientoService.GetAllAsync();
             return View(movimientos);
         }
 
-        // GET: Muestra el formulario para crear un nuevo movimiento
         public IActionResult Crear()
         {
             return View(new Movimiento());
         }
 
-        // POST: Crea un nuevo movimiento consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(Movimiento model)
@@ -52,7 +49,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: Muestra el formulario para editar un movimiento
         public async Task<IActionResult> Editar(int id)
         {
             var movimiento = await _movimientoService.GetByIdAsync(id);
@@ -64,7 +60,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(movimiento);
         }
 
-        // POST: Edita un movimiento consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(Movimiento model)
@@ -94,7 +89,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        // GET: Muestra el formulario para eliminar un movimiento
         public async Task<IActionResult> Eliminar(int id)
         {
             var movimiento = await _movimientoService.GetByIdAsync(id);
@@ -106,7 +100,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(movimiento);
         }
 
-        // POST: Elimina un movimiento consumiendo el service
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EliminarConfirmado(int id)

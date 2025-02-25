@@ -1,10 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using Sistema_de_Gestion_de_Importaciones.Helpers; // Para GetUserId()
-using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
@@ -21,7 +17,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
-        // GET: InformeGeneral
         public async Task<IActionResult> Index(int? selectedBarco)
         {
             try
@@ -29,7 +24,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var barcos = await _movimientoService.GetBarcosSelectListAsync();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
-                // Only get data if a barco is selected
                 var informeGeneral = selectedBarco.HasValue
                     ? await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value)
                     : new List<InformeGeneralViewModel>();

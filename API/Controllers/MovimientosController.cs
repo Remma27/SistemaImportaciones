@@ -162,7 +162,7 @@ namespace API.Controllers
                                     join i in _context.Importaciones on m.idimportacion equals i.id
                                     join e in _context.Empresas on m.idempresa equals e.id_empresa
                                     join b in _context.Barcos on i.idbarco equals b.id
-                                    where b.id == selectedBarco.Value && m.tipotransaccion == 1
+                                    where i.id == selectedBarco.Value && m.tipotransaccion == 1
                                     select new
                                     {
                                         IdMovimiento = m.id,
@@ -200,37 +200,50 @@ namespace API.Controllers
                     return BadRequest(new { message = "ImportacionId y idempresa deben ser mayores a 0" });
                 }
 
-                // Obtener y ordenar los movimientos
-                var movimientosList = await _context.Movimientos
-                    .Where(m => m.idimportacion == importacionId &&
-                               m.idempresa == idempresa)
-                    .OrderBy(m => m.fechahora)
-                    .ToListAsync();
+                // Combine both queries into a single database call
+                var data = await (from m in _context.Movimientos
+                                  where m.idimportacion == importacionId &&
+                                        m.idempresa == idempresa
+                                  group m by m.tipotransaccion into g
+                                  select new
+                                  {
+                                      TipoTransaccion = g.Key,
+                                      Total = g.Key == 1
+                                          ? g.Sum(x => x.cantidadrequerida ?? 0)
+                                          : 0,
+                                      Movimientos = g.Key == 2
+                                          ? g.OrderBy(x => x.fechahora)
+                                            .Select(x => new
+                                            {
+                                                x.id,
+                                                x.bodega,
+                                                x.guia,
+                                                x.guia_alterna,
+                                                x.placa,
+                                                x.placa_alterna,
+                                                x.cantidadentregada
+                                            })
+                                          : null
+                                  }).ToListAsync();
 
-                if (!movimientosList.Any())
+                var requerimiento = data.FirstOrDefault(x => x.TipoTransaccion == 1)?.Total ?? 0;
+                var movimientos = data.FirstOrDefault(x => x.TipoTransaccion == 2)?.Movimientos?.ToList();
+
+                if (movimientos == null || !movimientos.Any())
                 {
                     return Ok(new
                     {
                         count = 0,
                         data = new List<MovimientosCumulatedDto>(),
-                        message = "No hay movimientos registrados para esta combinación de importación y empresa"
+                        message = "No hay movimientos registrados para esta combinación"
                     });
                 }
 
-                // Obtener el requerimiento inicial
-                var requerimiento = await _context.Movimientos
-                    .FirstOrDefaultAsync(m => m.idimportacion == importacionId &&
-                                            m.idempresa == idempresa &&
-                                            m.tipotransaccion == 1);
-
-                // Si no hay requerimiento, usar valores por defecto
-                decimal requeridoTotal = requerimiento?.cantidadrequerida ?? 0;
-
-                var result = new List<MovimientosCumulatedDto>();
+                // Process results in memory with optimized list capacity
+                var result = new List<MovimientosCumulatedDto>(movimientos.Count);
                 decimal acumulado = 0;
 
-                // Procesar solo los movimientos de tipo 2 (entregas)
-                foreach (var mov in movimientosList.Where(m => m.tipotransaccion == 2))
+                foreach (var mov in movimientos)
                 {
                     acumulado += mov.cantidadentregada;
 
@@ -242,11 +255,11 @@ namespace API.Controllers
                         guia_alterna = mov.guia_alterna ?? "",
                         placa = mov.placa ?? "",
                         placa_alterna = mov.placa_alterna ?? "",
-                        cantidadrequerida = requeridoTotal,
+                        cantidadrequerida = requerimiento,
                         cantidadentregada = mov.cantidadentregada,
-                        peso_faltante = requeridoTotal - acumulado,
-                        porcentaje = requeridoTotal > 0
-                            ? Math.Round((acumulado * 100 / requeridoTotal), 2)
+                        peso_faltante = requerimiento - acumulado,
+                        porcentaje = requerimiento > 0
+                            ? Math.Round((acumulado * 100 / requerimiento), 2)
                             : 0
                     });
                 }
@@ -255,10 +268,10 @@ namespace API.Controllers
                 {
                     count = result.Count,
                     data = result,
-                    requerimiento = requerimiento != null,
-                    requeridoTotal = requeridoTotal,
-                    message = requerimiento == null
-                        ? "No se encontró un requerimiento inicial, mostrando entregas sin requerimiento"
+                    requerimiento = requerimiento > 0,
+                    requeridoTotal = requerimiento,
+                    message = requerimiento == 0
+                        ? "No se encontró un requerimiento inicial"
                         : null
                 });
             }
@@ -267,8 +280,95 @@ namespace API.Controllers
                 return StatusCode(500, new
                 {
                     message = "Error al procesar la solicitud",
-                    error = ex.Message,
-                    stackTrace = ex.StackTrace
+                    error = ex.Message
+                });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CalculoEscotillas([FromQuery] int importacionId)
+        {
+            try
+            {
+                if (importacionId <= 0)
+                {
+                    return BadRequest(new { message = "ImportacionId debe ser mayor a 0" });
+                }
+
+                // Primero obtenemos el barco y sus capacidades por escotilla
+                var importacion = await _context.Importaciones
+                    .Include(i => i.Barco)
+                    .FirstOrDefaultAsync(i => i.id == importacionId);
+
+                if (importacion?.Barco == null)
+                {
+                    return NotFound(new { message = "No se encontró la importación o el barco asociado" });
+                }
+
+                // Obtener los movimientos agrupados por escotilla
+                var movimientosPorEscotilla = await (from m in _context.Movimientos
+                                                     where m.idimportacion == importacionId
+                                                     && m.tipotransaccion == 2 // Solo movimientos de descarga
+                                                     && m.escotilla != null
+                                                     group m by m.escotilla into g
+                                                     select new
+                                                     {
+                                                         Escotilla = g.Key,
+                                                         DescargaReal = g.Sum(x => x.cantidadentregada)
+                                                     }).ToListAsync();
+
+                // Procesar las capacidades del barco y calcular diferencias
+                var result = new List<object>();
+                var capacidadesPorEscotilla = importacion.Barco.ObtenerCapacidadesEscotillas();
+
+                foreach (var capacidad in capacidadesPorEscotilla)
+                {
+                    var descarga = movimientosPorEscotilla
+                        .FirstOrDefault(m => m.Escotilla == capacidad.Key)?.DescargaReal ?? 0;
+
+                    var diferencia = capacidad.Value - descarga;
+                    var porcentaje = capacidad.Value > 0
+                        ? Math.Round((descarga * 100.0M / capacidad.Value), 2)
+                        : 0;
+
+                    result.Add(new
+                    {
+                        NumeroEscotilla = capacidad.Key,
+                        CapacidadKg = capacidad.Value,
+                        DescargaRealKg = descarga,
+                        DiferenciaKg = diferencia,
+                        Porcentaje = porcentaje > 100 ? porcentaje - 100 : porcentaje,
+                        Estado = diferencia > 0 ? "Faltante" : "Sobrante"
+                    });
+                }
+
+                // Calcular totales
+                var totalCapacidad = capacidadesPorEscotilla.Sum(x => x.Value);
+                var totalDescarga = movimientosPorEscotilla.Sum(x => x.DescargaReal);
+                var totalDiferencia = totalCapacidad - totalDescarga;
+                var porcentajeTotal = totalCapacidad > 0
+                    ? Math.Round((totalDescarga * 100.0M / totalCapacidad), 2)
+                    : 0;
+
+                return Ok(new
+                {
+                    escotillas = result,
+                    totales = new
+                    {
+                        CapacidadTotal = totalCapacidad,
+                        DescargaTotal = totalDescarga,
+                        DiferenciaTotal = totalDiferencia,
+                        PorcentajeTotal = porcentajeTotal > 100 ? porcentajeTotal - 100 : porcentajeTotal,
+                        EstadoGeneral = totalDiferencia > 0 ? "Faltante" : "Sobrante"
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error al procesar la solicitud",
+                    error = ex.Message
                 });
             }
         }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using API.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Sistema_de_Gestion_de_Importaciones.Models.DTOs;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
@@ -641,6 +642,185 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener datos de escotillas");
+                throw;
+            }
+        }
+
+        public async Task<List<RegistroPesajesIndividual>> GetAllMovimientosByImportacionAsync(int importacionId)
+        {
+            try
+            {
+                _logger.LogInformation($"Solicitando movimientos para importación {importacionId}");
+
+                var url = $"{_apiBaseUrl}/GetAllByImportacion?importacionId={importacionId}";
+
+                _logger.LogInformation($"URL API: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta recibida de la API. Longitud: {content.Length} caracteres");
+
+                // Usar JsonDocument para trabajar con la estructura cruda del JSON
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                // Verificar si hay un elemento "data" en la respuesta
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    // Verificar que data sea un array
+                    if (dataElement.ValueKind == JsonValueKind.Array)
+                    {
+                        var resultado = new List<RegistroPesajesIndividual>();
+
+                        // Iterar a través del array de datos
+                        foreach (var element in dataElement.EnumerateArray())
+                        {
+                            try
+                            {
+                                // Extraer propiedades de cada elemento con manejo especial para números que deben ser strings
+                                var item = new RegistroPesajesIndividual
+                                {
+                                    Id = GetIntValue(element, "id"),
+                                    FechaHora = GetDateTimeValue(element, "fechaHora", DateTime.Now),
+                                    IdImportacion = importacionId,
+                                    IdEmpresa = GetIntValue(element, "idEmpresa"),
+                                    EmpresaNombre = GetStringValue(element, "empresaNombre") ??
+                                                    GetStringValue(element, "empresa") ??
+                                                    "Sin Empresa",
+                                    Escotilla = GetIntValue(element, "escotilla"),
+                                    Bodega = GetStringValue(element, "bodega"),
+
+                                    // Para guía, que puede ser número o string, convertimos a string explícitamente
+                                    Guia = element.TryGetProperty("guia", out var guia) && guia.ValueKind != JsonValueKind.Null
+                                        ? guia.ValueKind == JsonValueKind.Number
+                                            ? guia.GetInt32().ToString()  // Si es número, convertir a string
+                                            : guia.GetString() ?? ""      // Si es string, usarlo
+                                        : "",
+
+                                    GuiaAlterna = GetStringValue(element, "guiaAlterna"),
+                                    Placa = GetStringValue(element, "placa"),
+                                    PlacaAlterna = GetStringValue(element, "placaAlterna"),
+                                    PesoEntregado = GetDecimalValue(element, "pesoEntregadoKg"),
+                                    PesoRequerido = GetDecimalValue(element, "cantidadRetirarKg"),
+                                    CantidadRetiradaKg = GetDecimalValue(element, "cantidadRetiradaKg"),
+                                    PesoFaltante = GetDecimalValue(element, "pesoFaltante"),
+                                    // Agregar estos campos
+                                    CantidadRequeridaQuintales = GetDecimalValue(element, "cantidadRequeridaQuintales"),
+                                    CantidadEntregadaQuintales = GetDecimalValue(element, "cantidadEntregadaQuintales"),
+                                    CantidadRequeridaLibras = GetDecimalValue(element, "cantidadRequeridaLibras"),
+                                    CantidadEntregadaLibras = GetDecimalValue(element, "cantidadEntregadaLibras"),
+                                    TipoTransaccion = GetIntValue(element, "tipoTransaccion")
+                                };
+
+                                resultado.Add(item);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Error al procesar un elemento del array JSON");
+                            }
+                        }
+
+                        _logger.LogInformation($"Movimientos procesados exitosamente: {resultado.Count}");
+                        return resultado;
+                    }
+                }
+
+                _logger.LogWarning("La respuesta de la API no contiene un array de datos válido");
+                return new List<RegistroPesajesIndividual>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener los movimientos de la importación {ImportacionId}", importacionId);
+                throw;
+            }
+        }
+
+        // Métodos auxiliares para extraer valores del JSON de manera segura
+        private int GetIntValue(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) &&
+                prop.ValueKind != JsonValueKind.Null)
+            {
+                return prop.TryGetInt32(out var value) ? value : 0;
+            }
+            return 0;
+        }
+
+        private decimal GetDecimalValue(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) &&
+                prop.ValueKind != JsonValueKind.Null)
+            {
+                return prop.TryGetDecimal(out var value) ? value : 0;
+            }
+            return 0;
+        }
+
+        private string GetStringValue(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop))
+            {
+                if (prop.ValueKind == JsonValueKind.Null)
+                    return "";
+
+                if (prop.ValueKind == JsonValueKind.String)
+                    return prop.GetString() ?? "";
+
+                // Si no es string, convertir a string
+                return prop.ToString();
+            }
+            return "";
+        }
+
+        private DateTime GetDateTimeValue(JsonElement element, string propertyName, DateTime defaultValue)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) &&
+                prop.ValueKind != JsonValueKind.Null)
+            {
+                return prop.TryGetDateTime(out var value) ? value : defaultValue;
+            }
+            return defaultValue;
+        }
+
+        public async Task<ReporteEscotillasPorEmpresaViewModel> GetEscotillasPorEmpresaAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/CalculoEscotillasPorEmpresa?importacionId={importacionId}";
+                _logger.LogInformation($"Solicitando datos de escotillas por empresa: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error al obtener escotillas por empresa: {response.StatusCode}, {content}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                var viewModel = new ReporteEscotillasPorEmpresaViewModel();
+
+                if (root.TryGetProperty("empresas", out JsonElement empresasElement))
+                {
+                    viewModel.Empresas = JsonSerializer.Deserialize<List<EmpresaEscotillasViewModel>>(
+                        empresasElement.GetRawText(), options) ?? new List<EmpresaEscotillasViewModel>();
+                }
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de escotillas por empresa");
                 throw;
             }
         }

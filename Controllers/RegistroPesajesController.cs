@@ -252,7 +252,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     Id = movimiento.id,
                     IdImportacion = movimiento.idimportacion,
                     IdEmpresa = movimiento.idempresa,
-                    Guia = movimiento.guia?.ToString(),
+                    Guia = movimiento.guia?.ToString() ?? string.Empty,
                     GuiaAlterna = movimiento.guia_alterna,
                     Placa = movimiento.placa,
                     PlacaAlterna = movimiento.placa_alterna,
@@ -347,7 +347,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     Id = movimiento.id,
                     IdImportacion = selectedBarco ?? movimiento.idimportacion,
                     IdEmpresa = empresaId ?? movimiento.idempresa,
-                    Guia = movimiento.guia?.ToString(),
+                    Guia = movimiento.guia?.ToString() ?? string.Empty,
                     GuiaAlterna = movimiento.guia_alterna,
                     Placa = movimiento.placa,
                     PlacaAlterna = movimiento.placa_alterna,
@@ -400,6 +400,61 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 _logger.LogError(ex, $"Error al eliminar el registro {id}");
                 TempData["Error"] = $"Error al eliminar el registro: {ex.Message}";
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
+        }
+
+        public async Task<IActionResult> ReporteIndividual(int? selectedBarco)
+        {
+            try
+            {
+                var viewModel = new RegistroPesajesViewModel();
+
+                if (selectedBarco.HasValue)
+                {
+                    int importacionId = selectedBarco.Value;
+                    var movimientos = await _movimientoService.GetAllMovimientosByImportacionAsync(importacionId);
+                    viewModel.Tabla1Data = movimientos;
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el reporte individual");
+                return View(new RegistroPesajesViewModel());
+            }
+        }
+
+        public async Task<IActionResult> ReporteGeneral(int? selectedBarco)
+        {
+            try
+            {
+                // Cargar dropdowns
+                var barcosList = await _movimientoService.GetBarcosSelectListAsync();
+                ViewBag.Barcos = new SelectList(barcosList, "Value", "Text", selectedBarco);
+
+                var viewModel = new ReporteEscotillasPorEmpresaViewModel();
+
+                if (selectedBarco.HasValue)
+                {
+                    int importacionId = selectedBarco.Value;
+                    viewModel = await _movimientoService.GetEscotillasPorEmpresaAsync(importacionId);
+
+                    // Obtener nombre del barco seleccionado
+                    var barcoSeleccionado = barcosList.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
+                    if (barcoSeleccionado != null)
+                    {
+                        ViewBag.BarcoSeleccionado = barcoSeleccionado.Text;
+                    }
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el reporte general");
+                TempData["Error"] = "Error al cargar los datos del reporte. Por favor, intente nuevamente.";
+                return View(new ReporteEscotillasPorEmpresaViewModel());
             }
         }
     }

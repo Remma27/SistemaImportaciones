@@ -7,15 +7,9 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 {
     public class RegistroPesajesViewModel
     {
-        // Datos individuales de cada movimiento (Tabla 1)
         public List<RegistroPesajesIndividual> Tabla1Data { get; set; } = new();
-
-        // Datos agregados de informe (Tabla 2)
         public List<RegistroPesajesAgregado> Tabla2Data { get; set; } = new();
-
         public List<TotalesPorBodegaViewModel> TotalesPorBodega { get; set; } = new();
-
-        // Propiedades para el resumen de escotillas
         public List<EscotillaViewModel> EscotillasData { get; set; } = new();
         public decimal CapacidadTotal { get; set; }
         public decimal DescargaTotal { get; set; }
@@ -30,7 +24,6 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal TotalDescargado => Tabla2Data.Sum(x => x.DescargaKilos);
         public decimal TotalFaltante => TotalRequerido - TotalDescargado;
         public decimal FaltanteTotal { get; set; }
-
         public decimal TotalKilosRequeridos { get; set; }
         public decimal TotalDescargaKilos { get; set; }
         public decimal TotalKilosFaltantes { get; set; }
@@ -47,13 +40,12 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public int IdEmpresa { get; set; }
 
         [Required(ErrorMessage = "La guía es requerida")]
-        public string? Guia { get; set; }
+        public string Guia { get; set; } = string.Empty;
 
         public string? GuiaAlterna { get; set; }
 
         [Required(ErrorMessage = "La placa es requerida")]
         public string? Placa { get; set; }
-
         public string? PlacaAlterna { get; set; }
 
         [Required(ErrorMessage = "El peso es requerido")]
@@ -72,6 +64,12 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal PesoRequerido { get; internal set; }
         public decimal PesoFaltante { get; internal set; }
         public decimal Porcentaje { get; internal set; }
+        public string EmpresaNombre { get; set; } = string.Empty;
+        public decimal CantidadRetiradaKg { get; internal set; }
+        public decimal? CantidadRequeridaQuintales { get; set; }
+        public decimal? CantidadEntregadaQuintales { get; set; }
+        public decimal? CantidadRequeridaLibras { get; set; }
+        public decimal? CantidadEntregadaLibras { get; set; }
     }
 
     public class RegistroPesajesAgregado

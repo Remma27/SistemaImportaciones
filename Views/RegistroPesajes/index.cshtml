@@ -4,6 +4,12 @@
     <link rel="stylesheet" href="~/css/registroPesajes.css" />
 }
 
+@{
+    var isBarcoSelected = !String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString());
+    var isEmpresaSelected = !String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString());
+    var isFormValid = isBarcoSelected && isEmpresaSelected;
+}
+
 <div class="container-fluid px-4">
     <div class="table-responsive-custom">
         <!-- Header Card -->
@@ -31,34 +37,65 @@
                                         </div>
                                     </div>
                                 </div>
-                                @if (!string.IsNullOrEmpty(Context.Request.Query["selectedBarco"]))
-                                {
-                                    <div class="col-md-6">
-                                        <div class="form-floating">
-                                            <select name="empresaId" 
-                                                    class="form-select" 
-                                                    asp-items="ViewBag.Empresas" 
-                                                    onchange="this.form.submit()" 
-                                                    required>
-                                                <option value="">Seleccione una Empresa</option>
-                                            </select>
-                                            <label><i class="fas fa-building me-2"></i>Empresa</label>
-                                            <div class="invalid-feedback">
-                                                Por favor seleccione una empresa
-                                            </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select name="empresaId" 
+                                                class="form-select" 
+                                                asp-items="ViewBag.Empresas" 
+                                                onchange="this.form.submit()" 
+                                                disabled="@(!isBarcoSelected)" 
+                                                required>
+                                            <option value="">Seleccione una Empresa</option>
+                                        </select>
+                                        <label><i class="fas fa-building me-2"></i>Empresa</label>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una empresa
                                         </div>
                                     </div>
-                                }
+                                </div>
                             </div>
                         </form>
                     </div>
-                    <div class="col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
-                        <button id="btnAgregar" 
-                                class="btn btn-primary btn-lg w-100 w-lg-auto" 
-                                @(String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString()) || 
-                                  String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString()) ? "disabled" : "")>
-                            <i class="fas fa-plus-circle me-2"></i>Agregar Nuevo Registro
-                        </button>
+                    <div class="col-lg-4 d-flex align-items-center justify-content-lg-end mt-3 mt-lg-0">
+                        <div class="action-buttons">
+                            <button id="btnAgregar" 
+                                   class="btn btn-primary action-btn" 
+                                   disabled="@(!isFormValid)">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Agregar</span>
+                            </button>
+
+                            <button id="btnToggleEscotillas" class="btn btn-secondary action-btn" title="Mostrar/ocultar escotillas">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                            
+                            <a href="@(isBarcoSelected 
+                                     ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] })
+                                     : "#")" 
+                               id="btnReporteEscotillas" 
+                               class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")" 
+                               title="Reporte Escotillas por Empresa">
+                                <i class="fas fa-chart-column"></i>
+                            </a>
+                            
+                            @{
+                                var hasTableData = Model.Tabla2Data != null && Model.Tabla2Data.Any();
+                                var enableDetailButton = isBarcoSelected && hasTableData;
+                            }
+
+                            <a href="@(isBarcoSelected 
+                                     ? Url.Action("ReporteIndividual", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"]})
+                                     : "#")" 
+                               id="btnTablaDetallada" 
+                               class="btn btn-dark action-btn @(!enableDetailButton ? "disabled" : "")" 
+                               title="Vista detallada">
+                                <i class="fas fa-table-cells"></i>
+                            </a>
+
+                            <button id="btnToggleUnidad" class="btn btn-warning action-btn" title="Cambiar entre Kilos/Libras">
+                                <i class="fas fa-weight-scale"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -70,8 +107,11 @@
         <!-- Resumen Agregado -->
         <div class="col-12">
             <div class="card shadow">
-                <div class="card-header bg-gradient bg-purple py-3">
+                <div class="card-header bg-gradient bg-purple py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-white"><i class="fas fa-chart-bar me-2"></i>Resumen Agregado</h5>
+                    <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel" disabled>
+                        <i class="fas fa-file-excel me-1"></i>Exportar
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive-custom">
@@ -90,7 +130,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (!Model.Tabla2Data.Any())
+                                @if (Model.Tabla2Data == null || !Model.Tabla2Data.Any())
                                 {
                                     <tr>
                                         <td colspan="10" class="text-center">
@@ -119,7 +159,7 @@
                                     }
                                 }
                             </tbody>
-                            @if (Model.Tabla2Data.Any())
+                            @if (Model.Tabla2Data != null && Model.Tabla2Data.Any())
                             {
                                 <tfoot>
                                     <tr class="table-purple">
@@ -169,7 +209,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if (!Model.EscotillasData.Any())
+                                @if (Model.EscotillasData == null || !Model.EscotillasData.Any())
                                 {
                                     <tr>
                                         <td colspan="10" class="text-center">
@@ -195,7 +235,7 @@
                                     }
                                 }
                             </tbody>
-                            @if (Model.EscotillasData.Any())
+                            @if (Model.EscotillasData != null && Model.EscotillasData.Any())
                             {
                                 <tfoot>
                                     <tr class="table-success-dark">
@@ -203,7 +243,7 @@
                                         <td class="text-end">@Model.CapacidadTotal.ToString("N0")</td>
                                         <td class="text-end">@Model.DescargaTotal.ToString("N0")</td>
                                         <td class="text-end">@Model.DiferenciaTotal.ToString("N0")</td>
-                                        <td class="text-end">@Model.PorcentajeTotal.ToString("N2")%</td>
+                                        <td class="text-end">@(Model.DiferenciaTotal < 0 ? "-" : "")@Math.Abs(Model.PorcentajeTotal).ToString("N2")%</td>
                                         <td>@Model.EstadoGeneral</td>
                                     </tr>
                                 </tfoot>
@@ -221,176 +261,174 @@
         </div>
 
         <!-- Tabla 1: Registros Individuales -->
-<div class="col-12">
-    <div class="card shadow">
-        <div class="card-header bg-gradient bg-info py-3">
-            <h5 class="mb-0 text-white"><i class="fas fa-table me-2"></i>Registros Individuales</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-scroll">
-                <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
-                    <thead>
-                        <tr class="table-info-dark">
-                            <th>Bodega</th>
-                            <th>Guía</th>
-                            <th>Guía Alterna</th>
-                            <th>Placa</th>
-                            <th>Placa Alterna</th>
-                            <th>Peso Requerido</th>
-                            <th>Peso Entregado</th>
-                            <th>Peso Faltante</th>
-                            <th>Porcentaje</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="table-group-divider">
-                        @if (!Model.Tabla1Data.Any())
-                        {
-                            <tr>
-                                <td colspan="10" class="text-center">
-                                    <div class="alert alert-info mb-0">
-                                        <i class="fas fa-info-circle"></i>
-                                        <span>No hay registros disponibles</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                        else
-                        {
-                            @foreach (var item in Model.Tabla1Data)
-                            {
-                                <tr>
-                                    <td>@item.Bodega</td>
-                                    <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
-                                    <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
-                                    <td>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</td>
-                                    <td>@(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</td>
-                                    <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
-                                    <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
-                                    <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
-                                    <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <a asp-controller="RegistroPesajes" 
-                                            asp-action="Edit" 
-                                            asp-route-id="@item.Id"
-                                            asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
-                                            asp-route-empresaId="@Context.Request.Query["empresaId"]"
-                                            class="btn btn-warning btn-sm">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a asp-controller="RegistroPesajes" 
-                                            asp-action="Delete" 
-                                            asp-route-id="@item.Id"
-                                            asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
-                                            asp-route-empresaId="@Context.Request.Query["empresaId"]"
-                                            class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-gradient bg-info py-3">
+                    <h5 class="mb-0 text-white"><i class="fas fa-table me-2"></i>Registros Individuales</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-scroll">
+                        <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
+                            <thead>
+                                <tr class="table-info-dark">
+                                    <th>Bodega</th>
+                                    <th>Guía</th>
+                                    <th>Guía Alterna</th>
+                                    <th>Placa</th>
+                                    <th>Placa Alterna</th>
+                                    <th>Peso Requerido</th>
+                                    <th>Peso Entregado</th>
+                                    <th>Peso Faltante</th>
+                                    <th>Porcentaje</th>
+                                    <th>Acciones</th>
                                 </tr>
-                            }
-                        }
-                    </tbody>
-                    @if (Model.Tabla1Data.Any())
-                    {
-                        <tfoot class="table-group-divider">
-                            <tr class="table-info-dark">
-                                <td>Totales</td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoRequerido).ToString("N0")</td>
-                                <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoEntregado).ToString("N0")</td>
-                                <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.PesoFaltante.ToString("N0") ?? "0")</td>
-                                <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.Porcentaje.ToString("N2") ?? "0")%</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
-                    }
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-        <!-- Tabla 3: Totales por Bodega -->
-@{
-    var empresaSeleccionadaId = Context.Request.Query["empresaId"].ToString();
-    var empresasList = (IEnumerable<SelectListItem>)ViewBag.Empresas;
-    var selectedEmpresa = empresasList?.FirstOrDefault(e => e.Value == empresaSeleccionadaId);
-    var empresaSeleccionadaNombre = selectedEmpresa?.Text;
-    
-    // Debugging
-    System.Diagnostics.Debug.WriteLine($"Empresa seleccionada: {empresaSeleccionadaNombre}");
-    var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) && 
-                             empresaSeleccionadaNombre.Trim().Equals("COMERCIALIZADORA INTER-GLOBAL INTERGLO, S.R.L.", 
-                                                                    StringComparison.OrdinalIgnoreCase);
-    System.Diagnostics.Debug.WriteLine($"Mostrar tabla bodegas: {mostrarTablaBodegas}");
-    System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
-}
-
-<!-- Mostrar tabla de bodegas solo si es la empresa correcta -->
-@if (mostrarTablaBodegas && Model.TotalesPorBodega?.Any() == true)
-{
-    <div class="col-12">
-        <div class="card shadow">
-            <div class="card-header bg-gradient bg-warning py-3">
-                <h5 class="mb-0 text-dark"><i class="fas fa-warehouse me-2"></i>Totales por Bodega</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-container">
-                    <table id="tabla3" class="table table-hover align-middle mb-0 table-fixed-header">
-                        <thead>
-                            <tr class="table-warning-dark">
-                                <th>Bodega</th>
-                                <th class="text-end">Total Kilos</th>
-                                <th class="text-center">Cantidad de Traslados</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (!Model.TotalesPorBodega.Any())
-                            {
-                                <tr>
-                                    <td colspan="10" class="text-center">
-                                        <div class="alert alert-info mb-0">
-                                            <i class="fas fa-info-circle"></i>
-                                            <span>No hay registros disponibles</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var item in Model.TotalesPorBodega)
+                            </thead>
+                            <tbody class="table-group-divider">
+                                @if (Model.Tabla1Data == null || !Model.Tabla1Data.Any())
                                 {
                                     <tr>
-                                        <td>@item.Bodega</td>
-                                        <td class="text-end">@item.TotalKilos.ToString("N2")</td>
-                                        <td class="text-center">@item.CantidadMovimientos</td>
+                                        <td colspan="10" class="text-center">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="fas fa-info-circle"></i>
+                                                <span>No hay registros disponibles</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
+                                else
+                                {
+                                    @foreach (var item in Model.Tabla1Data)
+                                    {
+                                        <tr>
+                                            <td>@item.Bodega</td>
+                                            <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
+                                            <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
+                                            <td>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</td>
+                                            <td>@(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</td>
+                                            <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
+                                            <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
+                                            <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
+                                            <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a asp-controller="RegistroPesajes" 
+                                                    asp-action="Edit" 
+                                                    asp-route-id="@item.Id"
+                                                    asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
+                                                    asp-route-empresaId="@Context.Request.Query["empresaId"]"
+                                                    class="btn btn-warning btn-sm">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a asp-controller="RegistroPesajes" 
+                                                    asp-action="Delete" 
+                                                    asp-route-id="@item.Id"
+                                                    asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
+                                                    asp-route-empresaId="@Context.Request.Query["empresaId"]"
+                                                    class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                            @if (Model.Tabla1Data != null && Model.Tabla1Data.Any())
+                            {
+                                <tfoot class="table-group-divider">
+                                    <tr class="table-info-dark">
+                                        <td>Totales</td>
+                                        <td colspan="3"></td>
+                                        <td class="text-end">Cant. registros: @Model.Tabla1Data.Count()</td>
+                                        <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.PesoRequerido.ToString("N0") ?? "0")</td>
+                                        <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoEntregado).ToString("N0")</td>
+                                        <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.PesoFaltante.ToString("N0") ?? "0")</td>
+                                        <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.Porcentaje.ToString("N2") ?? "0")%</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
                             }
-                        </tbody>
-                        @if (Model.TotalesPorBodega.Any())
-                        {
-                            <tfoot>
-                                <tr class="table-warning-dark">
-                                    <td>Totales</td>
-                                    <td class="text-end">@Model.TotalesPorBodega.Sum(x => x.TotalKilos).ToString("N2")</td>
-                                    <td class="text-center">@Model.TotalesPorBodega.Sum(x => x.CantidadMovimientos)</td>
-                                </tr>
-                            </tfoot>
-                        }
-                    </table>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
-    </div>
+
+        <!-- Tabla 3: Totales por Bodega -->
+        @{
+            var empresaSeleccionadaId = Context.Request.Query["empresaId"].ToString();
+            var empresasList = (IEnumerable<SelectListItem>)ViewBag.Empresas;
+            var selectedEmpresa = empresasList?.FirstOrDefault(e => e.Value == empresaSeleccionadaId);
+            var empresaSeleccionadaNombre = selectedEmpresa?.Text;
+            
+            // Debugging
+            System.Diagnostics.Debug.WriteLine($"Empresa seleccionada: {empresaSeleccionadaNombre}");
+            var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) && 
+                                    empresaSeleccionadaNombre.Trim().Equals("COMERCIALIZADORA INTER-GLOBAL INTERGLO, S.R.L.", 
+                                                                            StringComparison.OrdinalIgnoreCase);
+            System.Diagnostics.Debug.WriteLine($"Mostrar tabla bodegas: {mostrarTablaBodegas}");
+            System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
+        }
+
+        <!-- Mostrar tabla de bodegas solo si es la empresa correcta -->
+        @if (mostrarTablaBodegas && Model.TotalesPorBodega != null && Model.TotalesPorBodega.Any())
+        {
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header bg-gradient bg-warning py-3">
+                        <h5 class="mb-0 text-dark"><i class="fas fa-warehouse me-2"></i>Totales por Bodega</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-container">
+                            <table id="tabla3" class="table table-hover align-middle mb-0 table-fixed-header">
+                                <thead>
+                                    <tr class="table-warning-dark">
+                                        <th>Bodega</th>
+                                        <th class="text-end">Total Kilos</th>
+                                        <th class="text-center">Cantidad de Traslados</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.TotalesPorBodega == null || !Model.TotalesPorBodega.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="10" class="text-center">
+                                                <div class="alert alert-info mb-0">
+                                                    <i class="fas fa-info-circle"></i>
+                                                    <span>No hay registros disponibles</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var item in Model.TotalesPorBodega)
+                                        {
+                                            <tr>
+                                                <td>@item.Bodega</td>
+                                                <td class="text-end">@item.TotalKilos.ToString("N2")</td>
+                                                <td class="text-center">@item.CantidadMovimientos</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                                @if (Model.TotalesPorBodega != null && Model.TotalesPorBodega.Any())
+                                {
+                                    <tfoot>
+                                        <tr class="table-warning-dark">
+                                            <td>Totales</td>
+                                            <td class="text-end">@Model.TotalesPorBodega.Sum(x => x.TotalKilos).ToString("N2")</td>
+                                            <td class="text-center">@Model.TotalesPorBodega.Sum(x => x.CantidadMovimientos)</td>
+                                        </tr>
+                                    </tfoot>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+            </div>
 </div>
 
 @section Scripts {

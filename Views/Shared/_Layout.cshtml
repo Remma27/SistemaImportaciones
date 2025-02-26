@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="en" class="h-100">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,12 +16,14 @@
             display: flex;
             flex-direction: column;
         }
+
         main {
             flex: 1;
         }
     </style>
     @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body class="h-100">
     <div class="wrapper">
         <header class="bg-dark text-white py-3 mb-4">
@@ -36,15 +39,18 @@
                             </a>
                         </div>
                         <div class="col-12 col-md-6">
-                            <div class="d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-end gap-2">
+                            <div
+                                class="d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-end gap-2">
                                 <div class="mb-2 mb-md-0">
-                                    <span class="badge bg-light text-dark">
+                                    <span class="badge bg-light text-dark d-inline-flex align-items-center"
+                                        style="height: 38px; padding: 0 0.75rem; font-size: 0.875rem;">
                                         <i class="fas fa-user me-1"></i>
                                         Bienvenido, @User.Identity.Name
                                     </span>
                                 </div>
                                 <form asp-controller="Auth" asp-action="CerrarSesion" method="post">
-                                    <button type="submit" class="btn btn-danger btn-sm">
+                                    <button type="submit" class="btn btn-danger btn-sm d-inline-flex align-items-center"
+                                        style="height: 38px;">
                                         <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
                                     </button>
                                 </form>
@@ -63,7 +69,7 @@
             </div>
         </header>
 
-        <main role="main" class="container pb-3">
+        <main role="main" class="@(ViewData["FullWidth"] != null ? "container-fluid" : "container") pb-3">
             @RenderBody()
         </main>
 
@@ -94,4 +100,5 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

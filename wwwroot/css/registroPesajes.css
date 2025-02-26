@@ -337,6 +337,18 @@
     border-color: var(--info-hover);
 }
 
+.btn-teal {
+    background-color: #20c997;
+    border-color: #20c997;
+    color: white;
+}
+
+.btn-teal:hover {
+    background-color: #1ba87e;
+    border-color: #1ba87e;
+    color: white;
+}
+
 /* Improved Action Buttons Layout */
 .action-buttons {
     display: flex;

@@ -516,6 +516,85 @@ namespace API.Controllers
                 });
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> CalculoEscotillasPorEmpresa([FromQuery] int importacionId)
+        {
+            try
+            {
+                if (importacionId <= 0)
+                {
+                    return BadRequest(new { message = "ImportacionId debe ser mayor a 0" });
+                }
+
+                // Constantes para las conversiones de unidades
+                const decimal KG_PER_QUINTAL = 45.359237m;
+                const decimal KG_TO_LB = 2.20462m;
+                const decimal KG_TO_TON = 0.001m;
+
+                // Obtener la importación y el barco
+                var importacion = await _context.Importaciones
+                    .Include(i => i.Barco)
+                    .FirstOrDefaultAsync(i => i.id == importacionId);
+
+                if (importacion?.Barco == null)
+                {
+                    return NotFound(new { message = "No se encontró la importación o el barco asociado" });
+                }
+
+                // Obtener las capacidades de las escotillas del barco
+                var capacidadesPorEscotilla = importacion.Barco.ObtenerCapacidadesEscotillas();
+
+                // Obtener los movimientos agrupados por empresa y escotilla
+                var movimientosPorEmpresaEscotilla = await (from m in _context.Movimientos
+                                                            join e in _context.Empresas on m.idempresa equals e.id_empresa
+                                                            where m.idimportacion == importacionId
+                                                            && m.tipotransaccion == 2 // Solo movimientos de descarga
+                                                            && m.escotilla != null
+                                                            group m by new { m.idempresa, e.nombreempresa, m.escotilla } into g
+                                                            select new
+                                                            {
+                                                                IdEmpresa = g.Key.idempresa,
+                                                                NombreEmpresa = g.Key.nombreempresa ?? "Sin Nombre",
+                                                                Escotilla = g.Key.escotilla,
+                                                                DescargaReal = g.Sum(x => x.cantidadentregada)
+                                                            }).ToListAsync();
+
+                // Agrupar por empresa
+                var empresasAgrupadoEscotillas = movimientosPorEmpresaEscotilla
+                    .GroupBy(m => new { m.IdEmpresa, m.NombreEmpresa })
+                    .Select(g => new
+                    {
+                        IdEmpresa = g.Key.IdEmpresa,
+                        NombreEmpresa = g.Key.NombreEmpresa,
+                        Escotillas = g.Select(m => new
+                        {
+                            NumeroEscotilla = m.Escotilla,
+                            // Calcular valores en diferentes unidades
+                            DescargaKg = m.DescargaReal,
+                            DescargaQuintales = Math.Round(m.DescargaReal / KG_PER_QUINTAL, 4),
+                            DescargaLb = Math.Round(m.DescargaReal * KG_TO_LB, 3),
+                            DescargaTon = Math.Round(m.DescargaReal * KG_TO_TON, 6),
+                        }).OrderBy(e => e.NumeroEscotilla).ToList()
+                    })
+                    .OrderBy(e => e.NombreEmpresa)
+                    .ToList();
+
+                return Ok(new
+                {
+                    empresas = empresasAgrupadoEscotillas
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error al procesar la solicitud",
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+        }
     }
 }
 

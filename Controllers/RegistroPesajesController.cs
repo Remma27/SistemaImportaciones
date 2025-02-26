@@ -424,5 +424,38 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 return View(new RegistroPesajesViewModel());
             }
         }
+
+        public async Task<IActionResult> ReporteGeneral(int? selectedBarco)
+        {
+            try
+            {
+                // Cargar dropdowns
+                var barcosList = await _movimientoService.GetBarcosSelectListAsync();
+                ViewBag.Barcos = new SelectList(barcosList, "Value", "Text", selectedBarco);
+
+                var viewModel = new ReporteEscotillasPorEmpresaViewModel();
+
+                if (selectedBarco.HasValue)
+                {
+                    int importacionId = selectedBarco.Value;
+                    viewModel = await _movimientoService.GetEscotillasPorEmpresaAsync(importacionId);
+
+                    // Obtener nombre del barco seleccionado
+                    var barcoSeleccionado = barcosList.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
+                    if (barcoSeleccionado != null)
+                    {
+                        ViewBag.BarcoSeleccionado = barcoSeleccionado.Text;
+                    }
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el reporte general");
+                TempData["Error"] = "Error al cargar los datos del reporte. Por favor, intente nuevamente.";
+                return View(new ReporteEscotillasPorEmpresaViewModel());
+            }
+        }
     }
 }

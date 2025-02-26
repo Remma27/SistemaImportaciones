@@ -783,5 +783,46 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
             return defaultValue;
         }
+
+        public async Task<ReporteEscotillasPorEmpresaViewModel> GetEscotillasPorEmpresaAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/CalculoEscotillasPorEmpresa?importacionId={importacionId}";
+                _logger.LogInformation($"Solicitando datos de escotillas por empresa: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error al obtener escotillas por empresa: {response.StatusCode}, {content}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                var viewModel = new ReporteEscotillasPorEmpresaViewModel();
+
+                if (root.TryGetProperty("empresas", out JsonElement empresasElement))
+                {
+                    viewModel.Empresas = JsonSerializer.Deserialize<List<EmpresaEscotillasViewModel>>(
+                        empresasElement.GetRawText(), options) ?? new List<EmpresaEscotillasViewModel>();
+                }
+
+                return viewModel;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos de escotillas por empresa");
+                throw;
+            }
+        }
     }
 }

@@ -252,7 +252,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     Id = movimiento.id,
                     IdImportacion = movimiento.idimportacion,
                     IdEmpresa = movimiento.idempresa,
-                    Guia = movimiento.guia?.ToString(),
+                    Guia = movimiento.guia?.ToString() ?? string.Empty,
                     GuiaAlterna = movimiento.guia_alterna,
                     Placa = movimiento.placa,
                     PlacaAlterna = movimiento.placa_alterna,
@@ -347,7 +347,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     Id = movimiento.id,
                     IdImportacion = selectedBarco ?? movimiento.idimportacion,
                     IdEmpresa = empresaId ?? movimiento.idempresa,
-                    Guia = movimiento.guia?.ToString(),
+                    Guia = movimiento.guia?.ToString() ?? string.Empty,
                     GuiaAlterna = movimiento.guia_alterna,
                     Placa = movimiento.placa,
                     PlacaAlterna = movimiento.placa_alterna,
@@ -400,6 +400,28 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 _logger.LogError(ex, $"Error al eliminar el registro {id}");
                 TempData["Error"] = $"Error al eliminar el registro: {ex.Message}";
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
+        }
+
+        public async Task<IActionResult> ReporteIndividual(int? selectedBarco)
+        {
+            try
+            {
+                var viewModel = new RegistroPesajesViewModel();
+
+                if (selectedBarco.HasValue)
+                {
+                    int importacionId = selectedBarco.Value;
+                    var movimientos = await _movimientoService.GetAllMovimientosByImportacionAsync(importacionId);
+                    viewModel.Tabla1Data = movimientos;
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el reporte individual");
+                return View(new RegistroPesajesViewModel());
             }
         }
     }

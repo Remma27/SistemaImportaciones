@@ -3,8 +3,6 @@ using API.Models;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
-using Microsoft.Build.Framework;
-
 
 namespace API.Controllers
 {
@@ -78,10 +76,156 @@ namespace API.Controllers
 
         // GetAll
         [HttpGet]
-        public JsonResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _context.Movimientos.ToList();
-            return new JsonResult(Ok(result));
+            try
+            {
+                var result = await _context.Movimientos
+                    .AsNoTracking()
+                    .OrderByDescending(m => m.id)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    count = result.Count(),
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error al obtener movimientos", error = ex.Message });
+            }
+        }
+
+        // Get All Movimientos por Importacion
+        [HttpGet]
+        public async Task<IActionResult> GetAllByImportacion(int importacionId)
+        {
+            try
+            {
+                var importacion = await _context.Importaciones
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.id == importacionId);
+
+                if (importacion == null)
+                {
+                    return NotFound(new { message = "Importación no encontrada" });
+                }
+
+                var movimientos = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                if (!movimientos.Any())
+                {
+                    return Ok(new
+                    {
+                        count = 0,
+                        data = new List<object>()
+                    });
+                }
+
+                var empresaIds = movimientos.Select(m => m.idempresa).Distinct().ToList();
+                var bodegaIds = movimientos.Where(m => m.bodega.HasValue)
+                                          .Select(m => m.bodega!.Value)
+                                          .Distinct()
+                                          .ToList();
+
+                var empresasEntities = await _context.Empresas.AsNoTracking().ToListAsync();
+                var bodegasEntities = await _context.Empresa_Bodegas.AsNoTracking().ToListAsync();
+
+                var empresas = empresasEntities
+                    .Where(e => empresaIds.Contains(e.id_empresa))
+                    .ToDictionary(e => e.id_empresa, e => e.nombreempresa ?? "Sin Empresa");
+
+                var bodegas = bodegasEntities
+                    .Where(b => bodegaIds.Contains(b.id))
+                    .ToDictionary(b => b.id, b => b.bodega ?? "Sin Bodega");
+
+                const decimal KG_TO_LB = 2.20462m;
+                const decimal KG_PER_QUINTAL = 45.359237m;
+
+                decimal cargaTotalInicial = (decimal)(importacion.totalcargakilos ?? 0);
+
+                var movimientosMapeados = new List<dynamic>();
+
+                foreach (var m in movimientos)
+                {
+                    movimientosMapeados.Add(new
+                    {
+                        Id = m.id,
+                        Escotilla = m.escotilla,
+                        IdEmpresa = m.idempresa,
+                        Empresa = empresas.ContainsKey(m.idempresa) ? empresas[m.idempresa] : "Sin Empresa",
+                        EmpresaNombre = empresas.ContainsKey(m.idempresa) ? empresas[m.idempresa] : "Sin Empresa",
+                        Bodega = m.bodega.HasValue && bodegas.ContainsKey(m.bodega.Value) ? bodegas[m.bodega.Value] : "Sin Bodega",
+                        Guia = m.guia,
+                        GuiaAlterna = m.guia_alterna,
+                        Placa = m.placa,
+                        PlacaAlterna = m.placa_alterna,
+                        PesoEntregado = m.cantidadentregada,
+                        PesoEntregadoLibras = m.cantidadentregada * KG_TO_LB,
+                        CantidadRequerida = m.cantidadrequerida ?? 0
+                    });
+                }
+
+                var primerosRegistros = movimientosMapeados
+                    .GroupBy(m => m.IdEmpresa)
+                    .Select(group => group.OrderBy(m => m.Id).First())
+                    .OrderBy(m => m.EmpresaNombre)
+                    .ToList();
+
+                var restantesRegistros = movimientosMapeados
+                    .Where(m => !primerosRegistros.Any(p => p.Id == m.Id))
+                    .OrderBy(m => m.EmpresaNombre)
+                    .ThenBy(m => m.Id)
+                    .ToList();
+
+                var movimientosFinales = new List<object>();
+                decimal cantidadTotalAcumulada = 0;
+
+                foreach (var mov in primerosRegistros.Concat(restantesRegistros))
+                {
+                    cantidadTotalAcumulada += mov.PesoEntregado;
+
+                    decimal cantidadPorRetirar = cargaTotalInicial - cantidadTotalAcumulada;
+
+                    movimientosFinales.Add(new
+                    {
+                        Escotilla = mov.Escotilla,
+                        EmpresaNombre = mov.EmpresaNombre,
+                        Bodega = mov.Bodega,
+                        Guia = mov.Guia,
+                        GuiaAlterna = mov.GuiaAlterna,
+                        Placa = mov.Placa,
+                        PlacaAlterna = mov.PlacaAlterna,
+                        PesoEntregado = Math.Round(mov.PesoEntregado, 2),
+                        CantidadRetirarKg = Math.Round(cantidadPorRetirar, 2),
+                        CantidadRetiradaKg = Math.Round(cantidadTotalAcumulada, 2),
+                        CantidadRequeridaQuintales = Math.Round(cantidadPorRetirar / KG_PER_QUINTAL, 2) == 0 ? 0 : Math.Round(cantidadPorRetirar / KG_PER_QUINTAL, 2),
+                        CantidadEntregadaQuintales = Math.Round(cantidadTotalAcumulada / KG_PER_QUINTAL, 10) == 0 ? 0 : Math.Round(cantidadTotalAcumulada / KG_PER_QUINTAL, 10),
+
+                        CantidadRequeridaLibras = Math.Round(cantidadPorRetirar * KG_TO_LB, 2),
+                        CantidadEntregadaLibras = Math.Round(cantidadTotalAcumulada * KG_TO_LB, 3)
+                    });
+                }
+
+                return Ok(new
+                {
+                    count = movimientosFinales.Count,
+                    data = movimientosFinales
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error al obtener movimientos",
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
         }
 
         // Endpoint para obtener el informe general

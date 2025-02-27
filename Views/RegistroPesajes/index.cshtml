@@ -113,9 +113,9 @@
                         <i class="fas fa-file-excel me-1"></i>Exportar
                     </button>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive-custom">
-                        <table id="tabla2" class="table table-hover align-middle">
+                <div class="card-body p-0">
+                    <div class="table-scroll">
+                        <table id="tabla2" class="table table-hover align-middle table-fixed-header">
                             <thead>
                                 <tr class="bg-purple text-white">
                                     <th>Agroindustria</th>
@@ -195,9 +195,9 @@
                 <div class="card-header bg-gradient bg-success py-3">
                     <h5 class="mb-0 text-white"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive-custom">
-                        <table class="table table-hover align-middle">
+                <div class="card-body p-0">
+                    <div class="table-scroll">
+                        <table class="table table-hover align-middle table-fixed-header">
                             <thead>
                                 <tr class="table-success-dark">
                                     <th>Escotilla</th>
@@ -363,9 +363,11 @@
             
             // Debugging
             System.Diagnostics.Debug.WriteLine($"Empresa seleccionada: {empresaSeleccionadaNombre}");
+            
+            // Fix: Check if the company name CONTAINS "INTERGLO" rather than exact match
             var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) && 
-                                    empresaSeleccionadaNombre.Trim().Equals("COMERCIALIZADORA INTER-GLOBAL INTERGLO, S.R.L.", 
-                                                                            StringComparison.OrdinalIgnoreCase);
+                                   empresaSeleccionadaNombre.IndexOf("INTERGLO", StringComparison.OrdinalIgnoreCase) >= 0;
+                                   
             System.Diagnostics.Debug.WriteLine($"Mostrar tabla bodegas: {mostrarTablaBodegas}");
             System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
         }
@@ -379,7 +381,7 @@
                         <h5 class="mb-0 text-dark"><i class="fas fa-warehouse me-2"></i>Totales por Bodega</h5>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-container">
+                        <div class="table-scroll">
                             <table id="tabla3" class="table table-hover align-middle mb-0 table-fixed-header">
                                 <thead>
                                     <tr class="table-warning-dark">

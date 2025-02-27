@@ -1,13 +1,24 @@
 @model IEnumerable<Sistema_de_Gestion_de_Importaciones.Models.ViewModels.InformeGeneralViewModel>
 @using Microsoft.AspNetCore.Mvc.Rendering
 @using System.Linq
+@using Sistema_de_Gestion_de_Importaciones.ViewModels
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/informeGeneral.css" />
+}
 
 @{
     ViewData["Title"] = "Informe General";
-    var modelData = Model ?? Enumerable.Empty<Sistema_de_Gestion_de_Importaciones.Models.ViewModels.InformeGeneralViewModel>();
+    var modelData = Model ??
+    Enumerable.Empty<Sistema_de_Gestion_de_Importaciones.Models.ViewModels.InformeGeneralViewModel>();
     var selectedBarco = Context.Request.Query["selectedBarco"].ToString();
+
+    // Obtener el conteo total de movimientos desde ViewBag o el controlador
+    var totalMovimientos = ViewBag.TotalMovimientos ?? 0; // Asegúrate de pasar este valor desde el controlador
+
     var totales = new
     {
+        TotalRegistros = ViewBag.TotalMovimientos ?? 0, // Usar el valor que viene de la API
         RequeridoKg = modelData.Sum(x => x.RequeridoKg),
         RequeridoTon = modelData.Sum(x => x.RequeridoTon),
         DescargaKg = modelData.Sum(x => x.DescargaKg),
@@ -15,10 +26,12 @@
         TonFaltantes = modelData.Sum(x => x.TonFaltantes),
         CamionesFaltantes = modelData.Sum(x => x.CamionesFaltantes),
         ConteoPlacas = modelData.Sum(x => x.ConteoPlacas),
-        PorcentajeTotal = modelData.Any() && modelData.Sum(x => x.RequeridoKg) > 0 
-            ? Math.Round((decimal)(modelData.Sum(x => x.DescargaKg) / modelData.Sum(x => x.RequeridoKg)) * 100M, 2)
-            : 0
+        PorcentajeTotal = modelData.Any() && modelData.Sum(x => x.RequeridoKg) > 0
+    ? Math.Round((decimal)(modelData.Sum(x => x.DescargaKg) / modelData.Sum(x => x.RequeridoKg)) * 100M, 2)
+    : 0
     };
+
+    var escotillasData = ViewBag.EscotillasData;
 }
 
 <div class="container-fluid py-4">
@@ -34,28 +47,51 @@
                             <label class="input-group-text bg-primary text-white border-0">
                                 <i class="fas fa-ship me-1"></i>
                             </label>
-                            <select name="selectedBarco" 
-                                    class="form-select" 
-                                    asp-items="ViewBag.Barcos"
-                                    onchange="this.form.submit()">
+                            <select name="selectedBarco" class="form-select" asp-items="ViewBag.Barcos"
+                                onchange="this.form.submit()">
                                 <option value="">Seleccione una Importación</option>
                             </select>
                         </div>
                     </form>
                 </div>
                 <div class="col-md-4 text-end">
-                    <div class="btn-group">
-                        <button class="btn btn-light" id="exportToExcel" title="Exportar a Excel" disabled="@(!modelData.Any())">
+                    <div class="action-buttons">
+                        <button class="btn btn-light" id="exportToExcel" title="Exportar a Excel"
+                            disabled="@(modelData?.Any() != true)">
                             <i class="fas fa-file-excel me-1"></i> Excel
                         </button>
-                        <button class="btn btn-light" id="convertToLbs" title="Convertir a libras" disabled="@(!modelData.Any())">
+                        <button class="btn btn-light" id="convertToLbs" title="Convertir a libras"
+                            disabled="@(modelData?.Any() != true)">
                             <i class="fas fa-weight me-1"></i> Libras
                         </button>
+                        <button id="btnToggleEscotillas" class="btn btn-secondary action-btn"
+                            title="Mostrar/ocultar escotillas">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+
+                        @{
+                            var isBarcoSelected = !string.IsNullOrEmpty(selectedBarco);
+                            var hasTableData = modelData?.Any() == true;
+                            var enableDetailButton = isBarcoSelected && hasTableData;
+                        }
+
+                        <a href="@(isBarcoSelected ? Url.Action("ReporteIndividual", "RegistroPesajes", new { selectedBarco = selectedBarco, returnController = "InformeGeneral" }) : "#")"
+                            id="btnTablaDetallada"
+                            class="btn btn-dark action-btn @(!enableDetailButton ? "disabled" : "")"
+                            title="Vista detallada">
+                            <i class="fas fa-table-cells"></i>
+                        </a>
+
+                        <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = selectedBarco, returnController = "InformeGeneral", returnAction = "Index" }) : "#")"
+                            id="btnReporteEscotillas"
+                            class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")"
+                            title="Reporte Escotillas por Empresa">
+                            <i class="fas fa-chart-column"></i>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="card-body p-0">
             @if (string.IsNullOrEmpty(selectedBarco))
             {
@@ -64,7 +100,7 @@
                     Seleccione una importación para ver el informe
                 </div>
             }
-            else if (!modelData.Any())
+            else if (!(modelData?.Any() == true))
             {
                 <div class="alert alert-warning m-4 text-center">
                     <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
@@ -73,9 +109,9 @@
             }
             else
             {
-                <div class="table-responsive">
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-hover table-striped align-middle mb-0">
-                        <thead class="table-light">
+                        <thead class="table-light sticky-top">
                             <tr>
                                 <th class="border-bottom">Empresa</th>
                                 <th class="border-bottom text-end">Requerido (Kg)</th>
@@ -89,7 +125,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach(var item in modelData)
+                            @foreach (var item in modelData)
                             {
                                 <tr>
                                     <td>@item.Empresa</td>
@@ -104,9 +140,9 @@
                                 </tr>
                             }
                         </tbody>
-                        <tfoot class="table-primary fw-bold">
+                        <tfoot class="table-primary fw-bold sticky-bottom">
                             <tr>
-                                <td>TOTALES</td>
+                                <td>TOTALES (@totales.TotalRegistros registros en total)</td>
                                 <td class="text-end">@totales.RequeridoKg.ToString("N0")</td>
                                 <td class="text-end">@totales.RequeridoTon.ToString("N2")</td>
                                 <td class="text-end">@totales.DescargaKg.ToString("N0")</td>
@@ -122,56 +158,159 @@
             }
         </div>
     </div>
+
+    <!-- Resumen General y Escotillas (nueva sección) -->
+    <div class="card shadow-lg border-0 mt-4" id="cardEscotillas">
+        <div class="card-header bg-gradient bg-success py-3">
+            <h5 class="mb-0 text-white"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (string.IsNullOrEmpty(selectedBarco))
+            {
+                <div class="alert alert-info m-4 text-center">
+                    <i class="fas fa-info-circle fa-lg me-2"></i>
+                    Seleccione una importación para ver las escotillas
+                </div>
+            }
+            else if (ViewBag.EscotillasData == null)
+            {
+                <div class="alert alert-warning m-4 text-center">
+                    <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
+                    No hay registros de escotillas disponibles
+                </div>
+            }
+            else
+            {
+                var escotillasResumen = ViewBag.EscotillasData;
+                <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-hover align-middle table-fixed-header">
+                        <thead class="sticky-top">
+                            <tr class="table-success-dark">
+                                <th>Escotilla</th>
+                                <th class="text-end">Capacidad (Kg)</th>
+                                <th class="text-end">Descarga (Kg)</th>
+                                <th class="text-end">Diferencia (Kg)</th>
+                                <th class="text-end">% Descarga</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (escotillasResumen.Escotillas != null && escotillasResumen.Escotillas.Count > 0)
+                            {
+                                @foreach (var escotilla in escotillasResumen.Escotillas)
+                                {
+                                    <tr>
+                                        <td>Escotilla @escotilla.NumeroEscotilla</td>
+                                        <td class="text-end">@string.Format("{0:N0}", escotilla.CapacidadKg)</td>
+                                        <td class="text-end">@string.Format("{0:N0}", escotilla.DescargaRealKg)</td>
+                                        <td class="text-end">@string.Format("{0:N0}", escotilla.DiferenciaKg)</td>
+                                        <td class="text-end">@string.Format("{0:N2}", escotilla.Porcentaje)%</td>
+                                        <td>@escotilla.Estado</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>No hay escotillas registradas</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        @if (escotillasResumen.Escotillas != null && escotillasResumen.Escotillas.Count > 0)
+                        {
+                            <tfoot class="sticky-bottom">
+                                <tr class="table-success-dark">
+                                    <td>Totales</td>
+                                    <td class="text-end">@string.Format("{0:N0}", escotillasResumen.CapacidadTotal)</td>
+                                    <td class="text-end">@string.Format("{0:N0}", escotillasResumen.DescargaTotal)</td>
+                                    <td class="text-end">@string.Format("{0:N0}", escotillasResumen.DiferenciaTotal)</td>
+                                    <td class="text-end">
+                                        @{
+                                            var diferenciaTotal = escotillasResumen.DiferenciaTotal;
+                                            var porcentajeTotal = escotillasResumen.PorcentajeTotal;
+                                        }
+                                    @((diferenciaTotal < 0 ? "-" : "") + string.Format("{0:N2}",
+                                                                    Math.Abs((decimal)porcentajeTotal)) + "%")
+                                </td>
+                                <td>@escotillasResumen.EstadoGeneral</td>
+                            </tr>
+                        </tfoot>
+                                        }
+                    </table>
+                    <div class="p-3 bg-light border-top text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica
+                            sobrante
+                        </small>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/gh/linways/table-to-excel@v1.0.4/dist/tableToExcel.js"></script>
     <script>
-        document.getElementById('exportToExcel').addEventListener('click', function () {
-            let table = document.querySelector('table');
-            let fileName = 'Informe_General_' + new Date().toISOString().slice(0,10);
-            
-            TableToExcel.convert(table, {
-                name: fileName + '.xlsx',
-                sheet: {
-                    name: 'Informe General'
-                }
+        $(document).ready(function () {
+            // Toggle escotillas visibility
+            $('#btnToggleEscotillas').on('click', function () {
+                $('#cardEscotillas').slideToggle();
+                $(this).find('i').toggleClass('fa-eye fa-eye-slash');
             });
-        });
 
-        document.getElementById('convertToLbs').addEventListener('click', function() {
-            const kgToLbs = 2.20462;
-            const cells = document.querySelectorAll('td.text-end');
-            
-            cells.forEach(cell => {
-                const text = cell.textContent;
-                if (text.includes('Kg')) {
-                    const value = parseFloat(text);
-                    if (!isNaN(value)) {
-                        const lbs = (value * kgToLbs).toFixed(2);
-                        cell.textContent = text.replace(/[\d.,]+/g, lbs).replace('Kg', 'Lbs');
+            document.getElementById('exportToExcel').addEventListener('click', function () {
+                let table = document.querySelector('table');
+                let fileName = 'Informe_General_' + new Date().toISOString().slice(0, 10);
+
+                TableToExcel.convert(table, {
+                    name: fileName + '.xlsx',
+                    sheet: {
+                        name: 'Informe General'
                     }
-                }
+                });
             });
-            
-            // Actualizar encabezados
-            const headers = document.querySelectorAll('th');
-            headers.forEach(header => {
-                if (header.textContent.includes('Kg')) {
-                    header.textContent = header.textContent.replace('Kg', 'Lbs');
-                }
-            });
-            
-            this.disabled = true;
-        });
 
-        // Agregar animación de carga al formulario
-        document.querySelector('form').addEventListener('submit', function() {
-            const select = this.querySelector('select');
-            const currentText = select.options[select.selectedIndex].text;
-            select.disabled = true;
-            select.parentElement.insertAdjacentHTML('beforeend', 
-                '<div class="position-absolute end-0 me-2 spinner-border spinner-border-sm text-primary"></div>');
-        });
+            document.getElementById('convertToLbs').addEventListener('click', function () {
+                const kgToLbs = 2.20462;
+                const cells = document.querySelectorAll('td.text-end');
+
+                cells.forEach(cell => {
+                    const text = cell.textContent;
+                    if (text.includes('Kg')) {
+                        const value = parseFloat(text);
+                        if (!isNaN(value)) {
+                            const lbs = (value * kgToLbs).toFixed(2);
+                            cell.textContent = text.replace(/[\d.,]+/g, lbs).replace('Kg', 'Lbs');
+                        }
+                    }
+                });
+
+                // Actualizar encabezados
+                const headers = document.querySelectorAll('th');
+                headers.forEach(header => {
+                    if (header.textContent.includes('Kg')) {
+                        header.textContent = header.textContent.replace('Kg', 'Lbs');
+                    }
+                });
+
+                this.disabled = true;
+            });
+
+            // Agregar animación de carga al formulario
+            document.querySelector('form').addEventListener('submit', function () {
+                const select = this.querySelector('select');
+                const currentText = select.options[select.selectedIndex].text;
+                select.disabled = true;
+                select.parentElement.insertAdjacentHTML('beforeend',
+                    '<div class="position-absolute end-0 me-2 spinner-border spinner-border-sm text-primary"></div>');
+            });
+        }); 
     </script>
 }

@@ -1,0 +1,182 @@
+/* Escotillas table styling */
+.table-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+    position: relative;
+}
+
+.table-scroll thead.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+.table-scroll .table-success-dark {
+    background-color: #198754;
+    color: white;
+}
+
+.table-scroll .table-fixed-header th {
+    position: sticky;
+    top: 0;
+    background-color: #198754;
+    color: white;
+}
+
+.table-fixed-header thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #212529;
+}
+
+.table-success-dark {
+    background-color: #198754;
+    color: white;
+}
+
+/* Add this to your shared styles if not already there */
+.bg-gradient {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* Add to your site styles or create a new CSS file */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.action-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-teal {
+    background-color: #20c997;
+    color: white;
+}
+
+.btn-teal:hover {
+    background-color: #1ba87d;
+    color: white;
+}
+
+.table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+    position: relative;
+}
+
+.table-responsive thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white;
+}
+
+.table-responsive tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
+    background-color: white;
+}
+
+.table-responsive thead th {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-responsive tfoot td {
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-scroll thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white !important;
+}
+
+.table-scroll tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
+    background-color: white !important;
+}
+
+.table-scroll thead th {
+    background-color: white !important;
+    color: #212529 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-scroll tfoot td {
+    background-color: white !important;
+    color: #212529 !important;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-success-dark {
+    background-color: white !important;
+    color: #212529 !important;
+    font-weight: bold;
+}
+
+thead.sticky-top th {
+    background-color: white !important;
+    color: #212529 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.table-light {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+.table-primary {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+.table-scroll thead th,
+.table-scroll tfoot td,
+.table-success-dark {
+    background-color: white !important;
+    color: #212529 !important;
+    font-weight: bold;
+}
+
+.table-fixed-header th {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+/* Table headers and footers styling */
+.table-light,
+.table-primary,
+.table-success-dark,
+.table-scroll thead th,
+.table-scroll tfoot td,
+.table-scroll .table-success-dark,
+.table-fixed-header th,
+thead.sticky-top th,
+tfoot.sticky-bottom td {
+    background-color: white !important;
+    color: #212529 !important;
+    font-weight: bold;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Override any other background colors */
+.table thead,
+.table tfoot,
+.table-scroll thead,
+.table-scroll tfoot {
+    background-color: white !important;
+}

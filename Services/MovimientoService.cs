@@ -227,11 +227,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 if (root.TryGetProperty("value", out var importacionesElement))
                 {
                     var importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesElement.GetRawText(), options);
-                    return importaciones?.Select(i => new SelectListItem
-                    {
-                        Value = i.id.ToString(),
-                        Text = $"ID: {i.id} - {i.Barco?.nombrebarco ?? "Sin barco"} - {i.fechahora:dd/MM/yyyy}"
-                    }) ?? Enumerable.Empty<SelectListItem>();
+                    return importaciones?
+                        .OrderByDescending(i => i.fechahora) // Order by date, most recent first
+                        .Select(i => new SelectListItem
+                        {
+                            Value = i.id.ToString(),
+                            Text = $"{i.id} - {i.fechahora:dd/MM/yyyy} - {i.Barco?.nombrebarco ?? "Sin barco"}"
+                        }) ?? Enumerable.Empty<SelectListItem>();
                 }
 
                 return Enumerable.Empty<SelectListItem>();
@@ -309,11 +311,15 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 var empresas = JsonSerializer.Deserialize<List<Empresa>>(empresasArray.GetRawText(), options);
 
-                return empresas?.Select(e => new SelectListItem
-                {
-                    Value = e.id_empresa.ToString(),
-                    Text = e.nombreempresa ?? string.Empty
-                }) ?? Enumerable.Empty<SelectListItem>();
+                // Filter for only active companies (estatus == 1) and order alphabetically by name
+                return empresas?
+                    .Where(e => e.estatus == 1)
+                    .OrderBy(e => e.nombreempresa)
+                    .Select(e => new SelectListItem
+                    {
+                        Value = e.id_empresa.ToString(),
+                        Text = $"{e.id_empresa} - {e.nombreempresa ?? string.Empty}"
+                    }) ?? Enumerable.Empty<SelectListItem>();
             }
             catch (HttpRequestException ex)
             {
@@ -396,6 +402,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
+                // Extract the totalMovimientos value and store it in a property we can access later
+                if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
+                {
+                    // Store the total value in ViewBag through a custom property in this service
+                    // We'll access this after calling GetInformeGeneralAsync
+                    TotalMovimientos = totalMovimientosElement.GetInt32();
+                }
+
                 if (root.TryGetProperty("data", out var dataElement))
                 {
                     var informes = JsonSerializer.Deserialize<List<InformeGeneralViewModel>>(
@@ -413,6 +427,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 throw;
             }
         }
+
+        // Add this property to store the total count
+        public int TotalMovimientos { get; private set; }
 
         public async Task<IEnumerable<Movimiento>> GetAllMovimientosAsync()
         {

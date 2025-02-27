@@ -234,6 +234,10 @@ namespace API.Controllers
         {
             try
             {
+                var totalMovimientos = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId && m.tipotransaccion == 2)
+                    .CountAsync();
+
                 var query = from m in _context.Movimientos
                             join i in _context.Importaciones on m.idimportacion equals i.id
                             join e in _context.Empresas on m.idempresa equals e.id_empresa
@@ -261,14 +265,17 @@ namespace API.Controllers
                     item.RequeridoTon = item.RequeridoKg / 1000;
                     item.FaltanteKg = item.RequeridoKg - item.DescargaKg;
                     item.TonFaltantes = item.FaltanteKg / 1000;
-                    // Reemplazamos: ya no se redondea hacia arriba y se deja a 2 decimales, permitiendo negativos
                     item.CamionesFaltantes = Math.Round(item.FaltanteKg / 30000.0, 2);
                     item.PorcentajeDescarga = item.RequeridoKg > 0
                         ? (item.DescargaKg / item.RequeridoKg) * 100
                         : 0;
                 }
 
-                return Ok(new { data = informeData });
+                return Ok(new
+                {
+                    data = informeData,
+                    totalMovimientos = totalMovimientos // Add the total count to the response
+                });
             }
             catch (Exception ex)
             {

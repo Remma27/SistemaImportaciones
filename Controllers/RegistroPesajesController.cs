@@ -425,6 +425,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [HttpGet]
         public async Task<IActionResult> ReporteGeneral(int? selectedBarco)
         {
             try

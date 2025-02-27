@@ -24,11 +24,30 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var barcos = await _movimientoService.GetBarcosSelectListAsync();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
-                var informeGeneral = selectedBarco.HasValue
-                    ? await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value)
-                    : new List<InformeGeneralViewModel>();
+                if (selectedBarco.HasValue)
+                {
+                    // Get the informe general data
+                    var informeGeneral = await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value);
 
-                return View(informeGeneral);
+                    // Get the total count from the property set in the service
+                    ViewBag.TotalMovimientos = _movimientoService.TotalMovimientos;
+
+                    // Get escotillas data
+                    try
+                    {
+                        var escotillasData = await _movimientoService.GetEscotillasDataAsync(selectedBarco.Value);
+                        ViewBag.EscotillasData = escotillasData;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error getting escotillas data: {Message}", ex.Message);
+                        // Continue without escotillas data
+                    }
+
+                    return View(informeGeneral);
+                }
+
+                return View(new List<InformeGeneralViewModel>());
             }
             catch (Exception ex)
             {

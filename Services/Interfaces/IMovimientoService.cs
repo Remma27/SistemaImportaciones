@@ -7,6 +7,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services.Interfaces
 {
     public interface IMovimientoService
     {
+        int TotalMovimientos { get; }
         Task<IEnumerable<Movimiento>> GetAllAsync();
         Task<Movimiento> GetByIdAsync(int id);
         Task<Movimiento> CreateAsync(Movimiento movimiento);

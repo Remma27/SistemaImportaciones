@@ -202,23 +202,139 @@ function exportTableToExcelWithXLSX(tableId, filename = '') {
     }
 
     const wb = XLSX.utils.book_new()
-    const ws_data = []
 
-    const rows = table.querySelectorAll('tr')
+    const excelData = createExcelDataFromTable(table)
+    const ws = XLSX.utils.aoa_to_sheet(excelData.data)
+
+    formatNumbersInExcelSheet(ws, excelData.data)
+
+    ws['!cols'] = calculateColumnWidths(excelData.data)
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
+    XLSX.writeFile(wb, filename + '.xlsx')
+}
+
+function createExcelDataFromTable(table) {
+    const headerCells = table.querySelectorAll('thead tr:first-child th')
+    const headerInfo = getHeaderStructure(headerCells)
+    const data = [headerInfo.headerRow]
+
+    const rows = table.querySelectorAll('tbody tr')
     for (let i = 0; i < rows.length; i++) {
-        const row_data = []
-        const cols = rows[i].querySelectorAll('td, th')
-
-        for (let j = 0; j < cols.length; j++) {
-            row_data.push(cols[j].innerText.trim())
-        }
-
-        ws_data.push(row_data)
+        const row = processTableRow(rows[i], headerInfo)
+        data.push(row)
     }
 
-    const ws = XLSX.utils.aoa_to_sheet(ws_data)
+    const footerRows = table.querySelectorAll('tfoot tr')
+    if (footerRows.length > 0) {
+        for (let i = 0; i < footerRows.length; i++) {
+            const row = processTableRow(footerRows[i], headerInfo)
+            data.push(row)
+        }
+    }
 
-    const colWidth = ws_data.reduce((acc, row) => {
+    return { data, totalColumns: headerInfo.headerRow.length }
+}
+
+function getHeaderStructure(headerCells) {
+    const headerRow = []
+    const excludeColumnIndices = []
+    const columnMapping = []
+    let outputColIndex = 0
+
+    headerCells.forEach((cell, index) => {
+        const headerText = cell.innerText.trim()
+
+        if (headerText === 'Acciones') {
+            excludeColumnIndices.push(index)
+            columnMapping[index] = -1
+            return
+        }
+
+        if (cell.classList.contains('unit-toggle-columns')) {
+            const headerName =
+                cell.querySelector('div:first-child')?.textContent.trim() || headerText.split('\n')[0].trim()
+
+            headerRow.push(`${headerName} (Libras)`)
+            headerRow.push(`${headerName} (Quintales)`)
+
+            columnMapping[index] = [outputColIndex, outputColIndex + 1]
+            outputColIndex += 2
+        } else {
+            headerRow.push(headerText)
+            columnMapping[index] = outputColIndex
+            outputColIndex++
+        }
+    })
+
+    return {
+        headerRow,
+        excludeColumnIndices,
+        columnMapping,
+        totalColumns: outputColIndex,
+    }
+}
+
+function processTableRow(row, headerInfo) {
+    const { headerRow, excludeColumnIndices, columnMapping } = headerInfo
+    const rowData = Array(headerRow.length).fill('')
+    const cells = row.querySelectorAll('td, th')
+
+    let colIndex = 0
+    for (let j = 0; j < cells.length; j++) {
+        const cell = cells[j]
+        const colspan = parseInt(cell.getAttribute('colspan') || '1')
+
+        if (excludeColumnIndices.includes(colIndex)) {
+            colIndex += colspan
+            continue
+        }
+
+        if (cell.classList.contains('unit-toggle-columns')) {
+            const topValue = cell.querySelector('.top-value')?.textContent || ''
+            const bottomValue = cell.querySelector('.bottom-value')?.textContent || ''
+
+            const [lbsIndex, qqIndex] = Array.isArray(columnMapping[colIndex])
+                ? columnMapping[colIndex]
+                : [columnMapping[colIndex], columnMapping[colIndex] + 1]
+
+            const lbsValue = topValue.replace(/[^\d.,\-]/g, '').trim()
+            rowData[lbsIndex] = lbsValue
+
+            const qqValue = bottomValue.replace(/[^\d.,\-]/g, '').trim()
+            rowData[qqIndex] = qqValue
+        } else if (colspan > 1) {
+            rowData[columnMapping[colIndex]] = cell.innerText.trim()
+        } else {
+            if (columnMapping[colIndex] !== undefined && columnMapping[colIndex] !== -1) {
+                rowData[columnMapping[colIndex]] = cell.innerText.trim()
+            }
+        }
+
+        colIndex += colspan
+    }
+
+    return rowData
+}
+
+function formatNumbersInExcelSheet(worksheet, data) {
+    for (let i = 1; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: i, c: j })
+            const cellValue = data[i][j]
+
+            if (/^-?[\d.,]+$/.test(cellValue)) {
+                const numValue = parseFloat(cellValue.replace(/,/g, ''))
+                if (!isNaN(numValue)) {
+                    worksheet[cellAddress] = { v: numValue, t: 'n' }
+                }
+            }
+        }
+    }
+}
+
+function calculateColumnWidths(data) {
+    const colWidths = data.reduce((acc, row) => {
         for (let i = 0; i < row.length; i++) {
             const cellValue = row[i] || ''
             acc[i] = Math.max(acc[i] || 8, cellValue.toString().length + 2)
@@ -226,11 +342,7 @@ function exportTableToExcelWithXLSX(tableId, filename = '') {
         return acc
     }, [])
 
-    ws['!cols'] = colWidth.map(w => ({ width: w }))
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
-
-    XLSX.writeFile(wb, filename + '.xlsx')
+    return colWidths.map(w => ({ width: w }))
 }
 
 function hasTableData(tableId) {
@@ -273,6 +385,9 @@ function updateExcelButtonState() {
     const hasData = hasTableData('tabla2')
 
     btnExport.prop('disabled', !selectedBarco || !hasData)
+
+    const hasDataTabla1 = hasTableData('tabla1')
+    $('#btnExportarExcelIndividuales').prop('disabled', !selectedBarco || !hasDataTabla1)
 }
 
 function formatNumber(num) {
@@ -280,7 +395,77 @@ function formatNumber(num) {
 }
 
 function initializeWeightValues() {
-    console.log('Unit conversion functionality is temporarily disabled')
+    addConversionColumns()
+}
+
+function addConversionColumns() {
+    if ($('.unit-toggle-columns').length > 0) {
+        return
+    }
+
+    const tabla2 = $('#tabla2')
+    if (tabla2.length === 0) return
+
+    $('.unit-toggle-columns').hide()
+}
+
+let showingMetric = true
+function setupUnitToggle() {
+    $('#btnToggleUnidad').off('click')
+
+    const selectedBarco = $('select[name="selectedBarco"]').val() || $('#selectImportacion').val()
+    const hasData = hasTableData('tabla2')
+    $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
+
+    $('#btnToggleUnidad').on('click', function () {
+        if ($(this).prop('disabled')) return
+
+        showingMetric = !showingMetric
+
+        const buttonText = $(this).find('span')
+        buttonText.text(showingMetric ? 'Unidades' : 'Métrico')
+        $(this).attr('title', showingMetric ? 'Mostrar en Libras' : 'Mostrar en Kilogramos')
+        $(this).find('i').toggleClass('fa-weight-scale fa-balance-scale')
+
+        const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
+
+        toggleColumns.forEach(col => {
+            if (!showingMetric) {
+                col.style.display = 'table-cell'
+            }
+        })
+
+        setTimeout(() => {
+            toggleColumns.forEach(col => {
+                if (showingMetric) {
+                    $(col).removeClass('visible')
+                } else {
+                    $(col).addClass('visible')
+                }
+            })
+
+            if (showingMetric) {
+                setTimeout(() => {
+                    toggleColumns.forEach(col => {
+                        col.style.display = 'none'
+                    })
+                }, 300)
+            }
+
+            adjustTableLayout()
+        }, 50)
+    })
+
+    $('#selectImportacion, select[name="selectedBarco"]').on('change', function () {
+        const selectedBarco = $(this).val() || $('select[name="selectedBarco"]').val() || $('#selectImportacion').val()
+        const hasData = hasTableData('tabla2')
+        $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
+    })
+}
+
+function adjustTableLayout() {
+    $('.table-scroll').css('display', 'none').height()
+    $('.table-scroll').css('display', '')
 }
 
 function initializeReporteIndividualLink() {
@@ -376,9 +561,21 @@ $(document).ready(function () {
         exportTableToExcel('tabla2', 'Resumen_Agregado')
     })
 
-    $('#btnToggleUnidad').on('click', function () {
-        console.log('Unit conversion functionality is temporarily disabled')
-    })
+    $('#btnToggleUnidad').prop('disabled', true)
+
+    setupUnitToggle()
+
+    initializeWeightValues()
 
     initializeReporteIndividualLink()
+
+    $('#btnExportarExcelIndividuales').on('click', function () {
+        exportTableToExcel('tabla1', 'Registros_Individuales_' + new Date().toISOString().slice(0, 10))
+    })
+
+    updateExcelButtonState()
+
+    $('#selectImportacion, select[name="selectedBarco"], select[name="empresaId"]').on('change', function () {
+        updateExcelButtonState()
+    })
 })

@@ -2,7 +2,6 @@
   VARIABLES
 ==============================================*/
 :root {
-    /* Colors */
     --primary-color: #0d6efd;
     --primary-hover: #0b5ed7;
     --success-color: #198754;
@@ -18,14 +17,12 @@
     --text-white: #fff;
     --text-dark: #212529;
 
-    /* Spacing */
     --card-spacing-sm: 1rem;
     --card-spacing-md: 1.5rem;
     --btn-padding-x: 0.75rem;
     --btn-padding-y: 0.4rem;
     --btn-group-gap: 8px;
 
-    /* Dimensions */
     --scrollbar-size: 8px;
     --btn-icon-size: 0.85rem;
 }
@@ -68,7 +65,6 @@
     }
 }
 
-/* Gradient Headers */
 .bg-gradient.bg-primary {
     background: linear-gradient(to right, var(--primary-color), var(--primary-hover)) !important;
     color: var(--text-white) !important;
@@ -93,7 +89,6 @@
 /*==============================================
   TABLES
 ==============================================*/
-/* Base Table */
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -108,7 +103,6 @@
     white-space: nowrap;
 }
 
-/* Table Container */
 .table-responsive-custom,
 .table-container {
     width: 100%;
@@ -122,19 +116,21 @@
     margin-bottom: 0;
 }
 
-/* Table Headers */
 .table > thead > tr > th {
     background-color: var(--light-bg);
     border-bottom: 2px solid var(--border-color);
     color: var(--text-dark);
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom-width: 1px;
 }
 
-/* Table Hover */
 .table-hover tbody tr:hover {
     background-color: var(--hover-bg);
 }
 
-/* Column Sizes */
 .column-sm {
     width: 8%;
 }
@@ -145,7 +141,6 @@
     width: 15%;
 }
 
-/* Table Color Variants */
 .bg-purple,
 .table-purple thead th {
     background-color: var(--purple-color) !important;
@@ -170,11 +165,11 @@
     color: var(--text-dark) !important;
 }
 
-/* Fixed Header Table */
 .table-fixed-header {
     position: relative;
     border-collapse: separate;
     border-spacing: 0;
+    width: 100%;
 }
 
 .table-fixed-header thead th,
@@ -186,6 +181,7 @@
 .table-fixed-header thead th {
     top: 0;
     border-bottom: 2px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .table-fixed-header tfoot td {
@@ -194,9 +190,11 @@
     background-color: white !important;
     color: var(--text-dark) !important;
     font-weight: bold;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.1);
+    background-color: #f8f9fa;
+    font-weight: 500;
 }
 
-/* Fixed Headers */
 .table-fixed-header thead th {
     position: sticky;
     top: 0;
@@ -204,7 +202,6 @@
     background: inherit;
 }
 
-/* Fixed Footer */
 .table-fixed-header tfoot tr td {
     position: sticky;
     bottom: 0;
@@ -212,13 +209,14 @@
     background: inherit;
 }
 
-/* Table Footers */
 .table tfoot tr td {
     font-weight: bold;
     border-top: 2px solid var(--border-color);
+    font-weight: 600;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
 }
 
-/* Scrollable Table Container */
 .table-scroll {
     max-height: 400px;
     overflow-y: auto;
@@ -227,9 +225,9 @@
     position: relative;
     border-bottom: 1px solid var(--border-color);
     border-radius: 0.375rem;
+    border-radius: 0 0 0.375rem 0.375rem;
 }
 
-/* Custom Scrollbar */
 .table-responsive-custom::-webkit-scrollbar,
 .table-container::-webkit-scrollbar,
 .table-scroll::-webkit-scrollbar {
@@ -256,7 +254,6 @@
     background: #555;
 }
 
-/* Custom Scrollbar */
 .table-scroll::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -276,7 +273,6 @@
     background: #555;
 }
 
-/* Empty State Styling */
 .table tbody tr td[colspan] {
     padding: 1rem !important;
     vertical-align: middle;
@@ -291,10 +287,73 @@
     gap: 0.5rem;
 }
 
+.conversion-cell {
+    background-color: rgba(240, 249, 255, 0.7);
+    color: #0056b3;
+    font-weight: 500;
+    border-left: 2px solid #e9ecef;
+    border-right: 2px solid #e9ecef;
+    transition: background-color 0.2s ease;
+}
+
+.conversion-cell:hover {
+    background-color: rgba(230, 244, 255, 0.9);
+}
+
+.unit-toggle-columns {
+    display: none;
+    opacity: 0;
+    width: 0;
+    padding: 0;
+    transition: opacity 0.3s ease, width 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+}
+
+.unit-toggle-columns.visible {
+    opacity: 1;
+    width: auto;
+    padding: 0.75rem;
+    display: table-cell;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.dual-value-cell {
+    position: relative;
+    min-height: 48px;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+
+.dual-value-cell .top-value {
+    display: block;
+    font-weight: 500;
+    color: #0056b3;
+}
+
+.dual-value-cell .divider {
+    display: block;
+    border-top: 1px dashed rgba(0, 0, 0, 0.2);
+    margin: 3px 0;
+}
+
+.dual-value-cell .bottom-value {
+    display: block;
+    font-size: 0.9em;
+    color: #555;
+}
+
 /*==============================================
   FORMS
 ==============================================*/
-/* Form Floating */
 .form-floating {
     position: relative;
     margin-bottom: 0;
@@ -321,7 +380,6 @@
 /*==============================================
   BUTTONS
 ==============================================*/
-/* Basic Button Styling */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -337,7 +395,6 @@
     font-size: var(--btn-icon-size);
 }
 
-/* Button Variants with Improved Contrast */
 .btn-primary {
     background: var(--primary-color);
     border-color: var(--primary-color);
@@ -386,7 +443,6 @@
     color: white;
 }
 
-/* Improved Action Buttons Layout */
 .action-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -396,7 +452,6 @@
     align-items: center;
 }
 
-/* Standard action buttons with text and icon */
 .action-buttons .action-btn {
     height: 38px;
     margin-right: 5px;
@@ -406,20 +461,17 @@
     align-items: center;
 }
 
-/* Make text buttons wider */
 .action-buttons .action-btn:has(span) {
     min-width: 100px;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
 }
 
-/* Make icon-only buttons square */
 .action-buttons .action-btn:not(:has(span)) {
     width: 38px;
     padding: 0;
 }
 
-/* Center icon in buttons without text */
 .action-buttons .action-btn:not(:has(span)) i {
     margin: 0 auto;
 }
@@ -428,14 +480,12 @@
     margin-right: 0.5rem;
 }
 
-/* Button groups for related actions */
 .action-buttons .view-controls {
     display: inline-flex;
     border-radius: 0.375rem;
     overflow: hidden;
 }
 
-/* Compact buttons in view controls */
 .action-buttons .view-controls .btn {
     width: 38px;
     height: 38px;
@@ -457,7 +507,6 @@
 /*==============================================
   RESPONSIVE LAYOUT
 ==============================================*/
-/* Row Spacing */
 .row.gy-3 {
     --bs-gutter-y: 1rem;
 }
@@ -468,7 +517,6 @@
     }
 }
 
-/* Table Responsiveness */
 @media (max-width: 1199.98px) {
     #tabla1 {
         min-width: 1200px;
@@ -497,14 +545,12 @@
     }
 }
 
-/* Form Responsiveness */
 @media (max-width: 991.98px) {
     .form-floating {
         margin-bottom: 1rem;
     }
 }
 
-/* Button Responsiveness */
 @media (max-width: 767.98px) {
     .action-buttons {
         justify-content: center;
@@ -557,4 +603,65 @@
         white-space: normal;
         min-width: 200px;
     }
+}
+
+.unit-toggle-columns,
+.unit-toggle-columns.visible {
+    background-color: #ffffff !important;
+}
+
+.dual-value-cell {
+    background-color: #ffffff !important;
+}
+
+.table-purple thead th.unit-toggle-columns,
+.bg-purple th.unit-toggle-columns,
+th.unit-toggle-columns,
+td.unit-toggle-columns {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+.conversion-cell {
+    background-color: rgba(248, 250, 255, 0.7) !important;
+    color: #0056b3;
+}
+
+.conversion-cell:hover {
+    background-color: rgba(240, 245, 255, 0.9) !important;
+}
+
+tr.bg-purple {
+    background-color: var(--purple-color) !important;
+}
+
+tr.bg-purple th.unit-toggle-columns,
+tr.bg-purple td.unit-toggle-columns {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-left: 1px solid #e9ecef;
+    border-right: 1px solid #e9ecef;
+}
+
+.unit-toggle-columns {
+    background-color: #ffffff !important;
+}
+
+.unit-toggle-columns.visible {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+}
+
+tr.bg-purple .unit-toggle-columns * {
+    color: #212529 !important;
+}
+
+.dual-value-cell,
+tr.bg-purple .dual-value-cell,
+.unit-toggle-columns .dual-value-cell {
+    background-color: #ffffff !important;
+}
+
+.conversion-cell {
+    background-color: rgba(248, 250, 255, 0.7) !important;
 }

@@ -5,7 +5,6 @@
     var selectedBarco = Context.Request.Query["selectedBarco"].ToString();
     var returnController = Context.Request.Query["returnController"].ToString();
     var backController = !string.IsNullOrEmpty(returnController) ? returnController : "RegistroPesajes";
-    // Lista de todas las escotillas que queremos mostrar
     var todasLasEscotillas = new int[] { 1, 2, 3, 4, 5, 6, 7 };
 }
 
@@ -91,8 +90,8 @@
                                         
                                         @if (escotilla != null)
                                         {
-                                            <td class="text-end">@escotilla.DescargaKg.ToString("N0")</td>
-                                            <td class="text-end">@escotilla.DescargaLb.ToString("N0")</td>
+                                            <td class="text-end">@escotilla.DescargaKg.ToString("N2")</td>
+                                            <td class="text-end">@escotilla.DescargaLb.ToString("N2")</td>
                                             <td class="text-end">@escotilla.DescargaTon.ToString("N2")</td>
                                             <td class="text-end">@escotilla.DescargaQuintales.ToString("N2")</td>
                                         }
@@ -106,11 +105,10 @@
                                     </tr>
                                 }
                                 
-                                <!-- Subtotales por empresa -->
                                 <tr class="table-secondary">
                                     <td colspan="2" class="text-end fw-bold">Subtotal @empresa.NombreEmpresa:</td>
-                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaKg).ToString("N0")</td>
-                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaLb).ToString("N0")</td>
+                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaKg).ToString("N2")</td>
+                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaLb).ToString("N2")</td>
                                     <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaTon).ToString("N2")</td>
                                     <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaQuintales).ToString("N2")</td>
                                 </tr>
@@ -120,10 +118,10 @@
                             <tr>
                                 <td colspan="2" class="text-end fw-bold">TOTAL GENERAL:</td>
                                 <td class="text-end fw-bold">
-                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaKg).ToString("N0")
+                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaKg).ToString("N2")
                                 </td>
                                 <td class="text-end fw-bold">
-                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaLb).ToString("N0")
+                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaLb).ToString("N2")
                                 </td>
                                 <td class="text-end fw-bold">
                                     @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaTon).ToString("N2")
@@ -142,37 +140,5 @@
 
 @section Scripts {
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('#btnExportarExcel').on('click', function() {
-                const table = document.getElementById('tablaReporte');
-                const fileName = 'Reporte_Escotillas_Por_Empresa_' + new Date().toISOString().slice(0, 10);
-                
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.table_to_sheet(table);
-                
-                // Ajustar ancho de columnas
-                const colWidths = [];
-                const range = XLSX.utils.decode_range(ws['!ref']);
-                
-                for (let C = range.s.c; C <= range.e.c; ++C) {
-                    let maxWidth = 10;
-                    for (let R = range.s.r; R <= range.e.r; ++R) {
-                        const cell = XLSX.utils.encode_cell({ r: R, c: C });
-                        if (ws[cell]) {
-                            const value = ws[cell].v || '';
-                            const strValue = String(value);
-                            maxWidth = Math.max(maxWidth, strValue.length + 2);
-                        }
-                    }
-                    colWidths.push({ wch: maxWidth });
-                }
-                
-                ws['!cols'] = colWidths;
-                
-                XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-                XLSX.writeFile(wb, fileName + '.xlsx');
-            });
-        });
-    </script>
+    <script src="~/js/reporteGeneral.js"></script>
 }

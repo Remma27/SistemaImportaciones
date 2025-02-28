@@ -148,6 +148,16 @@ namespace API.Controllers
 
                 decimal cargaTotalInicial = (decimal)(importacion.totalcargakilos ?? 0);
 
+                var empresaRequerimientos = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId && m.tipotransaccion == 1)
+                    .GroupBy(m => m.idempresa)
+                    .Select(g => new
+                    {
+                        EmpresaId = g.Key,
+                        TotalRequerido = (decimal)g.Sum(m => m.cantidadrequerida ?? 0)
+                    })
+                    .ToDictionaryAsync(k => k.EmpresaId, v => v.TotalRequerido);
+
                 var movimientosMapeados = new List<dynamic>();
 
                 foreach (var m in movimientos)
@@ -185,11 +195,20 @@ namespace API.Controllers
                 var movimientosFinales = new List<object>();
                 decimal cantidadTotalAcumulada = 0;
 
+                var empresasProcesadas = new HashSet<int>();
+
                 foreach (var mov in primerosRegistros.Concat(restantesRegistros))
                 {
                     cantidadTotalAcumulada += mov.PesoEntregado;
-
                     decimal cantidadPorRetirar = cargaTotalInicial - cantidadTotalAcumulada;
+
+                    bool esPrimerRegistro = !empresasProcesadas.Contains(mov.IdEmpresa);
+
+                    decimal empresaRequerido = empresaRequerimientos.ContainsKey(mov.IdEmpresa)
+                        ? empresaRequerimientos[mov.IdEmpresa]
+                        : 0;
+
+                    empresasProcesadas.Add(mov.IdEmpresa);
 
                     movimientosFinales.Add(new
                     {
@@ -203,10 +222,17 @@ namespace API.Controllers
                         PesoEntregado = Math.Round(mov.PesoEntregado, 2),
                         CantidadRetirarKg = Math.Round(cantidadPorRetirar, 2),
                         CantidadRetiradaKg = Math.Round(cantidadTotalAcumulada, 2),
-                        CantidadRequeridaQuintales = Math.Round(cantidadPorRetirar / KG_PER_QUINTAL, 2) == 0 ? 0 : Math.Round(cantidadPorRetirar / KG_PER_QUINTAL, 2),
-                        CantidadEntregadaQuintales = Math.Round(cantidadTotalAcumulada / KG_PER_QUINTAL, 10) == 0 ? 0 : Math.Round(cantidadTotalAcumulada / KG_PER_QUINTAL, 10),
 
-                        CantidadRequeridaLibras = Math.Round(cantidadPorRetirar * KG_TO_LB, 2),
+                        CantidadRequeridaQuintales = esPrimerRegistro
+                            ? Math.Round(empresaRequerido / KG_PER_QUINTAL, 2)
+                            : 0,
+
+                        CantidadEntregadaQuintales = Math.Round(cantidadTotalAcumulada / KG_PER_QUINTAL, 10),
+
+                        CantidadRequeridaLibras = esPrimerRegistro
+                            ? Math.Round(empresaRequerido * KG_TO_LB, 2)
+                            : 0,
+
                         CantidadEntregadaLibras = Math.Round(cantidadTotalAcumulada * KG_TO_LB, 3)
                     });
                 }
@@ -238,43 +264,109 @@ namespace API.Controllers
                     .Where(m => m.idimportacion == importacionId && m.tipotransaccion == 2)
                     .CountAsync();
 
-                var query = from m in _context.Movimientos
-                            join i in _context.Importaciones on m.idimportacion equals i.id
-                            join e in _context.Empresas on m.idempresa equals e.id_empresa
-                            join b in _context.Barcos on i.idbarco equals b.id
-                            where (!importacionId.HasValue || i.id == importacionId)
-                            group m by new { e.id_empresa, e.nombreempresa } into g
-                            select new InformeGeneralViewModel
-                            {
-                                Empresa = g.Key.nombreempresa ?? "Sin Empresa",
-                                RequeridoKg = (double)g.Where(m => m.tipotransaccion == 1)
-                                             .Sum(m => m.cantidadrequerida ?? 0),
-                                DescargaKg = (double)g.Where(m => m.tipotransaccion == 2)
-                                            .Sum(m => m.cantidadentregada),
-                                ConteoPlacas = g.Where(m => m.placa != null)
-                                              .Select(m => m.placa)
-                                              .Distinct()
-                                              .Count()
-                            };
+                var entregasRaw = await _context.Movimientos
+                    .Where(m => (!importacionId.HasValue || m.idimportacion == importacionId)
+                          && m.tipotransaccion == 2
+                          && m.cantidadentregada != 0)
+                    .Select(m => new { m.idempresa, m.cantidadentregada })
+                    .ToListAsync();
 
-                var informeData = await query.ToListAsync();
+                var promediosEntregas = entregasRaw
+                    .GroupBy(m => m.idempresa)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Average(m => (decimal)m.cantidadentregada)
+                    );
 
-                // Calculate derived fields
+                var camionesPorEmpresa = await _context.Movimientos
+                    .Where(m => (!importacionId.HasValue || m.idimportacion == importacionId)
+                          && m.tipotransaccion == 1)
+                    .GroupBy(m => m.idempresa)
+                    .Select(g => new
+                    {
+                        EmpresaId = g.Key,
+                        TotalCamiones = g.Sum(m => m.cantidadcamiones ?? 0)
+                    })
+                    .ToDictionaryAsync(k => k.EmpresaId, v => v.TotalCamiones);
+
+                var movimientosRaw = await _context.Movimientos
+                    .Where(m => !importacionId.HasValue || m.idimportacion == importacionId)
+                    .Select(m => new
+                    {
+                        m.idempresa,
+                        m.tipotransaccion,
+                        m.cantidadrequerida,
+                        m.cantidadentregada
+                    })
+                    .ToListAsync();
+
+                var empresas = await _context.Empresas.ToDictionaryAsync(e => e.id_empresa, e => e.nombreempresa ?? "Sin Empresa");
+
+                var informeData = movimientosRaw
+                    .GroupBy(m => m.idempresa)
+                    .Select(g => new InformeGeneralViewModel
+                    {
+                        EmpresaId = g.Key,
+                        Empresa = empresas.ContainsKey(g.Key) ? empresas[g.Key] : "Sin Empresa",
+                        RequeridoKg = (double)g.Where(m => m.tipotransaccion == 1)
+                                    .Sum(m => (decimal)(m.cantidadrequerida ?? 0)),
+                        DescargaKg = (double)g.Where(m => m.tipotransaccion == 2)
+                                    .Sum(m => (decimal)m.cantidadentregada),
+                        ConteoPlacas = 0
+                    })
+                    .ToList();
+
                 foreach (var item in informeData)
                 {
-                    item.RequeridoTon = item.RequeridoKg / 1000;
-                    item.FaltanteKg = item.RequeridoKg - item.DescargaKg;
-                    item.TonFaltantes = item.FaltanteKg / 1000;
-                    item.CamionesFaltantes = Math.Round(item.FaltanteKg / 30000.0, 2);
-                    item.PorcentajeDescarga = item.RequeridoKg > 0
-                        ? (item.DescargaKg / item.RequeridoKg) * 100
+                    decimal requeridoKgDecimal = (decimal)item.RequeridoKg;
+                    decimal descargaKgDecimal = (decimal)item.DescargaKg;
+                    decimal faltanteKgDecimal = requeridoKgDecimal - descargaKgDecimal;
+                    decimal faltanteTonDecimal = faltanteKgDecimal / 1000m;
+
+                    item.RequeridoTon = (double)(requeridoKgDecimal / 1000m);
+                    item.FaltanteKg = (double)faltanteKgDecimal;
+                    item.TonFaltantes = (double)faltanteTonDecimal;
+
+                    if (camionesPorEmpresa.ContainsKey(item.EmpresaId))
+                    {
+                        item.ConteoPlacas = camionesPorEmpresa[item.EmpresaId];
+                    }
+
+                    if (promediosEntregas.ContainsKey(item.EmpresaId) &&
+                        promediosEntregas[item.EmpresaId] != 0)
+                    {
+                        decimal promedioEntregado = promediosEntregas[item.EmpresaId];
+                        decimal promedioEntregadoTon = promedioEntregado / 1000m;
+
+                        if (promedioEntregadoTon != 0)
+                        {
+                            decimal camionesFaltantesDecimal = faltanteTonDecimal / promedioEntregadoTon;
+
+                            item.CamionesFaltantes = Math.Round(
+                                (double)camionesFaltantesDecimal,
+                                2,
+                                MidpointRounding.AwayFromZero
+                            );
+
+                            System.Diagnostics.Debug.WriteLine(
+                                $"EXACT Calculation: {faltanteTonDecimal} / {promedioEntregadoTon} = {camionesFaltantesDecimal} → {item.CamionesFaltantes}"
+                            );
+                        }
+                    }
+                    else
+                    {
+                        item.CamionesFaltantes = Math.Round((double)(faltanteKgDecimal / 30000m), 2);
+                    }
+
+                    item.PorcentajeDescarga = requeridoKgDecimal > 0
+                        ? (double)Math.Round((descargaKgDecimal / requeridoKgDecimal) * 100m, 2)
                         : 0;
                 }
 
                 return Ok(new
                 {
                     data = informeData,
-                    totalMovimientos = totalMovimientos // Add the total count to the response
+                    totalMovimientos = totalMovimientos
                 });
             }
             catch (Exception ex)
@@ -289,7 +381,6 @@ namespace API.Controllers
         {
             try
             {
-                // Obtener la lista de barcos que tienen movimientos (tipotransaccion == 1)
                 var barcos = await (from b in _context.Barcos
                                     join i in _context.Importaciones on b.id equals i.id
                                     join m in _context.Movimientos on i.id equals m.idimportacion
@@ -298,7 +389,6 @@ namespace API.Controllers
                                    .Distinct()
                                    .ToListAsync();
 
-                // Si no se ha seleccionado un barco, se devuelve count 0, data vacía y la lista de barcos
                 if (!selectedBarco.HasValue)
                 {
                     return Ok(new

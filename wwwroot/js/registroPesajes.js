@@ -578,4 +578,163 @@ $(document).ready(function () {
     $('#selectImportacion, select[name="selectedBarco"], select[name="empresaId"]').on('change', function () {
         updateExcelButtonState()
     })
+
+    function adjustNoteWidth() {
+        $('.table-scroll').each(function () {
+            var $tableContainer = $(this)
+            var $table = $tableContainer.find('table')
+            var $note = $tableContainer.find('.border-top.text-center')
+
+            if ($table.length && $note.length) {
+                $note.width($table.outerWidth())
+                console.log('Note width adjusted to: ' + $table.outerWidth() + 'px')
+            }
+        })
+    }
+
+    adjustNoteWidth()
+
+    $(window).resize(function () {
+        adjustNoteWidth()
+    })
+
+    $('.table-scroll').each(function () {
+        var $container = $(this)
+        if ($container[0].scrollWidth > $container.innerWidth()) {
+            console.log('Horizontal scrollbar detected')
+            $container.addClass('has-h-scroll')
+        }
+    })
+
+    function adjustNoteWidth() {
+        $('.table-scroll').each(function () {
+            var $tableContainer = $(this)
+            var $table = $tableContainer.find('table')
+            var $note = $tableContainer.find('.p-3.bg-light.border-top')
+
+            if ($table.length && $note.length) {
+                $note.width($table.width())
+                console.log('Note width adjusted to: ' + $table.width() + 'px')
+            }
+        })
+    }
+
+    adjustNoteWidth()
+
+    $(window).resize(function () {
+        adjustNoteWidth()
+    })
+
+    $('.table-scroll').on('scroll', function () {
+        var $tableContainer = $(this)
+        var $table = $tableContainer.find('table')
+        var $note = $tableContainer.find('.p-3.bg-light.border-top')
+
+        if ($table.length && $note.length) {
+            $note.css({
+                left: -1 * $(this).scrollLeft() + 'px',
+                position: 'relative',
+                width: $table.width() + 'px',
+            })
+        }
+    })
+
+    function adjustNoteWidth() {
+        $('.table-scroll').each(function () {
+            var $table = $(this).find('table')
+            var $note = $(this).find('.p-3.bg-light.border-top')
+
+            if ($table.length && $note.length) {
+                $note.width($table.width())
+
+                console.log('Table width:', $table.width(), 'Note width:', $note.width())
+            }
+        })
+    }
+
+    adjustNoteWidth()
+
+    $(window).resize(function () {
+        adjustNoteWidth()
+    })
+
+    $('.table-scroll').on('scroll', function () {
+        adjustNoteWidth()
+    })
+
+    setNoteWidths()
+
+    $(window).resize(setNoteWidths)
+
+    function setNoteWidths() {
+        $('.table-scroll').each(function () {
+            const $tableScroll = $(this)
+            const $table = $tableScroll.find('table')
+            const $note = $tableScroll.find('.p-3.bg-light.border-top.text-center')
+
+            if ($table.length && $note.length) {
+                const tableWidth = $table[0].offsetWidth
+
+                $tableScroll.css('--table-width', tableWidth + 'px')
+
+                $note.width(tableWidth)
+
+                console.log(`Table width: ${tableWidth}px, Note width set`)
+            }
+        })
+    }
+
+    $('.table-scroll').on('scroll', function () {
+        setNoteWidths()
+    })
+
+    $('.table-scroll').off('scroll.notefix')
+    $(window).off('resize.notefix')
+
+    function fixNoteWidth() {
+        $('.table-scroll').each(function () {
+            const $container = $(this)
+            const $table = $container.find('table')
+            const $note = $container.find('.p-3.bg-light.border-top')
+
+            if ($table.length && $note.length) {
+                const tableWidth = $table[0].offsetWidth
+
+                $note.width(tableWidth)
+                $note.css({
+                    'min-width': tableWidth + 'px',
+                    'max-width': tableWidth + 'px',
+                })
+
+                console.log(`Fixed note width: ${tableWidth}px`)
+            }
+        })
+    }
+
+    setTimeout(fixNoteWidth, 100)
+
+    $(window).on('resize.notefix', fixNoteWidth)
+
+    $('.table-scroll').on('scroll.notefix', function () {
+        fixNoteWidth()
+    })
+
+    function updateNoteWidth() {
+        $('.table-scroll').each(function () {
+            const $table = $(this).find('table')
+            const $note = $(this).find('.p-3.bg-light.border-top')
+
+            if ($table.length && $note.length) {
+                $note.css('left', '')
+
+                const tableWidth = $table.outerWidth()
+                $note.width(tableWidth)
+                $note.css('min-width', tableWidth + 'px')
+            }
+        })
+    }
+
+    updateNoteWidth()
+
+    $(window).on('resize', updateNoteWidth)
 })

@@ -2,6 +2,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 
 public class InformeGeneralViewModel
 {
+    public int EmpresaId { get; set; }
     public string Empresa { get; set; } = string.Empty;
     public double RequeridoKg { get; set; }
     public double RequeridoTon { get; set; }

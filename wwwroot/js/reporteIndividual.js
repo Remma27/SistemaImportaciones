@@ -1,6 +1,4 @@
 $(document).ready(function () {
-    console.log('ReporteIndividual.js inicializado')
-
     function adjustTableHeight() {
         const windowHeight = $(window).height()
         const headerHeight = $('.card-header').outerHeight(true) * 2
@@ -17,33 +15,60 @@ $(document).ready(function () {
     })
 
     const totalFilas = $('#tablaDetallada tbody tr').length
-    console.log(`Tabla cargada con ${totalFilas} filas`)
 
     $('#btnExportarExcel').on('click', function () {
-        console.log('Iniciando exportación a Excel...')
-
         const tabla = document.getElementById('tablaDetallada')
         const wb = XLSX.utils.book_new()
 
-        const ws = XLSX.utils.table_to_sheet(tabla, { raw: true })
+        const data = []
+        const headers = []
 
-        const colWidths = []
-        const range = XLSX.utils.decode_range(ws['!ref'])
-
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-            let maxLength = 10
-
-            for (let R = range.s.r; R <= range.e.r; ++R) {
-                const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
-                if (!ws[cellAddress]) continue
-
-                const cellContent = String(ws[cellAddress].v || '')
-                maxLength = Math.max(maxLength, cellContent.length * 1.1)
-            }
-
-            colWidths.push({ wch: maxLength })
+        const headerRow = tabla.querySelector('thead tr')
+        if (headerRow) {
+            const headerCells = headerRow.querySelectorAll('th')
+            headerCells.forEach(cell => {
+                headers.push(cell.innerText.trim())
+            })
+            data.push(headers)
         }
 
+        const rows = tabla.querySelectorAll('tbody tr')
+        rows.forEach(row => {
+            const rowData = []
+            const cells = row.querySelectorAll('td')
+            cells.forEach((cell, colIndex) => {
+                let cellValue = cell.innerText.trim()
+
+                if ([7, 8, 9, 10, 11, 12, 13].includes(colIndex)) {
+                    if (cellValue.includes(',') && cellValue.indexOf(',') > cellValue.lastIndexOf('.')) {
+                        cellValue = parseFloat(cellValue.replace(/\./g, '').replace(',', '.'))
+                    } else if (cellValue.includes('.') || cellValue.includes(',')) {
+                        cellValue = parseFloat(cellValue.replace(/,/g, ''))
+                    } else {
+                        cellValue = parseInt(cellValue, 10)
+                    }
+                }
+
+                rowData.push(cellValue)
+            })
+            data.push(rowData)
+        })
+
+        const ws = XLSX.utils.aoa_to_sheet(data)
+
+        const numericColumns = [7, 8, 9, 10, 11, 12, 13]
+        for (let R = 1; R < data.length; R++) {
+            for (let C of numericColumns) {
+                if (C < data[R].length) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
+                    if (ws[cellAddress]) {
+                        ws[cellAddress].t = 'n'
+                    }
+                }
+            }
+        }
+
+        const colWidths = headers.map(header => ({ wch: Math.max(10, header.length * 1.2) }))
         ws['!cols'] = colWidths
 
         XLSX.utils.book_append_sheet(wb, ws, 'Reporte Detallado')
@@ -53,6 +78,5 @@ $(document).ready(function () {
         const nombreArchivo = `Reporte_Detallado_${fecha}.xlsx`
 
         XLSX.writeFile(wb, nombreArchivo)
-        console.log(`Archivo exportado como: ${nombreArchivo}`)
     })
 })

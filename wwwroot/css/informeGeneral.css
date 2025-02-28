@@ -33,9 +33,92 @@
 }
 
 .table-scroll {
-    max-height: 400px;
-    overflow-y: auto;
     position: relative;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll table {
+    margin-bottom: 0;
+    width: 100%;
+    min-width: 1200px;
+}
+
+.table-scroll table th,
+.table-scroll table td {
+    white-space: nowrap;
+    min-width: auto;
+}
+
+.table-scroll table th:first-child,
+.table-scroll table td:first-child {
+    min-width: 200px;
+}
+
+.table-scroll table th.text-end,
+.table-scroll table td.text-end {
+    min-width: 120px;
+}
+
+.table-scroll table .unit-toggle-columns.conversion-cell {
+    min-width: 150px;
+}
+
+.table-scroll thead.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: #fff;
+}
+
+.table-scroll tfoot.sticky-bottom {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background-color: #fff;
+}
+
+.table-scroll::-webkit-scrollbar {
+    height: 8px;
+    width: 0;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+@media (max-width: 768px) {
+    .table-scroll {
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        width: calc(100% + 2rem);
+    }
+
+    .table-scroll .p-3.bg-light.border-top.text-center {
+        min-width: 1200px;
+        position: sticky;
+        left: 0;
+    }
+}
+
+.table-scroll .p-3.bg-light.border-top.text-center {
+    min-width: 100%;
+    width: max-content;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .table-scroll thead.sticky-top {
@@ -593,4 +676,18 @@ tfoot.sticky-bottom td {
         height: 34px;
         font-size: 0.85rem;
     }
+}
+
+#cardEscotillas .table-scroll {
+    max-height: none !important;
+}
+
+.table-scroll .p-3.bg-light.border-top.text-center {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    z-index: 3;
 }

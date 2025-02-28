@@ -4,58 +4,148 @@
     ViewData["Title"] = "Barcos";
 }
 
-<div class="container-fluid">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white py-3">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h3 class="mb-0">Gestión de Barcos</h3>
-                </div>
-                <div class="col text-end">
-                    <a asp-controller="Barco" asp-action="Create" class="btn btn-light hover-shadow" title="Agregar nuevo barco">
-                        <i class="fas fa-plus-circle me-1"></i>Nuevo Barco
+<style>
+    .escotilla-header {
+        font-weight: 600;
+        text-align: center;
+        padding: 4px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 2px;
+    }
+
+    .escotilla-value {
+        text-align: center;
+        padding: 6px 4px;
+        font-weight: 500;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .escotilla-row:hover .escotilla-value {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    .escotilla-value.non-zero {
+        color: black;
+    }
+
+    .table-header-row {
+        background-color: #f8f9fa;
+    }
+
+    .action-buttons .btn {
+        margin: 0 2px;
+        padding: 6px 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+
+    .barco-name {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #333;
+        vertical-align: middle;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark py-3 d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Lista de Barcos</h3>
+                    <a asp-action="Create" class="btn btn-success shadow-sm">
+                        <i class="fas fa-plus me-1"></i>Nuevo Barco
                     </a>
                 </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Escotillas</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>@Html.DisplayFor(modelItem => item.nombrebarco)</td>
-                            <td>
-                                <div class="row g-2">
-                                    <div class="col-auto"><span class="badge bg-info">E1: @(item.escotilla1 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E2: @(item.escotilla2 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E3: @(item.escotilla3 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E4: @(item.escotilla4 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E5: @(item.escotilla5 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E6: @(item.escotilla6 ?? 0)</span></div>
-                                    <div class="col-auto"><span class="badge bg-info">E7: @(item.escotilla7 ?? 0)</span></div>
-                                </div>
-                            </td>
-                            <td class="text-end">
-                                <a asp-controller="Barco" asp-action="Edit" asp-route-id="@item.id" class="btn btn-sm btn-warning" title="Editar barco">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a asp-controller="Barco" asp-action="Delete" asp-route-id="@item.id" class="btn btn-sm btn-danger" title="Eliminar barco">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
+                <div class="card-body px-3 py-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr class="table-header-row">
+                                    <th style="width: 25%">Nombre</th>
+                                    <th style="width: 60%">
+                                        <div class="d-flex">
+                                            <div class="escotilla-header" style="width: 14.28%">E1</div>
+                                            <div class="escotilla-header" style="width: 14.28%">E2</div>
+                                            <div class="escotilla-header" style="width: 14.28%">E3</div>
+                                            <div class="escotilla-header" style="width: 14.28%">E4</div>
+                                            <div class="escotilla-header" style="width: 14.28%">E5</div>
+                                            <div class="escotilla-header" style="width: 14.28%">E6</div>
+                                            <div class="escotilla-header" style="width: 14.28%">E7</div>
+                                        </div>
+                                    </th>
+                                    <th style="width: 15%" class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Any())
+                                {
+                                    @foreach (var barco in Model)
+                                    {
+                                        <tr class="escotilla-row">
+                                            <td class="barco-name">@barco.nombrebarco</td>
+                                            <td>
+                                                <div class="d-flex">
+                                                    <div class="escotilla-value @(barco.escotilla1 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla1 > 0 ? barco.escotilla1 : 0)
+                                                    </div>
+                                                    <div class="escotilla-value @(barco.escotilla2 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla2 > 0 ? barco.escotilla2 : 0)
+                                                    </div>
+                                                    <div class="escotilla-value @(barco.escotilla3 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla3 > 0 ? barco.escotilla3 : 0)
+                                                    </div>
+                                                    <div class="escotilla-value @(barco.escotilla4 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla4 > 0 ? barco.escotilla4 : 0)
+                                                    </div>
+                                                    <div class="escotilla-value @(barco.escotilla5 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla5 > 0 ? barco.escotilla5 : 0)
+                                                    </div>
+                                                    <div class="escotilla-value @(barco.escotilla6 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla6 > 0 ? barco.escotilla6 : 0)
+                                                    </div>
+                                                    <div class="escotilla-value @(barco.escotilla7 > 0 ? "non-zero" : "")"
+                                                        style="width: 14.28%">
+                                                        @(barco.escotilla7 > 0 ? barco.escotilla7 : 0)
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center action-buttons">
+                                                <div class="btn-group" role="group">
+                                                    <a asp-action="Edit" asp-route-id="@barco.id"
+                                                        class="btn btn-warning btn-sm">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a asp-action="Delete" asp-route-id="@barco.id"
+                                                        class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="3" class="text-center">
+                                            <div class="alert alert-info mb-0 py-3">
+                                                <i class="fas fa-info-circle me-2"></i>No hay barcos registrados
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

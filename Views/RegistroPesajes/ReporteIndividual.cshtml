@@ -27,8 +27,8 @@
             <div class="card-header bg-gradient bg-dark py-3 d-flex justify-content-between align-items-center">
                 <h4 class="mb-0 text-white"><i class="fas fa-clipboard-list me-2"></i>Reporte Individual Detallado</h4>
                 <div class="d-flex gap-2">
-                    <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })" 
-                       class="btn btn-secondary">
+                    <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })"
+                        class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-2"></i>Volver
                     </a>
                     <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel">
@@ -62,7 +62,6 @@
                                     <th class="text-end">Peso Entregado</th>
                                     <th class="text-end">Cantidad por Retirar</th>
                                     <th class="text-end">Cantidad Retirada</th>
-                                    <th class="text-end">Peso Faltante</th>
                                     <th class="text-end">Cant. Req. Quintales</th>
                                     <th class="text-end">Cant. Ent. Quintales</th>
                                     <th class="text-end">Cant. Req. Libras</th>
@@ -105,11 +104,10 @@
                                             <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
                                             <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
                                             <td class="text-end">@item.CantidadRetiradaKg.ToString("N0")</td>
-                                            <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
                                             <td class="text-end">@item.CantidadRequeridaQuintales?.ToString("N2")</td>
-                                            <td class="text-end">@item.CantidadEntregadaQuintales?.ToString("N10")</td>
+                                            <td class="text-end">@item.CantidadEntregadaQuintales?.ToString("N2")</td>
                                             <td class="text-end">@item.CantidadRequeridaLibras?.ToString("N2")</td>
-                                            <td class="text-end">@item.CantidadEntregadaLibras?.ToString("N3")</td>
+                                            <td class="text-end">@item.CantidadEntregadaLibras?.ToString("N2")</td>
                                         </tr>
                                     }
                                 }
@@ -127,11 +125,9 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="~/js/reporteIndividual.js"></script>
     <script>
-        // Asegurarse de que el botón de exportar esté habilitado
         $(document).ready(function () {
             $('#btnExportarExcel').prop('disabled', false).removeClass('disabled');
 
-            // Verificar si el botón está habilitado después de todo el procesamiento
             setTimeout(function () {
                 if ($('#btnExportarExcel').prop('disabled')) {
                     console.warn('El botón sigue deshabilitado después de inicialización');

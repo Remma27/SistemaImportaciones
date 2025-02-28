@@ -124,7 +124,6 @@
                                     <th class="bg-white text-black text-end column-sm">Req. (Ton)</th>
                                     <th class="bg-white text-black text-end column-md">Desc. (Kg)</th>
                                     
-                                    <!-- Add toggle column for Libras/Quintales -->
                                     <th class="text-end column-md unit-toggle-columns">
                                         <div>Desc.</div>
                                         <div><small>Lbs / Qq</small></div>
@@ -133,7 +132,6 @@
                                     <th class="bg-white text-black text-end column-md">Falt. (Kg)</th>
                                     <th class="bg-white text-black text-end column-sm">Falt. (Ton)</th>
                                     
-                                    <!-- Add toggle column for Faltante in Libras/Quintales -->
                                     <th class="text-end column-md unit-toggle-columns">
                                         <div>Falt.</div>
                                         <div><small>Lbs / Qq</small></div>
@@ -166,7 +164,6 @@
                                             <td class="text-end">@item.ToneladasRequeridas.ToString("N2")</td>
                                             <td class="text-end">@item.DescargaKilos.ToString("N0")</td>
 
-                                            <!-- Add Descarga Lbs/Quintales conversion cell -->
                                             <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                                 <span class="top-value">@((item.DescargaKilos * 2.20462M).ToString("N0")) lbs</span>
                                                 <span class="divider"></span>
@@ -176,7 +173,6 @@
                                             <td class="text-end">@item.FaltanteKilos.ToString("N0")</td>
                                             <td class="text-end">@item.ToneladasFaltantes.ToString("N2")</td>
 
-                                            <!-- Add Faltante Lbs/Quintales conversion cell -->
                                             <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                                 <span class="top-value">@((item.FaltanteKilos * 2.20462M).ToString("N0")) lbs</span>
                                                 <span class="divider"></span>
@@ -199,7 +195,6 @@
                                         <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasRequeridas).ToString("N2")</td>
                                         <td class="text-end">@Model.Tabla2Data.Sum(x => x.DescargaKilos).ToString("N0")</td>
 
-                                        <!-- Add Descarga Lbs/Quintales conversion cell for footer -->
                                         <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                             <span class="top-value">@((Model.Tabla2Data.Sum(x => x.DescargaKilos) * 2.20462M).ToString("N0")) lbs</span>
                                             <span class="divider"></span>
@@ -209,7 +204,6 @@
                                         <td class="text-end">@Model.Tabla2Data.Sum(x => x.FaltanteKilos).ToString("N0")</td>
                                         <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasFaltantes).ToString("N2")</td>
 
-                                        <!-- Add Faltante Lbs/Quintales conversion cell for footer -->
                                         <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                             <span class="top-value">@((Model.Tabla2Data.Sum(x => x.FaltanteKilos) * 2.20462M).ToString("N0")) lbs</span>
                                             <span class="divider"></span>
@@ -251,7 +245,6 @@
                                     <th class="text-end">Capacidad (Kg)</th>
                                     <th class="text-end">Descarga (Kg)</th>
                                     
-                                    <!-- Add toggle column for Descarga in Libras/Quintales -->
                                     <th class="text-end unit-toggle-columns">
                                         <div>Desc.</div>
                                         <div><small>Lbs / Qq</small></div>
@@ -259,7 +252,6 @@
                                     
                                     <th class="text-end">Diferencia (Kg)</th>
                                     
-                                    <!-- Add toggle column for Diferencia in Libras/Quintales -->
                                     <th class="text-end unit-toggle-columns">
                                         <div>Dif.</div>
                                         <div><small>Lbs / Qq</small></div>
@@ -290,7 +282,6 @@
                                             <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
                                             <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
                                             
-                                            <!-- Add Descarga Lbs/Quintales conversion cell -->
                                             <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                                 <span class="top-value">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
                                                 <span class="divider"></span>
@@ -299,7 +290,6 @@
                                             
                                             <td class="text-end">@escotilla.DiferenciaKg.ToString("N0")</td>
                                             
-                                            <!-- Add Diferencia Lbs/Quintales conversion cell -->
                                             <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                                 <span class="top-value">@((escotilla.DiferenciaKg * 2.20462M).ToString("N0")) lbs</span>
                                                 <span class="divider"></span>
@@ -320,7 +310,6 @@
                                         <td class="text-end">@Model.CapacidadTotal.ToString("N0")</td>
                                         <td class="text-end">@Model.DescargaTotal.ToString("N0")</td>
                                         
-                                        <!-- Add Descarga Lbs/Quintales conversion cell for footer -->
                                         <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                             <span class="top-value">@((Model.DescargaTotal * 2.20462M).ToString("N0")) lbs</span>
                                             <span class="divider"></span>
@@ -329,7 +318,6 @@
                                         
                                         <td class="text-end">@Model.DiferenciaTotal.ToString("N0")</td>
                                         
-                                        <!-- Add Diferencia Lbs/Quintales conversion cell for footer -->
                                         <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                             <span class="top-value">@((Model.DiferenciaTotal * 2.20462M).ToString("N0")) lbs</span>
                                             <span class="divider"></span>
@@ -339,15 +327,17 @@
                                         <td class="text-end">@(Model.DiferenciaTotal < 0 ? "-" : "")@Math.Abs(Model.PorcentajeTotal).ToString("N2")%</td>
                                         <td>@Model.EstadoGeneral</td>
                                     </tr>
+                                    <tr>
+                                        <td colspan="8" class="p-3 bg-light text-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
+                                            </small>
+                                        </td>
+                                    </tr>
                                 </tfoot>
                             }
                         </table>
-                        <div class="p-3 bg-light border-top text-center">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
-                            </small>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -477,10 +467,7 @@
             var selectedEmpresa = empresasList?.FirstOrDefault(e => e.Value == empresaSeleccionadaId);
             var empresaSeleccionadaNombre = selectedEmpresa?.Text;
             
-            // Debugging
-            System.Diagnostics.Debug.WriteLine($"Empresa seleccionada: {empresaSeleccionadaNombre}");
             
-            // Fix: Check if the company name CONTAINS "INTERGLO" rather than exact match
             var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) && 
                                    empresaSeleccionadaNombre.IndexOf("INTERGLO", StringComparison.OrdinalIgnoreCase) >= 0;
                                    
@@ -488,7 +475,6 @@
             System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
         }
 
-        <!-- Mostrar tabla de bodegas solo si es la empresa correcta -->
         @if (mostrarTablaBodegas && Model.TotalesPorBodega != null && Model.TotalesPorBodega.Any())
         {
             <div class="col-12">
@@ -550,6 +536,7 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="~/js/registroPesajes.js"></script>
     <script>
         $(document).ready(function() {

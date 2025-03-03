@@ -1,7 +1,7 @@
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace SistemaDeGestionDeImportaciones.Services
 {
@@ -120,24 +120,57 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
+                _httpClient.DefaultRequestHeaders.Accept.Clear();
+                _httpClient.DefaultRequestHeaders.Accept.Add(
+                    new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
                 var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/IniciarSesion", model);
+
+                var jsonString = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return OperationResult.CreateFailure($"Error al iniciar sesión: {errorContent}");
+                    try
+                    {
+                        var errorObj = JsonSerializer.Deserialize<JsonElement>(jsonString);
+                        var errorMessage = errorObj.TryGetProperty("message", out var msgElement)
+                            ? msgElement.GetString() ?? "Error desconocido en la API"
+                            : "Error desconocido en la API";
+
+                        return OperationResult.CreateFailure(errorMessage);
+                    }
+                    catch
+                    {
+                        return OperationResult.CreateFailure($"Error al iniciar sesión: {response.StatusCode}");
+                    }
                 }
 
-                var usuario = await response.Content.ReadFromJsonAsync<Usuario>();
-                if (usuario == null)
+                try
                 {
-                    return OperationResult.CreateFailure("Error al iniciar sesión: respuesta vacía");
+                    var responseObj = JsonSerializer.Deserialize<JsonElement>(jsonString);
+
+                    if (responseObj.TryGetProperty("user", out var userElement))
+                    {
+                        var usuario = JsonSerializer.Deserialize<Usuario>(userElement.GetRawText());
+                        if (usuario == null)
+                        {
+                            return OperationResult.CreateFailure("No se pudo deserializar los datos del usuario");
+                        }
+                        return OperationResult.CreateSuccess(usuario);
+                    }
+                    else
+                    {
+                        return OperationResult.CreateFailure("Formato de respuesta inválido");
+                    }
                 }
-                return OperationResult.CreateSuccess(usuario);
+                catch (Exception ex)
+                {
+                    return OperationResult.CreateFailure($"Error al procesar respuesta: {ex.Message}");
+                }
             }
             catch (Exception ex)
             {
-                return OperationResult.CreateFailure($"Error al iniciar sesión: {ex.Message}");
+                return OperationResult.CreateFailure($"Error en la conexión: {ex.Message}");
             }
         }
     }

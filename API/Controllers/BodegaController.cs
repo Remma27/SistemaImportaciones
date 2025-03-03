@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using API.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class BodegaController : ControllerBase
     {
         private readonly ApiContext _context;

@@ -142,6 +142,19 @@ function initializeServerData(selectedBarco, empresaId) {
         btnAgregar.dataset.selectedBarco = selectedBarco
         btnAgregar.dataset.empresaId = empresaId
     }
+    console.log('Initializing with barco:', selectedBarco, 'empresa:', empresaId)
+
+    window.selectedBarcoId = selectedBarco
+    window.selectedEmpresaId = empresaId
+
+    console.log('Barcos dropdown options:', $('#selectedBarco option').length)
+    console.log('Empresas dropdown options:', $('#empresaId option').length)
+
+    $('#btnAgregar').on('click', function () {
+        if (selectedBarco && empresaId) {
+            window.location.href = `/RegistroPesajes/Create?selectedBarco=${selectedBarco}&empresaId=${empresaId}`
+        }
+    })
 }
 
 function setupEscotillasToggle() {
@@ -528,8 +541,8 @@ function setupUnitToggle() {
         }, 50)
     })
 
-    $('#selectImportacion, select[name="selectedBarco"]').on('change', function () {
-        const selectedBarco = $(this).val() || $('select[name="selectedBarco"]').val() || $('#selectImportacion').val()
+    document.addEventListener('dataLoaded', function () {
+        const selectedBarco = $('select[name="selectedBarco"]').val() || $('#selectImportacion').val()
         const hasData = hasTableData('tabla2')
         $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
     })
@@ -562,6 +575,34 @@ function initializeReporteIndividualLink() {
             btnTablaDetallada.addClass('disabled')
         }
     })
+}
+
+function handleBarcoChange(selectElement) {
+    console.log('Barco changed to:', selectElement.value)
+
+    $('#barcoLoadingIndicator').removeClass('d-none')
+
+    const empresaSelect = $('#empresaId')
+    if (selectElement.value) {
+        empresaSelect.prop('disabled', false)
+    } else {
+        empresaSelect.prop('disabled', true)
+        empresaSelect.val('')
+    }
+
+    setTimeout(() => {
+        $('#selectionForm').submit()
+    }, 100)
+}
+
+function handleEmpresaChange(selectElement) {
+    console.log('Empresa changed to:', selectElement.value)
+
+    $('#empresaLoadingIndicator').removeClass('d-none')
+
+    setTimeout(() => {
+        $('#selectionForm').submit()
+    }, 100)
 }
 
 $(document).ready(function () {

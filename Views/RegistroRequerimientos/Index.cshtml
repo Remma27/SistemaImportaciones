@@ -19,10 +19,8 @@
                             <label class="input-group-text bg-primary text-white border-0">
                                 <i class="fas fa-ship me-1"></i>
                             </label>
-                            <select name="selectedBarco" 
-                                    class="form-select" 
-                                    asp-items="ViewBag.Barcos"
-                                    onchange="this.form.submit()">
+                            <select name="selectedBarco" class="form-select" asp-items="ViewBag.Barcos"
+                                onchange="this.form.submit()">
                                 <option value="">Seleccione una Importación</option>
                             </select>
                         </div>
@@ -61,45 +59,50 @@
             }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Fecha y Hora</th>
-                                <th>Importación</th>
-                                <th>Empresa</th>
-                                <th>Cantidad Requerida</th>
-                                <th>Cantidad de Camiones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model)
-                            {
+                <div class="table-container">
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-hover" id="mainTable">
+                            <thead class="table-light sticky-top">
                                 <tr>
-                                    <td>@item.IdMovimiento</td>
-                                    <td>@(item.FechaHora?.ToString("dd/MM/yyyy HH:mm"))</td>
-                                    <td>@item.Importacion</td>
-                                    <td>@item.Empresa</td>
-                                    <td>@item.CantidadRequerida kg</td>
-                                    <td>@item.CantidadCamiones</td>
+                                    <th style="width: 8%">ID</th>
+                                    <th style="width: 18%">Fecha y Hora</th>
+                                    <th style="width: 18%">Importación</th>
+                                    <th style="width: 18%">Empresa</th>
+                                    <th style="width: 19%">Cantidad Requerida</th>
+                                    <th style="width: 19%">Cantidad de Camiones</th>
                                 </tr>
-                            }
-                        </tbody>
-                        @if(Model?.Any() == true)
-                        {
-                            var totalRequerida = Model.Sum(x => x.CantidadRequerida);
-                            var totalCamiones = Model.Sum(x => x.CantidadCamiones);
-                            <tfoot>
-                                <tr class="table-secondary">
-                                    <td colspan="4" class="fw-bold text-end">Totales:</td>
-                                    <td class="fw-bold">@totalRequerida kg</td>
-                                    <td class="fw-bold">@totalCamiones</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        }
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@item.IdMovimiento</td>
+                                        <td>@(item.FechaHora?.ToString("dd/MM/yyyy HH:mm"))</td>
+                                        <td>@item.Importacion</td>
+                                        <td>@item.Empresa</td>
+                                        <td>@item.CantidadRequerida kg</td>
+                                        <td>@item.CantidadCamiones</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (Model?.Any() == true)
+                    {
+                        var totalRequerida = Model.Sum(x => x.CantidadRequerida);
+                        var totalCamiones = Model.Sum(x => x.CantidadCamiones);
+                        <table class="table mb-0" id="totalsTable" style="table-layout: fixed; width: 100%;">
+                            <tr class="table-secondary">
+                                <td style="width: 8%"></td> <!-- ID column -->
+                                <td style="width: 18%"></td> <!-- Fecha y Hora column -->
+                                <td style="width: 18%"></td> <!-- Importación column -->
+                                <td style="width: 18%; text-align: right; font-weight: bold;">Totales:</td> <!-- Empresa column -->
+                                <td style="width: 19%; font-weight: bold;">@totalRequerida kg</td> <!-- Cantidad Requerida column -->
+                                <td style="width: 19%; font-weight: bold;">@totalCamiones</td> <!-- Cantidad de Camiones column -->
+                            </tr>
+                        </table>
+                    }
                 </div>
             }
         </div>
@@ -108,9 +111,9 @@
 
 @section Scripts {
     <script>
-        document.querySelector('select[name="selectedBarco"]').addEventListener('change', function() {
+        document.querySelector('select[name="selectedBarco"]').addEventListener('change', function () {
             this.disabled = true;
-            this.parentElement.insertAdjacentHTML('beforeend', 
+            this.parentElement.insertAdjacentHTML('beforeend',
                 '<div class="spinner-border spinner-border-sm text-primary ms-2" role="status">' +
                 '<span class="visually-hidden">Cargando...</span></div>');
         });

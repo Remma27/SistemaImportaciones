@@ -7,6 +7,7 @@
     <title>@ViewData["Title"] - Sistema de Gestión de Importaciones</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/toast.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
@@ -91,6 +92,8 @@
         </footer>
     </div>
 
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -98,6 +101,40 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/toast-service.js" asp-append-version="true"></script>
+
+    <script>
+        $(document).ready(function () {
+            @if (TempData["Success"] != null)
+                {
+                    <text>
+                        toastService.success('@TempData["Success"]');
+                    </text>
+            }
+
+                @if (TempData["Error"] != null)
+                {
+                    <text>
+                        toastService.error('@TempData["Error"]');
+                    </text>
+            }
+
+                @if (TempData["Warning"] != null)
+                {
+                    <text>
+                        toastService.warning('@TempData["Warning"]');
+                    </text>
+            }
+
+                @if (TempData["Info"] != null)
+                {
+                    <text>
+                        toastService.info('@TempData["Info"]');
+                    </text>
+            }
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 

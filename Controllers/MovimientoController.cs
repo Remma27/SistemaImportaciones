@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
+    [Authorize]
     public class MovimientoController : Controller
     {
         private readonly IMovimientoService _movimientoService;

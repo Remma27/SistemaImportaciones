@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
+    [Authorize]
     public class InformeGeneralController : Controller
     {
         private readonly IMovimientoService _movimientoService;

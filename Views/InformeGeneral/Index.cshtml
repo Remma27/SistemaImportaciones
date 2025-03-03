@@ -218,7 +218,7 @@
         <div class="card-body p-0">
             @{
                 var escotillasCollection = ViewBag.EscotillasData?.Escotillas;
-                var tieneEscotillas = escotillasCollection != null && escotillasCollection.Count > 0;
+                var tieneEscotillas = escotillasCollection?.Count > 0;
             }
 
             @if (string.IsNullOrEmpty(selectedBarco))

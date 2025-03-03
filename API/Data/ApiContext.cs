@@ -15,6 +15,7 @@ namespace API.Data
         public DbSet<Empresa> Empresas { get; set; }
         public DbSet<Importacion> Importaciones { get; set; }
         public DbSet<Movimiento> Movimientos { get; set; }
+        public DbSet<Unidad> Unidades { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

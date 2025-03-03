@@ -3,9 +3,12 @@ using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
+using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
+    [Authorize]
     public class ImportacionController : Controller
     {
         private readonly IImportacionService _importacionService;
@@ -39,7 +42,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al cargar los barcos para el formulario de creación");
-                TempData["Error"] = "Error al cargar la lista de barcos.";
+                this.Error("Error al cargar la lista de barcos.");
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -54,7 +57,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     importacion.idusuario = User.GetUserId();
                     await _importacionService.CreateAsync(importacion);
-                    TempData["Success"] = "Importacion creada correctamente.";
+                    this.Success("Importación creada correctamente.");
                     return RedirectToAction("Index", "Importacion");
                 }
                 catch (Exception ex)
@@ -111,7 +114,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     importacion.idusuario = User.GetUserId();
                     await _importacionService.UpdateAsync(id, importacion);
-                    TempData["Success"] = "Importacion actualizada correctamente.";
+                    this.Success("Importación actualizada correctamente.");
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -141,14 +144,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             try
             {
                 await _importacionService.DeleteAsync(id);
-                TempData["Success"] = "Importacion eliminada correctamente.";
+                this.Success("Importación eliminada correctamente.");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar la empresa con ID {Id}", id);
                 var importacion = await _importacionService.GetByIdAsync(id);
-                ViewBag.Error = "Ocurrió un error al eliminar la importacion: " + ex.Message;
+                this.Error("Ocurrió un error al eliminar la importación: " + ex.Message);
                 return View("Delete", importacion);
             }
         }

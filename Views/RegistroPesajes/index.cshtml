@@ -20,14 +20,15 @@
             <div class="card-body bg-light">
                 <div class="row gy-3">
                     <div class="col-lg-8">
-                        <form method="get" class="needs-validation" novalidate>
+                        <form id="selectionForm" method="get" class="needs-validation" novalidate>
                             <div class="row gy-3">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <select name="selectedBarco" 
+                                        <select id="selectedBarco" 
+                                                name="selectedBarco" 
                                                 class="form-select" 
                                                 asp-items="ViewBag.Barcos" 
-                                                onchange="this.form.submit()" 
+                                                onchange="handleBarcoChange(this)" 
                                                 required>
                                             <option value="">Seleccione una Importación</option>
                                         </select>
@@ -35,14 +36,18 @@
                                         <div class="invalid-feedback">
                                             Por favor seleccione una importación
                                         </div>
+                                        <div id="barcoLoadingIndicator" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none" style="margin-top: -10px;" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <select name="empresaId" 
+                                        <select id="empresaId" 
+                                                name="empresaId" 
                                                 class="form-select" 
                                                 asp-items="ViewBag.Empresas" 
-                                                onchange="this.form.submit()" 
+                                                onchange="handleEmpresaChange(this)" 
                                                 disabled="@(!isBarcoSelected)" 
                                                 required>
                                             <option value="">Seleccione una Empresa</option>
@@ -50,6 +55,9 @@
                                         <label><i class="fas fa-building me-2"></i>Empresa</label>
                                         <div class="invalid-feedback">
                                             Por favor seleccione una empresa
+                                        </div>
+                                        <div id="empresaLoadingIndicator" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none" style="margin-top: -10px;" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -540,10 +548,33 @@
     <script src="~/js/registroPesajes.js"></script>
     <script>
         $(document).ready(function() {
+            console.log("Page ready. Checking ViewBag data:");
+            
+            // Log data for debugging
+            var barcoOptions = @Json.Serialize(ViewBag.Barcos?.Items ?? new List<SelectListItem>());
+            var empresaOptions = @Json.Serialize(ViewBag.Empresas?.Items ?? new List<SelectListItem>());
+            
+            console.log("Barcos options:", barcoOptions);
+            console.log("Empresas options:", empresaOptions);
+            
             initializeServerData(
                 '@Context.Request.Query["selectedBarco"]',
                 '@Context.Request.Query["empresaId"]'
             );
+            
+            // Check if we need to manually set dropdown values
+            const selectedBarco = '@Context.Request.Query["selectedBarco"]';
+            const empresaId = '@Context.Request.Query["empresaId"]';
+            
+            if (selectedBarco) {
+                $('#selectedBarco').val(selectedBarco);
+                console.log('Set selectedBarco to:', selectedBarco);
+            }
+            
+            if (empresaId) {
+                $('#empresaId').val(empresaId);
+                console.log('Set empresaId to:', empresaId);
+            }
         });
     </script>
 }

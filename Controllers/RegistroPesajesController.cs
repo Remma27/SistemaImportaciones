@@ -4,37 +4,45 @@ using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
-using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
+using System.Diagnostics;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
+    [Authorize]
     public class RegistroPesajesController : Controller
     {
         private readonly IMovimientoService _movimientoService;
         private readonly IBodegaService _bodegaService;
         private readonly ILogger<RegistroPesajesController> _logger;
         private readonly IImportacionService _importacionService;
+        private readonly IMemoryCache _memoryCache;
+        private const int BARCOS_CACHE_DURATION_HOURS = 1;
+        private const int BODEGAS_CACHE_DURATION_HOURS = 1;
+        private const int REPORTE_CACHE_DURATION_MINUTES = 30;
+        private const int DATA_CACHE_DURATION_MINUTES = 5;
 
         public RegistroPesajesController(
             IMovimientoService movimientoService,
             IBodegaService bodegaService,
             ILogger<RegistroPesajesController> logger,
-            IImportacionService importacionService)
+            IImportacionService importacionService,
+            IMemoryCache memoryCache)
         {
             _movimientoService = movimientoService;
             _bodegaService = bodegaService;
             _logger = logger;
             _importacionService = importacionService;
+            _memoryCache = memoryCache;
         }
 
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId)
         {
+            var watch = Stopwatch.StartNew();
             try
             {
-                // Cargar dropdowns
-                var barcosList = await _movimientoService.GetBarcosSelectListAsync();
-                ViewBag.Barcos = new SelectList(barcosList, "Value", "Text", selectedBarco);
-                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", empresaId);
+                string cacheKey = $"RegistroPesajes_{selectedBarco}_{empresaId}";
 
                 var viewModel = new RegistroPesajesViewModel
                 {
@@ -44,142 +52,282 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     EscotillasData = new List<EscotillaViewModel>()
                 };
 
-                if (selectedBarco.HasValue)
+                await PopulateDropdowns(selectedBarco, empresaId);
+
+                if (!selectedBarco.HasValue)
                 {
-                    int importacionId = selectedBarco.Value;
+                    return View(viewModel);
+                }
 
-                    var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
-                    viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
-                    {
-                        Agroindustria = ig.Empresa,
-                        KilosRequeridos = (decimal)ig.RequeridoKg,
-                        ToneladasRequeridas = (decimal)ig.RequeridoTon,
-                        DescargaKilos = (decimal)ig.DescargaKg,
-                        FaltanteKilos = (decimal)ig.FaltanteKg,
-                        ToneladasFaltantes = (decimal)ig.TonFaltantes,
-                        CamionesFaltantes = (decimal)ig.CamionesFaltantes,
-                        ConteoPlacas = ig.ConteoPlacas,
-                        PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
-                    }).ToList();
+                if (_memoryCache.TryGetValue(cacheKey, out RegistroPesajesViewModel? cachedViewModel) && cachedViewModel != null)
+                {
+                    _logger.LogDebug($"Datos recuperados desde caché para barco {selectedBarco}, empresa {empresaId}");
+                    return View(cachedViewModel);
+                }
 
-                    using (var client = new HttpClient())
+                int importacionId = selectedBarco.Value;
+
+                if (empresaId.HasValue)
+                {
+                    var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId.Value);
+
+                    if (calculo != null && calculo.Any())
                     {
-                        try
-                        {
-                            var response = await client.GetAsync($"http://localhost:5079/api/Movimientos/CalculoEscotillas?importacionId={importacionId}");
-                            if (response.IsSuccessStatusCode)
+                        viewModel.Tabla1Data = calculo
+                            .Where(c => c != null)
+                            .Select(c => new RegistroPesajesIndividual
                             {
-                                var result = await response.Content.ReadFromJsonAsync<EscotillasResponse>();
-                                if (result != null)
-                                {
-                                    viewModel.EscotillasData = result.escotillas;
-                                    viewModel.CapacidadTotal = result.totales.capacidadTotal;
-                                    viewModel.DescargaTotal = result.totales.descargaTotal;
-                                    viewModel.DiferenciaTotal = result.totales.diferenciaTotal;
-                                    viewModel.PorcentajeTotal = result.totales.porcentajeTotal;
-                                    viewModel.EstadoGeneral = result.totales.estadoGeneral;
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error al obtener datos de escotillas");
-                        }
+                                Id = c.id,
+                                IdImportacion = c.idimportacion,
+                                IdEmpresa = c.idempresa,
+                                Guia = c.guia?.ToString() ?? string.Empty,
+                                GuiaAlterna = c.guia_alterna,
+                                Placa = c.placa,
+                                PlacaAlterna = c.placa_alterna,
+                                PesoRequerido = c.cantidadrequerida ?? 0,
+                                PesoEntregado = c.cantidadentregada,
+                                PesoFaltante = c.peso_faltante,
+                                Porcentaje = c.porcentaje,
+                                Escotilla = c.escotilla ?? 0,
+                                Bodega = c.bodega?.ToString() ?? string.Empty,
+                            }).ToList();
+
+                        var bodegasDict = await GetBodegasDictionaryAsync();
+                        viewModel.TotalesPorBodega = CalculateTotalesPorBodega(calculo, bodegasDict);
                     }
 
-                    if (empresaId.HasValue)
+                    var informeGeneralTask = _movimientoService.GetInformeGeneralAsync(importacionId);
+                    var escotillasTask = _movimientoService.GetEscotillasDataAsync(importacionId);
+
+                    await Task.WhenAll(informeGeneralTask, escotillasTask);
+
+                    var informeGeneral = await informeGeneralTask;
+                    if (informeGeneral != null)
+                    {
+                        viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
+                        {
+                            Agroindustria = ig.Empresa ?? "Sin nombre",
+                            KilosRequeridos = (decimal)ig.RequeridoKg,
+                            ToneladasRequeridas = (decimal)ig.RequeridoTon,
+                            DescargaKilos = (decimal)ig.DescargaKg,
+                            FaltanteKilos = (decimal)ig.FaltanteKg,
+                            ToneladasFaltantes = (decimal)ig.TonFaltantes,
+                            CamionesFaltantes = (decimal)ig.CamionesFaltantes,
+                            ConteoPlacas = ig.ConteoPlacas,
+                            PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
+                        }).ToList();
+                    }
+                    var escotillasData = await escotillasTask;
+                    if (escotillasData != null)
+                        if (escotillasData != null)
+                        {
+                            viewModel.EscotillasData = escotillasData.Escotillas ?? new List<EscotillaViewModel>();
+                            viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
+                            viewModel.DescargaTotal = escotillasData.DescargaTotal;
+                            viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
+                            viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
+                            viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                        }
+                }
+                else
+                {
+                    var informeGeneralTask = _movimientoService.GetInformeGeneralAsync(importacionId);
+                    var escotillasTask = _movimientoService.GetEscotillasDataAsync(importacionId);
+                    Task<List<Movimiento>>? calculoTask = empresaId.HasValue
+                        ? _movimientoService.CalculoMovimientos(importacionId, empresaId.Value)
+                        : null;
+
+                    await Task.WhenAll(new Task[] { informeGeneralTask, escotillasTask }
+                        .Concat(calculoTask != null ? new[] { calculoTask } : Enumerable.Empty<Task>()));
+
+                    var informeGeneral = await informeGeneralTask;
+                    if (informeGeneral != null)
+                    {
+                        viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
+                        {
+                            Agroindustria = ig.Empresa ?? "Sin nombre",
+                            KilosRequeridos = (decimal)ig.RequeridoKg,
+                            ToneladasRequeridas = (decimal)ig.RequeridoTon,
+                            DescargaKilos = (decimal)ig.DescargaKg,
+                            FaltanteKilos = (decimal)ig.FaltanteKg,
+                            ToneladasFaltantes = (decimal)ig.TonFaltantes,
+                            CamionesFaltantes = (decimal)ig.CamionesFaltantes,
+                            ConteoPlacas = ig.ConteoPlacas,
+                            PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
+                        }).ToList();
+                    }
+
+                    var escotillasData = await escotillasTask;
+                    if (escotillasData != null)
+                    {
+                        viewModel.EscotillasData = escotillasData.Escotillas ?? new List<EscotillaViewModel>();
+                        viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
+                        viewModel.DescargaTotal = escotillasData.DescargaTotal;
+                        viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
+                        viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
+                        viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                    }
+
+                    if (empresaId.HasValue && calculoTask != null)
                     {
                         try
                         {
-                            var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId.Value);
+                            var calculo = await calculoTask;
 
                             if (calculo != null && calculo.Any())
                             {
-                                _logger.LogInformation($"Datos recibidos: {calculo.Count()} registros");
-
-                                var bodegas = await _bodegaService.GetAllAsync();
-                                var bodegasDict = bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
-
                                 viewModel.Tabla1Data = calculo
+                                    .Where(c => c != null)
                                     .Select(c => new RegistroPesajesIndividual
                                     {
                                         Id = c.id,
-                                        IdImportacion = importacionId,
-                                        IdEmpresa = empresaId.Value,
-                                        Bodega = c.bodega.HasValue && bodegasDict.ContainsKey(c.bodega.Value)
-                                            ? bodegasDict[c.bodega.Value]
-                                            : "Sin Bodega",
+                                        IdImportacion = c.idimportacion,
+                                        IdEmpresa = c.idempresa,
                                         Guia = c.guia?.ToString() ?? string.Empty,
-                                        GuiaAlterna = c.guia_alterna ?? string.Empty,
-                                        Placa = c.placa ?? string.Empty,
-                                        PlacaAlterna = c.placa_alterna ?? string.Empty,
+                                        GuiaAlterna = c.guia_alterna,
+                                        Placa = c.placa,
+                                        PlacaAlterna = c.placa_alterna,
+                                        PesoRequerido = c.cantidadrequerida ?? 0,
                                         PesoEntregado = c.cantidadentregada,
-                                        PesoRequerido = c.cantidadrequerida.GetValueOrDefault(),
                                         PesoFaltante = c.peso_faltante,
                                         Porcentaje = c.porcentaje,
-                                        TipoTransaccion = c.tipotransaccion,
-                                        Escotilla = c.escotilla ?? 0
-                                    })
-                                    .ToList();
+                                        Escotilla = c.escotilla ?? 0,
+                                        Bodega = c.bodega?.ToString() ?? string.Empty,
+                                    }).ToList();
 
-                                viewModel.TotalesPorBodega = calculo
-                                    .Where(c => c.bodega.HasValue)
-                                    .GroupBy(c => c.bodega)
-                                    .Select(g => new TotalesPorBodegaViewModel
-                                    {
-                                        Bodega = g.Key.HasValue && bodegasDict.ContainsKey(g.Key.Value)
-                                            ? bodegasDict[g.Key.Value]
-                                            : "Sin Bodega",
-                                        TotalKilos = g.Sum(m => m.cantidadentregada),
-                                        CantidadMovimientos = g.Count()
-                                    })
-                                    .ToList();
+                                var bodegasDict = await GetBodegasDictionaryAsync();
 
-                                _logger.LogInformation($"Registros cargados - Individuales: {viewModel.Tabla1Data.Count}, Bodegas: {viewModel.TotalesPorBodega.Count}");
+                                viewModel.TotalesPorBodega = CalculateTotalesPorBodega(calculo, bodegasDict);
                             }
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, "Error al cargar datos específicos de la empresa");
+                            _logger.LogError(ex, $"Error al procesar datos de empresa {empresaId.Value}");
+                            TempData["Warning"] = $"Algunos datos no pudieron cargarse: {ex.Message}";
                         }
                     }
                 }
+
+                _memoryCache.Set(cacheKey, viewModel, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
+
+                watch.Stop();
+                _logger.LogDebug($"Tiempo de ejecución Index: {watch.ElapsedMilliseconds}ms para barco {selectedBarco}, empresa {empresaId}");
 
                 return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar la página de registro de pesajes");
-                return View(new RegistroPesajesViewModel
+                watch.Stop();
+                _logger.LogError(ex, $"Error crítico al cargar RegistroPesajes. Tiempo: {watch.ElapsedMilliseconds}ms");
+
+                try
                 {
-                    EscotillasData = new List<EscotillaViewModel>()
-                });
+                    await PopulateDropdowns(selectedBarco, empresaId);
+                }
+                catch
+                {
+                    ViewBag.Barcos = new SelectList(Enumerable.Empty<SelectListItem>());
+                    ViewBag.Empresas = new SelectList(Enumerable.Empty<SelectListItem>());
+                }
+
+                TempData["Error"] = $"Error al cargar los datos: {ex.Message}";
+                return View(new RegistroPesajesViewModel());
             }
         }
 
-        public async Task<IActionResult> Create(int? selectedBarco, int? empresaId)
+        private async Task PopulateDropdowns(int? selectedBarco, int? empresaId)
         {
-            if (!selectedBarco.HasValue || !empresaId.HasValue)
+            try
             {
-                return RedirectToAction(nameof(Index));
+                const string barcosCacheKey = "BarcosDropdown";
+                List<SelectListItem> barcos;
+
+                if (!_memoryCache.TryGetValue(barcosCacheKey, out List<SelectListItem>? cachedBarcos))
+                {
+                    var barcosData = await _movimientoService.GetBarcosSelectListAsync();
+                    barcos = barcosData?.ToList() ?? new List<SelectListItem>();
+
+                    _memoryCache.Set(barcosCacheKey, barcos, TimeSpan.FromHours(BARCOS_CACHE_DURATION_HOURS));
+                    _logger.LogDebug($"Actualizado caché de barcos: {barcos.Count} elementos");
+                }
+                else
+                {
+                    barcos = cachedBarcos ?? new List<SelectListItem>();
+                }
+
+                ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
+
+                if (selectedBarco.HasValue)
+                {
+                    const string empresasCacheKey = "EmpresasDropdown";
+                    List<SelectListItem> empresas;
+
+                    if (!_memoryCache.TryGetValue(empresasCacheKey, out List<SelectListItem>? cachedEmpresas))
+                    {
+                        var empresasData = await _movimientoService.GetEmpresasSelectListAsync();
+                        empresas = empresasData?.ToList() ?? new List<SelectListItem>();
+
+                        _memoryCache.Set(empresasCacheKey, empresas, TimeSpan.FromHours(BARCOS_CACHE_DURATION_HOURS));
+                        _logger.LogDebug($"Actualizado caché de empresas: {empresas.Count} elementos");
+                    }
+                    else
+                    {
+                        empresas = cachedEmpresas ?? new List<SelectListItem>();
+                    }
+
+                    ViewBag.Empresas = new SelectList(empresas, "Value", "Text", empresaId);
+                }
+                else
+                {
+                    ViewBag.Empresas = new SelectList(new List<SelectListItem>(), "Value", "Text");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar los dropdowns");
+                throw;
+            }
+        }
+
+        private async Task<Dictionary<int, string>> GetBodegasDictionaryAsync()
+        {
+            const string cacheKey = "BodegasDictionary";
+
+            if (!_memoryCache.TryGetValue(cacheKey, out Dictionary<int, string>? bodegasDict) || bodegasDict == null)
+            {
+                var bodegas = await _bodegaService.GetAllAsync();
+                bodegasDict = bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
+                _memoryCache.Set(cacheKey, bodegasDict, TimeSpan.FromHours(BODEGAS_CACHE_DURATION_HOURS));
+                _logger.LogDebug($"Actualizado caché de diccionario de bodegas: {bodegasDict.Count} elementos");
             }
 
-            var barcos = await _movimientoService.GetBarcosSelectListAsync();
-            var selectedBarcoItem = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
-            ViewBag.NombreBarco = selectedBarcoItem?.Text ?? "Desconocido";
+            return bodegasDict ?? new Dictionary<int, string>();
+        }
 
-            var bodegas = await _bodegaService.GetAllAsync();
-            ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega");
-
-            var viewModel = new RegistroPesajesIndividual
+        private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodegaSafe(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
+        {
+            if (calculo == null)
             {
-                FechaHora = DateTime.Now,
-                IdImportacion = selectedBarco.Value,
-                IdEmpresa = empresaId.Value,
-                TipoTransaccion = 2
-            };
+                return new List<TotalesPorBodegaViewModel>();
+            }
 
-            return View(viewModel);
+            return CalculateTotalesPorBodega(calculo, bodegasDict);
+        }
+
+        private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodega(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
+        {
+            return calculo
+                .Where(c => c.bodega.HasValue)
+                .GroupBy(c => c.bodega)
+                .Select(g => new TotalesPorBodegaViewModel
+                {
+                    Bodega = g.Key.HasValue && bodegasDict.TryGetValue(g.Key.Value, out var nombre)
+                        ? nombre ?? "Sin Bodega"
+                        : "Sin Bodega",
+                    TotalKilos = g.Sum(m => m.cantidadentregada),
+                    CantidadMovimientos = g.Count()
+                })
+                .ToList();
         }
 
         [HttpPost]
@@ -194,8 +342,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega", viewModel.Bodega);
                     return View(viewModel);
                 }
-
-                _logger.LogInformation($"Creando nuevo registro: {JsonSerializer.Serialize(viewModel)}");
 
                 var movimiento = new Movimiento
                 {
@@ -216,6 +362,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var result = await _movimientoService.CreateAsync(movimiento);
                 TempData["Success"] = "Registro creado exitosamente.";
 
+                InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
+
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
             }
@@ -227,50 +375,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var bodegas = await _bodegaService.GetAllAsync();
                 ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega", viewModel.Bodega);
                 return View(viewModel);
-            }
-        }
-
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            try
-            {
-                var movimiento = await _movimientoService.GetByIdAsync(id.Value);
-
-                if (movimiento == null)
-                {
-                    TempData["Error"] = $"No se encontró el registro con ID {id}";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var viewModel = new RegistroPesajesIndividual
-                {
-                    Id = movimiento.id,
-                    IdImportacion = movimiento.idimportacion,
-                    IdEmpresa = movimiento.idempresa,
-                    Guia = movimiento.guia?.ToString() ?? string.Empty,
-                    GuiaAlterna = movimiento.guia_alterna,
-                    Placa = movimiento.placa,
-                    PlacaAlterna = movimiento.placa_alterna,
-                    PesoEntregado = movimiento.cantidadentregada,
-                    Escotilla = movimiento.escotilla ?? 0,
-                    Bodega = movimiento.bodega?.ToString() ?? string.Empty
-                };
-
-                var bodegas = await _bodegaService.GetAllAsync();
-                ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega", viewModel.Bodega);
-
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error al obtener el registro {id} para editar");
-                TempData["Error"] = "Ocurrió un error al cargar el registro para editar";
-                return RedirectToAction(nameof(Index));
             }
         }
 
@@ -312,6 +416,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.UpdateAsync(id, movimiento);
                 TempData["Success"] = "Registro actualizado exitosamente.";
 
+                InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
+
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
             }
@@ -326,72 +432,23 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        public async Task<IActionResult> Delete(int? id, int? selectedBarco, int? empresaId)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            try
-            {
-                var movimiento = await _movimientoService.GetByIdAsync(id.Value);
-                if (movimiento == null)
-                {
-                    TempData["Error"] = $"No se encontró el registro con ID {id}";
-                    return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
-                }
-
-                var viewModel = new RegistroPesajesIndividual
-                {
-                    Id = movimiento.id,
-                    IdImportacion = selectedBarco ?? movimiento.idimportacion,
-                    IdEmpresa = empresaId ?? movimiento.idempresa,
-                    Guia = movimiento.guia?.ToString() ?? string.Empty,
-                    GuiaAlterna = movimiento.guia_alterna,
-                    Placa = movimiento.placa,
-                    PlacaAlterna = movimiento.placa_alterna,
-                    PesoEntregado = movimiento.cantidadentregada,
-                    Escotilla = movimiento.escotilla ?? 0
-                };
-
-                if (movimiento.bodega.HasValue)
-                {
-                    var bodegas = await _bodegaService.GetAllAsync();
-                    var bodega = bodegas.FirstOrDefault(b => b.id == movimiento.bodega.Value);
-                    viewModel.Bodega = bodega?.bodega ?? "N/A";
-                }
-
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error al cargar el registro {id} para eliminar");
-                TempData["Error"] = "Error al cargar el registro para eliminar";
-                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
-            }
-        }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id, int selectedBarco, int empresaId)
         {
             try
             {
-                _logger.LogInformation($"Iniciando proceso de eliminación para registro {id}");
-
                 var movimiento = await _movimientoService.GetByIdAsync(id);
                 if (movimiento == null)
                 {
-                    _logger.LogWarning($"No se encontró el registro {id} para eliminar");
                     TempData["Error"] = "No se encontró el registro para eliminar";
                     return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
                 }
 
                 await _movimientoService.DeleteAsync(id);
-
-                _logger.LogInformation($"Registro {id} eliminado exitosamente");
                 TempData["Success"] = "Registro eliminado correctamente";
+
+                InvalidateRelatedCaches(selectedBarco, empresaId);
 
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
             }
@@ -403,60 +460,70 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        public async Task<IActionResult> ReporteIndividual(int? selectedBarco)
-        {
-            try
-            {
-                var viewModel = new RegistroPesajesViewModel();
-
-                if (selectedBarco.HasValue)
-                {
-                    int importacionId = selectedBarco.Value;
-                    var movimientos = await _movimientoService.GetAllMovimientosByImportacionAsync(importacionId);
-                    viewModel.Tabla1Data = movimientos;
-                }
-
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al cargar el reporte individual");
-                return View(new RegistroPesajesViewModel());
-            }
-        }
-
         [HttpGet]
         public async Task<IActionResult> ReporteGeneral(int? selectedBarco)
         {
+            var watch = Stopwatch.StartNew();
             try
             {
-                // Cargar dropdowns
-                var barcosList = await _movimientoService.GetBarcosSelectListAsync();
-                ViewBag.Barcos = new SelectList(barcosList, "Value", "Text", selectedBarco);
+                const string barcosCacheKey = "BarcosDropdown";
+                List<SelectListItem> barcos;
 
-                var viewModel = new ReporteEscotillasPorEmpresaViewModel();
-
-                if (selectedBarco.HasValue)
+                if (!_memoryCache.TryGetValue(barcosCacheKey, out List<SelectListItem>? cachedBarcos))
                 {
-                    int importacionId = selectedBarco.Value;
-                    viewModel = await _movimientoService.GetEscotillasPorEmpresaAsync(importacionId);
-
-                    // Obtener nombre del barco seleccionado
-                    var barcoSeleccionado = barcosList.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
-                    if (barcoSeleccionado != null)
-                    {
-                        ViewBag.BarcoSeleccionado = barcoSeleccionado.Text;
-                    }
+                    barcos = (await _movimientoService.GetBarcosSelectListAsync())?.ToList() ?? new List<SelectListItem>();
+                    _memoryCache.Set(barcosCacheKey, barcos, TimeSpan.FromHours(BARCOS_CACHE_DURATION_HOURS));
+                    _logger.LogDebug($"Actualizado caché de barcos en ReporteGeneral: {barcos.Count} elementos");
                 }
+                else
+                {
+                    barcos = cachedBarcos ?? new List<SelectListItem>();
+                }
+
+                ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
+
+                if (!selectedBarco.HasValue)
+                {
+                    return View(new ReporteEscotillasPorEmpresaViewModel());
+                }
+
+                string reporteCacheKey = $"ReporteEscotillas_{selectedBarco}";
+                ReporteEscotillasPorEmpresaViewModel viewModel;
+
+                if (!_memoryCache.TryGetValue(reporteCacheKey, out ReporteEscotillasPorEmpresaViewModel? cachedViewModel))
+                {
+                    viewModel = await _movimientoService.GetEscotillasPorEmpresaAsync(selectedBarco.Value);
+                    _memoryCache.Set(reporteCacheKey, viewModel, TimeSpan.FromMinutes(REPORTE_CACHE_DURATION_MINUTES));
+                    _logger.LogDebug($"Datos de reporte escotillas cargados de API para barco {selectedBarco}");
+                }
+                else
+                {
+                    viewModel = cachedViewModel ?? new ReporteEscotillasPorEmpresaViewModel();
+                    _logger.LogDebug($"Datos de reporte escotillas recuperados de caché para barco {selectedBarco}");
+                }
+
+                var barcoSeleccionado = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
+                ViewBag.BarcoSeleccionado = barcoSeleccionado?.Text ?? "Desconocido";
+
+                watch.Stop();
+                _logger.LogDebug($"Tiempo de ejecución ReporteGeneral: {watch.ElapsedMilliseconds}ms para barco {selectedBarco}");
 
                 return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar el reporte general");
+                watch.Stop();
+                _logger.LogError(ex, $"Error al cargar el reporte general. Tiempo: {watch.ElapsedMilliseconds}ms");
                 TempData["Error"] = "Error al cargar los datos del reporte. Por favor, intente nuevamente.";
                 return View(new ReporteEscotillasPorEmpresaViewModel());
             }
+        }
+
+        private void InvalidateRelatedCaches(int importacionId, int empresaId)
+        {
+            _memoryCache.Remove($"RegistroPesajes_{importacionId}_{empresaId}");
+            _memoryCache.Remove($"ReporteEscotillas_{importacionId}");
+            _logger.LogDebug($"Caché invalidado para importación {importacionId}, empresa {empresaId}");
         }
     }
 }

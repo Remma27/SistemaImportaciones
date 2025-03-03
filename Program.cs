@@ -1,47 +1,79 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 using API.Data;
 using SistemaDeGestionDeImportaciones.Services;
-using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using Sistema_de_Gestion_de_Importaciones.Services;
+using Sistema_de_Gestion_de_Importaciones.Handlers;
 using Sistema_de_Gestion_de_Importaciones.Middleware;
 using Sistema_de_Gestion_de_Importaciones.Extensions;
+using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
+using Sistema_de_Gestion_de_Importaciones.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add this near the top of your configuration
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader();
-        });
+    options.AddPolicy("ApiPolicy", policy =>
+    {
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                             ?? new[] { "https://yourdomain.com", "https://www.yourdomain.com" };
+        policy.WithOrigins(allowedOrigins)
+              .SetIsOriginAllowedToAllowWildcardSubdomains()
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
-// ----------------------
-// Configuración de la API (Base de datos, Swagger, Endpoints API)
-// ----------------------
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "localhost",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "localhost",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(15)
+            }));
+});
+
+builder.Services.AddDataProtection()
+    .SetApplicationName("SistemaGestionImportaciones")
+    .SetDefaultKeyLifetime(TimeSpan.FromDays(30))
+    .PersistKeysToFileSystem(new DirectoryInfo(@"C:\DataProtection-Keys"));
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 }
 
-builder.Services.AddDbContext<ApiContext>(opt =>
-    opt.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+builder.Services.AddDbContext<ApiContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
-// Reemplaza todas las configuraciones de servicios individuales con esta única línea
-builder.Services.AddApplicationServices(builder.Configuration);
+ServiceExtensions.AddApplicationServices(builder.Services, builder.Configuration);
 
-builder.Services.AddControllers(); // Para API controllers
+builder.Services.AddControllers();
 
-// Agregar después de builder.Services.AddControllers();
 builder.Services.AddLogging(logging =>
 {
     logging.ClearProviders();
@@ -53,10 +85,20 @@ builder.Services.AddLogging(logging =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// ----------------------
-// Configuración del Frontend (MVC) y autenticación
-// ----------------------
-builder.Services.AddControllersWithViews(); // Para vistas MVC
+builder.Services.AddControllersWithViews(options =>
+{
+    var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+    options.Filters.Add(new AuthorizeFilter(policy));
+});
+
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -66,13 +108,45 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.AccessDeniedPath = "/Auth/IniciarSesion";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
+        options.Cookie.Name = ".AspNetCore.Cookies";
+        options.Cookie.HttpOnly = true;
+
+        if (builder.Environment.IsDevelopment())
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+        }
+        else
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SameSite = SameSiteMode.Strict;
+        }
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api") ||
+                (context.Request.Headers.TryGetValue("Accept", out var acceptValues) &&
+                 acceptValues.Any(v => v != null && v.Contains("application/json"))))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                return Task.CompletedTask;
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+
+        options.Cookie.IsEssential = true;
+        options.Cookie.MaxAge = TimeSpan.FromHours(8);
+
+        options.SessionStore = new MemoryCookieSessionStore();
     });
 
-// Si tu API y frontend se comunican internamente, configura el HttpClient con el mismo puerto
-string apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5079";
+builder.Services.AddHttpContextAccessor();
 
-// Keep this HTTP client configuration
-builder.Services.AddHttpClient("API", client =>
+builder.Services.AddTransient<CookieDelegatingHandler>();
+
+builder.Services.AddHttpClient("API", (sp, client) =>
 {
     var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
     if (string.IsNullOrEmpty(apiUrl))
@@ -83,7 +157,8 @@ builder.Services.AddHttpClient("API", client =>
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Accept.Clear();
     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-});
+})
+.AddHttpMessageHandler<CookieDelegatingHandler>();
 
 builder.Services.AddScoped<IImportacionService>(sp =>
 {
@@ -93,24 +168,20 @@ builder.Services.AddScoped<IImportacionService>(sp =>
     return new ImportacionService(httpClient, configuration, logger);
 });
 
-// Registro de IUsuarioService (asegúrate de que UsuarioService implemente IUsuarioService)
-builder.Services.AddHttpClient<IUsuarioService, UsuarioService>(client =>
+builder.Services.AddScoped<IUsuarioService>(sp =>
 {
-    client.BaseAddress = new Uri(apiBaseUrl);
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    return new UsuarioService(httpClient, builder.Configuration);
 });
 
-// Reemplazar la configuración existente del HttpClient con esta:
-builder.Services.AddHttpClient<IEmpresaService, EmpresaService>(client =>
+builder.Services.AddScoped<IEmpresaService>(sp =>
 {
-    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
-    Console.WriteLine($"Configurando API URL: {apiUrl}"); // Para debug
-    client.BaseAddress = new Uri(apiUrl ?? "http://localhost:5079/");
-    client.Timeout = TimeSpan.FromSeconds(30);
-    client.DefaultRequestHeaders.Accept.Clear();
-    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<EmpresaService>>();
+    return new EmpresaService(httpClient, configuration, logger);
 });
 
-// Register BarcoService
 builder.Services.AddScoped<IBarcoService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
@@ -119,7 +190,6 @@ builder.Services.AddScoped<IBarcoService>(sp =>
     return new BarcoService(httpClient, configuration, logger);
 });
 
-// Add this with the other service registrations
 builder.Services.AddScoped<IBodegaService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
@@ -128,26 +198,33 @@ builder.Services.AddScoped<IBodegaService>(sp =>
     return new BodegaService(httpClient, configuration, logger);
 });
 
-// Reemplaza el registro existente de IMovimientoService
+builder.Services.AddHttpClient<IMovimientoService, MovimientoService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+})
+.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+    MaxConnectionsPerServer = 20
+});
+
 builder.Services.AddScoped<IMovimientoService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
     var configuration = sp.GetRequiredService<IConfiguration>();
     var logger = sp.GetRequiredService<ILogger<MovimientoService>>();
-    return new MovimientoService(httpClient, configuration, logger);
+    var memoryCache = sp.GetRequiredService<IMemoryCache>();
+    return new MovimientoService(httpClient, configuration, logger, memoryCache);
 });
-
-builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// ----------------------
-// Pipeline de la aplicación
-// ----------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 else
 {
@@ -160,16 +237,24 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Add this before app.UseRouting();
-app.UseCors("AllowAll");
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    await next();
+});
 
-// Agregar el middleware de logging después de app.UseRouting();
+app.UseCors("ApiPolicy");
+
 app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseMiddleware<SecurityLoggingMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Mapea las rutas MVC
 app.MapControllerRoute(
     name: "mvc",
     pattern: "mvc/{controller=Home}/{action=Index}/{id?}"
@@ -180,7 +265,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}"
 );
 
-// Mapea también los endpoints API
 app.MapControllerRoute(
     name: "api",
     pattern: "api/{controller}/{action}/{id?}"

@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
+    [Authorize]
     public class BarcoController : Controller
     {
         private readonly IBarcoService _barcoService;
@@ -27,7 +30,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener los barcos");
-                ViewBag.Error = "Error al cargar los barcos. Por favor, intente más tarde.";
+                this.Error("Error al cargar los barcos. Por favor, intente más tarde.");
                 return View(new List<Barco>());
             }
         }
@@ -47,7 +50,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     barco.idusuario = User.GetUserId();
                     await _barcoService.CreateAsync(barco);
-                    TempData["Success"] = "Barco creado correctamente.";
+                    this.Success("Barco creado correctamente.");
                     return RedirectToAction("Index", "Barco");
                 }
                 catch (Exception ex)
@@ -73,7 +76,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al obtener el barco con ID: {id}");
-                TempData["Error"] = "Ocurrió un error al obtener el barco.";
+                this.Error("Ocurrió un error al obtener el barco.");
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -93,7 +96,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     barco.idusuario = User.GetUserId();
                     await _barcoService.UpdateAsync(id, barco);
-                    TempData["Success"] = "Barco actualizado correctamente.";
+                    this.Success("Barco actualizado correctamente.");
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -123,13 +126,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             try
             {
                 await _barcoService.DeleteAsync(id);
-                TempData["Success"] = "Barco eliminado correctamente.";
+                this.Success("Barco eliminado correctamente.");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar el barco con ID: {id}");
-                TempData["Error"] = "Ocurrió un error al eliminar el barco.";
+                this.Error("Ocurrió un error al eliminar el barco.");
                 return RedirectToAction(nameof(Index));
             }
         }

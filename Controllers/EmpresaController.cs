@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using Sistema_de_Gestion_de_Importaciones.Helpers; // Agregar para usar GetUserId
+using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authorization;
+using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
+    [Authorize]
     public class EmpresaController : Controller
     {
         private readonly IEmpresaService _empresaService;
@@ -26,7 +29,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener las empresas");
-                ViewBag.Error = "Error al cargar las empresas. Por favor, intente más tarde.";
+                this.Error("Error al cargar las empresas. Por favor, intente más tarde.");
                 return View(new List<Empresa>());
             }
         }
@@ -47,7 +50,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     empresa.idusuario = User.GetUserId();
                     await _empresaService.CreateAsync(empresa);
-                    TempData["Success"] = "Empresa creada correctamente.";
+                    this.Success("Empresa creada correctamente.");
                     return RedirectToAction("Index", "Empresa");
                 }
                 catch (Exception ex)
@@ -74,7 +77,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener la empresa para editar");
-                TempData["Error"] = "Error al cargar la empresa.";
+                this.Error("Error al cargar la empresa.");
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -94,7 +97,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     empresa.idusuario = User.GetUserId();
                     await _empresaService.UpdateAsync(id, empresa);
-                    TempData["Success"] = "Empresa actualizada correctamente.";
+                    this.Success("Empresa actualizada correctamente.");
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -124,14 +127,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             try
             {
                 await _empresaService.DeleteAsync(id);
-                TempData["Success"] = "Empresa eliminada correctamente.";
+                this.Success("Empresa eliminada correctamente.");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar la empresa con ID {Id}", id);
                 var empresa = await _empresaService.GetByIdAsync(id);
-                ViewBag.Error = "Ocurrió un error al eliminar la empresa: " + ex.Message;
+                this.Error("Ocurrió un error al eliminar la empresa: " + ex.Message);
                 return View("Delete", empresa);
             }
         }

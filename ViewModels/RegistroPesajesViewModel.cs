@@ -62,8 +62,8 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public int TipoTransaccion { get; set; } = 2;
         public DateTime FechaHora { get; set; } = DateTime.Now;
         public decimal PesoRequerido { get; internal set; }
-        public decimal PesoFaltante { get; internal set; }
-        public decimal Porcentaje { get; internal set; }
+        public decimal PesoFaltante { get; set; }
+        public decimal Porcentaje { get; set; }
         public string EmpresaNombre { get; set; } = string.Empty;
         public decimal CantidadRetiradaKg { get; internal set; }
         public decimal? CantidadRequeridaQuintales { get; set; }

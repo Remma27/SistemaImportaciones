@@ -25,8 +25,6 @@ namespace API.Models
         public Dictionary<int, decimal> ObtenerCapacidadesEscotillas()
         {
             var capacidades = new Dictionary<int, decimal>();
-
-            // Agregar las capacidades de cada escotilla
             if (escotilla1 > 0) capacidades.Add(1, (decimal)escotilla1);
             if (escotilla2 > 0) capacidades.Add(2, (decimal)escotilla2);
             if (escotilla3 > 0) capacidades.Add(3, (decimal)escotilla3);

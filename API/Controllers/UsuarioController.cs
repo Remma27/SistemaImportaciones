@@ -3,6 +3,11 @@ using API.Models;
 using API.Data;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using API.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
@@ -21,6 +26,7 @@ namespace API.Controllers
 
         // Endpoint para crear un nuevo Usuario
         [HttpPost]
+        [Authorize]
         public JsonResult Create(Usuario usuario)
         {
             if (usuario.id != 0)
@@ -28,14 +34,12 @@ namespace API.Controllers
                 return new JsonResult(BadRequest("El id debe ser 0 para crear un nuevo usuario."));
             }
 
-            // Verificar si el email ya existe
             var usuarioExistente = _context.Usuarios.FirstOrDefault(u => u.email == usuario.email);
             if (usuarioExistente != null)
             {
                 return new JsonResult(BadRequest("El email ya está registrado."));
             }
 
-            // Hashear la contraseña
             if (usuario.password_hash != null)
             {
                 usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
@@ -52,6 +56,7 @@ namespace API.Controllers
 
         // Endpoint para editar un Usuario existente
         [HttpPut]
+        [Authorize]
         public JsonResult Edit(Usuario usuario)
         {
             if (usuario.id == 0)
@@ -71,6 +76,7 @@ namespace API.Controllers
 
         // Get
         [HttpGet]
+        [Authorize]
         public JsonResult Get(int id)
         {
             var result = _context.Usuarios.Find(id);
@@ -83,6 +89,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
+        [Authorize]
         public JsonResult Delete(int id)
         {
             var result = _context.Usuarios.Find(id);
@@ -97,6 +104,7 @@ namespace API.Controllers
 
         // GetAll
         [HttpGet]
+        [Authorize]
         public JsonResult GetAll()
         {
             var result = _context.Usuarios.ToList();
@@ -113,7 +121,6 @@ namespace API.Controllers
                 return new JsonResult(BadRequest("El email ya está registrado."));
             }
 
-            // Encriptar la contraseña antes de guardarla
             if (model.password_hash != null)
             {
                 model.password_hash = _passwordHashService.HashPassword(model.password_hash);
@@ -128,12 +135,14 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public ActionResult<Usuario> IniciarSesion([FromBody] LoginViewModel model)
+        [AllowAnonymous]
+        public async Task<ActionResult<Usuario>> IniciarSesion([FromBody] LoginViewModel model)
         {
             try
             {
-                var usuario = _context.Usuarios
-                    .FirstOrDefault(u => (u.email ?? string.Empty).ToLower() == (model.Email ?? string.Empty).ToLower());
+                string userEmail = model.Email ?? string.Empty;
+                var usuario = await _context.Usuarios
+                    .FirstOrDefaultAsync(u => (u.email ?? string.Empty).ToLower() == userEmail.ToLower());
 
                 if (usuario == null || usuario.password_hash == null ||
                     !_passwordHashService.VerifyPassword(model.Password, usuario.password_hash))
@@ -142,14 +151,82 @@ namespace API.Controllers
                 }
 
                 usuario.ultimo_acceso = DateTime.Now;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
-                return Ok(usuario);
+                // Create claims for authentication
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, usuario.nombre ?? string.Empty),
+                    new Claim(ClaimTypes.Email, usuario.email ?? string.Empty),
+                    new Claim(ClaimTypes.NameIdentifier, usuario.id.ToString())
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                var authProperties = new AuthenticationProperties
+                {
+                    IsPersistent = model.RememberMe,
+                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                };
+
+                // Sign the user in with cookie authentication
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    authProperties);
+
+                // Create a sanitized user object that excludes sensitive information
+                var userResponse = new
+                {
+                    id = usuario.id,
+                    email = usuario.email,
+                    nombre = usuario.nombre,
+                    ultimo_acceso = usuario.ultimo_acceso,
+                    activo = usuario.activo
+                };
+
+                // Return the sanitized user object
+                return Ok(new
+                {
+                    Message = "Inicio de sesión exitoso",
+                    User = userResponse
+                });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
             }
+        }
+
+        // Add a logout endpoint
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CerrarSesion()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            foreach (var cookie in Request.Cookies.Keys)
+            {
+                Response.Cookies.Delete(cookie, new CookieOptions
+                {
+                    Secure = true,
+                    HttpOnly = true,
+                    SameSite = SameSiteMode.Strict
+                });
+            }
+
+            Response.Cookies.Delete(CookieAuthenticationDefaults.AuthenticationScheme, new CookieOptions
+            {
+                Secure = true,
+                HttpOnly = true,
+                SameSite = SameSiteMode.Strict
+            });
+
+            return Ok(new
+            {
+                Message = "Sesión cerrada correctamente",
+                CookiesRemoved = Request.Cookies.Keys.ToList()
+            });
         }
     }
 }

@@ -216,6 +216,11 @@
             <h5 class="mb-0 text-white"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
         </div>
         <div class="card-body p-0">
+            @{
+                var escotillasCollection = ViewBag.EscotillasData?.Escotillas;
+                var tieneEscotillas = escotillasCollection != null && escotillasCollection.Count > 0;
+            }
+
             @if (string.IsNullOrEmpty(selectedBarco))
             {
                 <div class="alert alert-info m-4 text-center">
@@ -223,11 +228,11 @@
                     Seleccione una importación para ver las escotillas
                 </div>
             }
-            else if (ViewBag.EscotillasData == null)
+            else if (ViewBag.EscotillasData == null || !tieneEscotillas)
             {
                 <div class="alert alert-warning m-4 text-center">
                     <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
-                    No hay registros de escotillas disponibles
+                    No hay registros de escotillas disponibles para esta importación
                 </div>
             }
             else

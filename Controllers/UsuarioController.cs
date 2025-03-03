@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using System;
-using System.Threading.Tasks;
+
+using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -20,20 +19,44 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var usuarios = await _usuarioService.GetAllAsync();
-            return View(usuarios);
+            try
+            {
+                var usuarios = await _usuarioService.GetAllAsync();
+                return View(usuarios);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener los usuarios");
+                this.Error("Error al cargar los usuarios. Por favor, intente más tarde.");
+                return View(Array.Empty<Usuario>());
+            }
         }
 
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
-                return NotFound();
+            {
+                this.Error("ID de usuario no especificado");
+                return RedirectToAction(nameof(Index));
+            }
 
-            var usuario = await _usuarioService.GetByIdAsync(id.Value);
-            if (usuario == null)
-                return NotFound();
+            try
+            {
+                var usuario = await _usuarioService.GetByIdAsync(id.Value);
+                if (usuario == null)
+                {
+                    this.Error($"Usuario con ID {id} no encontrado");
+                    return RedirectToAction(nameof(Index));
+                }
 
-            return View(usuario);
+                return View(usuario);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener el usuario {Id}", id);
+                this.Error("Error al cargar los datos del usuario.");
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         public IActionResult Create()
@@ -47,9 +70,19 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             if (ModelState.IsValid)
             {
-                usuario.fecha_creacion = DateTime.Now;
-                await _usuarioService.CreateAsync(usuario);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    usuario.fecha_creacion = DateTime.Now;
+                    await _usuarioService.CreateAsync(usuario);
+                    this.Success("Usuario creado correctamente");
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error al crear usuario");
+                    this.Error("Error al crear el usuario. Por favor, intente más tarde.");
+                    ModelState.AddModelError("", "Error al crear el usuario: " + ex.Message);
+                }
             }
             return View(usuario);
         }
@@ -57,13 +90,28 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
-                return NotFound();
+            {
+                this.Error("ID de usuario no especificado");
+                return RedirectToAction(nameof(Index));
+            }
 
-            var usuario = await _usuarioService.GetByIdAsync(id.Value);
-            if (usuario == null)
-                return NotFound();
+            try
+            {
+                var usuario = await _usuarioService.GetByIdAsync(id.Value);
+                if (usuario == null)
+                {
+                    this.Error($"Usuario con ID {id} no encontrado");
+                    return RedirectToAction(nameof(Index));
+                }
 
-            return View(usuario);
+                return View(usuario);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener el usuario {Id}", id);
+                this.Error("Error al cargar los datos del usuario.");
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         [HttpPost]
@@ -71,13 +119,17 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         public async Task<IActionResult> Edit(int id, Usuario usuario)
         {
             if (id != usuario.id)
-                return NotFound();
+            {
+                this.Error("ID de usuario no coincide");
+                return RedirectToAction(nameof(Index));
+            }
 
             if (ModelState.IsValid)
             {
                 try
                 {
                     await _usuarioService.UpdateAsync(id, usuario);
+                    this.Success("Usuario actualizado correctamente");
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
@@ -85,11 +137,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     _logger.LogError(ex, "Error al actualizar el usuario con ID '{Id}'", id);
                     if (!await UsuarioExists(usuario.id))
                     {
-                        return NotFound();
+                        this.Error($"Usuario con ID {id} no encontrado");
+                        return RedirectToAction(nameof(Index));
                     }
                     else
                     {
-                        throw;
+                        ModelState.AddModelError("", "Error al actualizar: " + ex.Message);
                     }
                 }
             }
@@ -99,21 +152,46 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
-                return NotFound();
+            {
+                this.Error("ID de usuario no especificado");
+                return RedirectToAction(nameof(Index));
+            }
 
-            var usuario = await _usuarioService.GetByIdAsync(id.Value);
-            if (usuario == null)
-                return NotFound();
+            try
+            {
+                var usuario = await _usuarioService.GetByIdAsync(id.Value);
+                if (usuario == null)
+                {
+                    this.Error($"Usuario con ID {id} no encontrado");
+                    return RedirectToAction(nameof(Index));
+                }
 
-            return View(usuario);
+                return View(usuario);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener el usuario {Id}", id);
+                this.Error("Error al cargar los datos del usuario.");
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _usuarioService.DeleteAsync(id);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _usuarioService.DeleteAsync(id);
+                this.Success("Usuario eliminado correctamente");
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar el usuario con ID {Id}", id);
+                this.Error("Error al eliminar el usuario: " + ex.Message);
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         private async Task<bool> UsuarioExists(int id)

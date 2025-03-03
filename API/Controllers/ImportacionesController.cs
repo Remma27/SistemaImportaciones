@@ -2,11 +2,13 @@
 using API.Models;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class ImportacionesController : ControllerBase
     {
         private readonly ApiContext _context;

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using API.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Sistema_de_Gestion_de_Importaciones.Models.DTOs;
+using Microsoft.Extensions.Caching.Memory;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.ViewModels;
@@ -13,12 +13,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         private readonly HttpClient _httpClient;
         private readonly string _apiBaseUrl;
         private readonly ILogger<MovimientoService> _logger;
+        private readonly IMemoryCache _memoryCache;
+        private IConfiguration configuration;
 
-        public MovimientoService(HttpClient httpClient, IConfiguration configuration, ILogger<MovimientoService> logger)
+        public MovimientoService(HttpClient httpClient, IConfiguration configuration, ILogger<MovimientoService> logger, IMemoryCache memoryCache)
         {
             _httpClient = httpClient;
+            this.configuration = configuration;
             _apiBaseUrl = configuration["ApiSettings:BaseUrl"] + "/api/Movimientos";
             _logger = logger;
+            _memoryCache = memoryCache;
         }
 
         public async Task<IEnumerable<Movimiento>> GetAllAsync()
@@ -171,7 +175,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        //Registro de Requerimientos
         public async Task<Movimiento> RegistroRequerimientos(int id, Movimiento movimiento)
         {
             try
@@ -228,7 +231,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 {
                     var importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesElement.GetRawText(), options);
                     return importaciones?
-                        .OrderByDescending(i => i.fechahora) // Order by date, most recent first
+                        .OrderByDescending(i => i.fechahora)
                         .Select(i => new SelectListItem
                         {
                             Value = i.id.ToString(),
@@ -311,7 +314,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 var empresas = JsonSerializer.Deserialize<List<Empresa>>(empresasArray.GetRawText(), options);
 
-                // Filter for only active companies (estatus == 1) and order alphabetically by name
                 return empresas?
                     .Where(e => e.estatus == 1)
                     .OrderBy(e => e.nombreempresa)
@@ -338,7 +340,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"API Response: {content}"); // Debug log
+                Console.WriteLine($"API Response: {content}");
 
                 var options = new JsonSerializerOptions
                 {
@@ -402,11 +404,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
-                // Extract the totalMovimientos value and store it in a property we can access later
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
                 {
-                    // Store the total value in ViewBag through a custom property in this service
-                    // We'll access this after calling GetInformeGeneralAsync
+
                     TotalMovimientos = totalMovimientosElement.GetInt32();
                 }
 
@@ -428,7 +428,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        // Add this property to store the total count
         public int TotalMovimientos { get; private set; }
 
         public async Task<IEnumerable<Movimiento>> GetAllMovimientosAsync()
@@ -514,66 +513,64 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 throw new Exception($"Error al actualizar el registro {id}: {ex.Message}", ex);
             }
         }
+
         public async Task<List<Movimiento>> CalculoMovimientos(int importacionId, int idempresa)
         {
             try
             {
-                _logger.LogInformation($"Solicitando cálculo de movimientos para importación {importacionId} y empresa {idempresa}");
+                string cacheKey = $"CalculoMovimientos_{importacionId}_{idempresa}";
+
+                if (_memoryCache.TryGetValue(cacheKey, out List<Movimiento>? cachedResult) && cachedResult != null)
+                {
+                    return cachedResult;
+                }
+
+                _logger.LogDebug($"Calculando movimientos: importación {importacionId}, empresa {idempresa}");
 
                 var url = $"{_apiBaseUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}";
-                _logger.LogInformation($"URL de la solicitud: {url}");
 
                 var response = await _httpClient.GetAsync(url);
-                var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"Respuesta API: {content}");
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorMessage = TryGetErrorMessage(content);
-                    throw new HttpRequestException($"Error del servidor: {errorMessage}");
+                    _logger.LogWarning($"Error API ({response.StatusCode}): {url}");
+                    return new List<Movimiento>();
                 }
 
-                using var document = JsonDocument.Parse(content);
-                var root = document.RootElement;
+                var apiResponse = await response.Content.ReadFromJsonAsync<MovimientosApiResponse>();
 
-                if (root.TryGetProperty("data", out JsonElement dataElement))
+                if (apiResponse?.Data == null || !apiResponse.Data.Any())
                 {
-                    var options = new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    };
-
-                    var movimientosDtos = JsonSerializer.Deserialize<List<MovimientosCumulatedDto>>(dataElement.GetRawText(), options);
-
-                    if (movimientosDtos == null || !movimientosDtos.Any())
-                    {
-                        _logger.LogInformation("No se encontraron movimientos para procesar");
-                        return new List<Movimiento>();
-                    }
-
-                    return movimientosDtos.Select(m => new Movimiento
-                    {
-                        id = m.id,
-                        bodega = int.TryParse(m.bodega, out int bod) ? bod : null,
-                        guia = int.TryParse(m.guia, out int gui) ? gui : null,
-                        guia_alterna = m.guia_alterna,
-                        placa = m.placa,
-                        placa_alterna = m.placa_alterna,
-                        cantidadrequerida = m.cantidadrequerida,
-                        cantidadentregada = m.cantidadentregada,
-                        peso_faltante = m.peso_faltante,
-                        porcentaje = m.porcentaje
-                    }).ToList();
+                    return new List<Movimiento>();
                 }
 
-                return new List<Movimiento>();
+                var result = apiResponse.Data.Select(dto => new Movimiento
+                {
+                    id = dto.Id,
+                    bodega = string.IsNullOrEmpty(dto.Bodega) ? null :
+                            int.TryParse(dto.Bodega, out int bod) ? bod : null,
+                    guia = string.IsNullOrEmpty(dto.Guia) ? null :
+                          int.TryParse(dto.Guia, out int gui) ? gui : null,
+                    guia_alterna = dto.GuiaAlterna,
+                    placa = dto.Placa,
+                    placa_alterna = dto.PlacaAlterna,
+                    cantidadentregada = dto.CantidadEntregada,
+                    cantidadrequerida = dto.CantidadRequerida,
+                    peso_faltante = dto.PesoFaltante,
+                    porcentaje = dto.Porcentaje
+                }).ToList();
+
+                _memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(3));
+
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al calcular los movimientos: {Message}", ex.Message);
-                throw new Exception($"Error al calcular los movimientos: {ex.Message}", ex);
+                _logger.LogError(ex, "Error al calcular los movimientos");
+                return new List<Movimiento>();
             }
         }
+
 
         public async Task<EscotillaApiResponse> GetEscotillasApiDataAsync(int importacionId)
         {
@@ -624,23 +621,33 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
+                _logger.LogInformation($"Solicitando datos de escotillas para importación {importacionId}");
                 var url = $"{_apiBaseUrl}/CalculoEscotillas?importacionId={importacionId}";
+                _logger.LogDebug($"URL de solicitud: {url}");
+
                 var response = await _httpClient.GetAsync(url);
 
-                response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning($"Error al obtener escotillas: Status {response.StatusCode}");
+                    return new EscotillasResumenViewModel();
+                }
 
                 var content = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug($"Respuesta API escotillas: {content.Substring(0, Math.Min(500, content.Length))}...");
+
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
 
-                var apiResponse = JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
-                    ?? new EscotillaApiResponse();
+                var apiResponse = JsonSerializer.Deserialize<EscotillaApiResponse>(content, options);
+
+                _logger.LogInformation($"Escotillas recibidas: {apiResponse?.Escotillas?.Count ?? 0}");
 
                 return new EscotillasResumenViewModel
                 {
-                    Escotillas = apiResponse.Escotillas.Select(e => new EscotillaViewModel
+                    Escotillas = apiResponse?.Escotillas?.Select(e => new EscotillaViewModel
                     {
                         NumeroEscotilla = e.NumeroEscotilla,
                         CapacidadKg = e.CapacidadKg,
@@ -648,18 +655,18 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         DiferenciaKg = e.DiferenciaKg,
                         Porcentaje = e.Porcentaje,
                         Estado = e.Estado
-                    }).ToList(),
-                    CapacidadTotal = apiResponse.Totales.CapacidadTotal,
-                    DescargaTotal = apiResponse.Totales.DescargaTotal,
-                    DiferenciaTotal = apiResponse.Totales.DiferenciaTotal,
-                    PorcentajeTotal = apiResponse.Totales.PorcentajeTotal,
-                    EstadoGeneral = apiResponse.Totales.EstadoGeneral
+                    }).ToList() ?? new List<EscotillaViewModel>(),
+                    CapacidadTotal = apiResponse?.Totales?.CapacidadTotal ?? 0,
+                    DescargaTotal = apiResponse?.Totales?.DescargaTotal ?? 0,
+                    DiferenciaTotal = apiResponse?.Totales?.DiferenciaTotal ?? 0,
+                    PorcentajeTotal = apiResponse?.Totales?.PorcentajeTotal ?? 0,
+                    EstadoGeneral = apiResponse?.Totales?.EstadoGeneral ?? "Sin información"
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener datos de escotillas");
-                throw;
+                return new EscotillasResumenViewModel();
             }
         }
 
@@ -679,24 +686,19 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogInformation($"Respuesta recibida de la API. Longitud: {content.Length} caracteres");
 
-                // Usar JsonDocument para trabajar con la estructura cruda del JSON
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
-                // Verificar si hay un elemento "data" en la respuesta
                 if (root.TryGetProperty("data", out var dataElement))
                 {
-                    // Verificar que data sea un array
                     if (dataElement.ValueKind == JsonValueKind.Array)
                     {
                         var resultado = new List<RegistroPesajesIndividual>();
 
-                        // Iterar a través del array de datos
                         foreach (var element in dataElement.EnumerateArray())
                         {
                             try
                             {
-                                // Extraer propiedades de cada elemento con manejo especial para números que deben ser strings
                                 var item = new RegistroPesajesIndividual
                                 {
                                     Id = GetIntValue(element, "id"),
@@ -709,11 +711,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                                     Escotilla = GetIntValue(element, "escotilla"),
                                     Bodega = GetStringValue(element, "bodega"),
 
-                                    // Para guía, que puede ser número o string, convertimos a string explícitamente
                                     Guia = element.TryGetProperty("guia", out var guia) && guia.ValueKind != JsonValueKind.Null
                                         ? guia.ValueKind == JsonValueKind.Number
-                                            ? guia.GetInt32().ToString()  // Si es número, convertir a string
-                                            : guia.GetString() ?? ""      // Si es string, usarlo
+                                            ? guia.GetInt32().ToString()
+                                            : guia.GetString() ?? ""
                                         : "",
 
                                     GuiaAlterna = GetStringValue(element, "guiaAlterna"),
@@ -723,7 +724,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                                     PesoRequerido = GetDecimalValue(element, "cantidadRetirarKg"),
                                     CantidadRetiradaKg = GetDecimalValue(element, "cantidadRetiradaKg"),
                                     PesoFaltante = GetDecimalValue(element, "pesoFaltante"),
-                                    // Agregar estos campos
                                     CantidadRequeridaQuintales = GetDecimalValue(element, "cantidadRequeridaQuintales"),
                                     CantidadEntregadaQuintales = GetDecimalValue(element, "cantidadEntregadaQuintales"),
                                     CantidadRequeridaLibras = GetDecimalValue(element, "cantidadRequeridaLibras"),
@@ -754,7 +754,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        // Métodos auxiliares para extraer valores del JSON de manera segura
         private int GetIntValue(JsonElement element, string propertyName)
         {
             if (element.TryGetProperty(propertyName, out var prop) &&
@@ -785,7 +784,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 if (prop.ValueKind == JsonValueKind.String)
                     return prop.GetString() ?? "";
 
-                // Si no es string, convertir a string
                 return prop.ToString();
             }
             return "";

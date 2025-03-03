@@ -5,6 +5,7 @@ using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
 using API.Models;
+using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -34,12 +35,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading registro requerimientos: {Message}", ex.Message);
-                TempData["Error"] = "Error al cargar los registros: " + ex.Message;
+                this.Error("Error al cargar los registros: " + ex.Message);
                 return View(new List<RegistroRequerimientosViewModel>());
             }
         }
-
-
 
         public async Task<IActionResult> Create(int? selectedBarco)
         {
@@ -87,6 +86,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             try
             {
                 await _movimientoService.CreateAsync(movimiento);
+                this.Success("Requerimiento registrado exitosamente");
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)

@@ -1,8 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
-using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
-using Microsoft.AspNetCore.Authorization;
+using Sistema_de_Gestion_de_Importaciones.ViewModels;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -10,52 +10,62 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
     public class InformeGeneralController : Controller
     {
         private readonly IMovimientoService _movimientoService;
-        private readonly ILogger<InformeGeneralController> _logger;
+        private readonly IBarcoService _barcoService;
 
-        public InformeGeneralController(IMovimientoService registroService,
-                                                ILogger<InformeGeneralController> logger)
+        public InformeGeneralController(IMovimientoService movimientoService, IBarcoService barcoService)
         {
-            _movimientoService = registroService;
-            _logger = logger;
+            _movimientoService = movimientoService;
+            _barcoService = barcoService;
         }
 
         public async Task<IActionResult> Index(int? selectedBarco)
         {
+            var viewModel = new RegistroPesajesViewModel();
+            ViewBag.Barcos = new SelectList(await _movimientoService.GetBarcosSelectListAsync(), "Value", "Text", selectedBarco);
+
+            if (!selectedBarco.HasValue)
+            {
+                return View(viewModel);
+            }
+
             try
             {
-                var barcos = await _movimientoService.GetBarcosSelectListAsync();
-                ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
+                // Get the report data
+                var informeGeneralData = await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value);
+                var escotillasData = await _movimientoService.GetEscotillasDataAsync(selectedBarco.Value);
 
-                if (selectedBarco.HasValue)
+                // Map to ViewModel
+                viewModel.Tabla2Data = informeGeneralData.Select(ig => new RegistroPesajesAgregado
                 {
-                    // Get the informe general data
-                    var informeGeneral = await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value);
+                    Agroindustria = ig.Empresa ?? "Sin nombre",
+                    KilosRequeridos = (decimal)ig.RequeridoKg,
+                    ToneladasRequeridas = (decimal)ig.RequeridoTon,
+                    DescargaKilos = (decimal)ig.DescargaKg,
+                    FaltanteKilos = (decimal)ig.FaltanteKg,
+                    ToneladasFaltantes = (decimal)ig.TonFaltantes,
+                    CamionesFaltantes = (decimal)ig.CamionesFaltantes,
+                    ConteoPlacas = ig.ConteoPlacas,
+                    PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
+                }).ToList();
 
-                    // Get the total count from the property set in the service
-                    ViewBag.TotalMovimientos = _movimientoService.TotalMovimientos;
-
-                    // Get escotillas data
-                    try
-                    {
-                        var escotillasData = await _movimientoService.GetEscotillasDataAsync(selectedBarco.Value);
-                        ViewBag.EscotillasData = escotillasData;
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error getting escotillas data: {Message}", ex.Message);
-                        // Continue without escotillas data
-                    }
-
-                    return View(informeGeneral);
+                if (escotillasData != null)
+                {
+                    viewModel.EscotillasData = escotillasData.Escotillas;
+                    viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
+                    viewModel.DescargaTotal = escotillasData.DescargaTotal;
+                    viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
+                    viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
+                    viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
                 }
 
-                return View(new List<InformeGeneralViewModel>());
+                return View(viewModel);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading informe general: {Message}", ex.Message);
-                TempData["Error"] = "Error al cargar el informe: " + ex.Message;
-                return View(new List<InformeGeneralViewModel>());
+                // Log the exception
+                // _logger.LogError(ex, "Error loading informe general");
+                ModelState.AddModelError("", $"Error al cargar el informe: {ex.Message}");
+                return View(viewModel);
             }
         }
     }

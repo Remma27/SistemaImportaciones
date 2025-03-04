@@ -1,0 +1,109 @@
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>
+@{
+    // Obtener valores del ViewData para usar en la plantilla con manejo seguro de nulos
+    var capacidadTotal = ViewData["CapacidadTotal"] is decimal value ? value : 0;
+    var descargaTotal = ViewData["DescargaTotal"] is decimal value2 ? value2 : 0;
+    var diferenciaTotal = ViewData["DiferenciaTotal"] is decimal value3 ? value3 : 0;
+    var porcentajeTotal = ViewData["PorcentajeTotal"] is decimal value4 ? value4 : 0;
+    var estadoGeneral = ViewData["EstadoGeneral"] is string value5 ? value5 : "";
+}
+
+<div class="col-lg-12">
+    <div class="card mb-4 shadow escotillas-card">
+        <div class="card-header bg-gradient bg-primary text-white py-3">
+            <h5 class="mb-0"><i class="fas fa-ship me-2"></i>Estado de Escotillas</h5>
+        </div>
+        <div class="card-body bg-light">
+            <div class="table-responsive">
+                <table id="tablaEscotillas" class="table table-striped table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Escotilla</th>
+                            <th class="text-end">Capacidad (Kg)</th>
+                            <th class="text-end">Descargado (Kg)</th>
+                            <th class="text-end unit-toggle-columns">
+                                <div>Desc.</div>
+                                <div><small>Lbs / Qq</small></div>
+                            </th>
+                            <th class="text-end">Diferencia (Kg)</th>
+                            <th class="text-end unit-toggle-columns">
+                                <div>Dif.</div>
+                                <div><small>Lbs / Qq</small></div>
+                            </th>
+                            <th class="text-end">% Descarga</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No hay registros disponibles</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var escotilla in Model)
+                            {
+                                <tr>
+                                    <td>Escotilla @escotilla.NumeroEscotilla</td>
+                                    <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
+                                    <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
+                                    <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                        <span class="top-value">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
+                                        <span class="divider"></span>
+                                        <span class="bottom-value">@((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq</span>
+                                    </td>
+                                    <td class="text-end">@escotilla.DiferenciaKg.ToString("N0")</td>
+                                    <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                        <span class="top-value">@((escotilla.DiferenciaKg * 2.20462M).ToString("N0")) lbs</span>
+                                        <span class="divider"></span>
+                                        <span class="bottom-value">@((escotilla.DiferenciaKg / 45.359237M).ToString("N2")) qq</span>
+                                    </td>
+                                    <td class="text-end">@escotilla.Porcentaje.ToString("N2")%</td>
+                                    <td>@escotilla.Estado</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        <tfoot>
+                            <tr class="table-success-dark">
+                                <td>Totales</td>
+                                <td class="text-end">@capacidadTotal.ToString("N0")</td>
+                                <td class="text-end">@descargaTotal.ToString("N0")</td>
+                                <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                    <span class="top-value">@((descargaTotal * 2.20462M).ToString("N0")) lbs</span>
+                                    <span class="divider"></span>
+                                    <span class="bottom-value">@((descargaTotal / 45.359237M).ToString("N2")) qq</span>
+                                </td>
+                                <td class="text-end">@diferenciaTotal.ToString("N0")</td>
+                                <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                    <span class="top-value">@((diferenciaTotal * 2.20462M).ToString("N0")) lbs</span>
+                                    <span class="divider"></span>
+                                    <span class="bottom-value">@((diferenciaTotal / 45.359237M).ToString("N2")) qq</span>
+                                </td>
+                                <td class="text-end">@(diferenciaTotal < 0 ? "-" : "")@Math.Abs(porcentajeTotal).ToString("N2")%</td>
+                                <td>@estadoGeneral</td>
+                            </tr>
+                            <tr>
+                                <td colspan="8" class="p-3 bg-light text-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
+                                    </small>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

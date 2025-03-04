@@ -24,39 +24,35 @@
                             <div class="row gy-3">
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <select id="selectedBarco" 
-                                                name="selectedBarco" 
-                                                class="form-select" 
-                                                asp-items="ViewBag.Barcos" 
-                                                onchange="handleBarcoChange(this)" 
-                                                required>
+                                        <select id="selectedBarco" name="selectedBarco" class="form-select"
+                                            asp-items="ViewBag.Barcos" onchange="handleBarcoChange(this)" required>
                                             <option value="">Seleccione una Importación</option>
                                         </select>
                                         <label><i class="fas fa-ship me-2"></i>Importación</label>
                                         <div class="invalid-feedback">
                                             Por favor seleccione una importación
                                         </div>
-                                        <div id="barcoLoadingIndicator" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none" style="margin-top: -10px;" role="status">
+                                        <div id="barcoLoadingIndicator"
+                                            class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none"
+                                            style="margin-top: -10px;" role="status">
                                             <span class="visually-hidden">Cargando...</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-floating">
-                                        <select id="empresaId" 
-                                                name="empresaId" 
-                                                class="form-select" 
-                                                asp-items="ViewBag.Empresas" 
-                                                onchange="handleEmpresaChange(this)" 
-                                                disabled="@(!isBarcoSelected)" 
-                                                required>
+                                        <select id="empresaId" name="empresaId" class="form-select"
+                                            asp-items="ViewBag.Empresas" onchange="handleEmpresaChange(this)"
+                                            disabled="@(!isBarcoSelected)" required>
                                             <option value="">Seleccione una Empresa</option>
                                         </select>
                                         <label><i class="fas fa-building me-2"></i>Empresa</label>
                                         <div class="invalid-feedback">
                                             Por favor seleccione una empresa
                                         </div>
-                                        <div id="empresaLoadingIndicator" class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none" style="margin-top: -10px;" role="status">
+                                        <div id="empresaLoadingIndicator"
+                                            class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none"
+                                            style="margin-top: -10px;" role="status">
                                             <span class="visually-hidden">Cargando...</span>
                                         </div>
                                     </div>
@@ -66,37 +62,30 @@
                     </div>
                     <div class="col-lg-4 d-flex align-items-center justify-content-lg-end mt-3 mt-lg-0">
                         <div class="action-buttons">
-                            <button id="btnAgregar" 
-                                   class="btn btn-primary action-btn" 
-                                   disabled="@(!isFormValid)">
+                            <button id="btnAgregar" class="btn btn-primary action-btn" disabled="@(!isFormValid)">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Agregar</span>
                             </button>
 
-                            <button id="btnToggleEscotillas" class="btn btn-secondary action-btn" title="Mostrar/ocultar escotillas">
+                            <button id="btnToggleEscotillas" class="btn btn-secondary action-btn"
+                                title="Mostrar/ocultar escotillas">
                                 <i class="fas fa-eye-slash"></i>
                             </button>
-                            
-                            <a href="@(isBarcoSelected 
-                                     ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] })
-                                     : "#")" 
-                               id="btnReporteEscotillas" 
-                               class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")" 
-                               title="Reporte Escotillas por Empresa">
+
+                            <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
+                                id="btnReporteEscotillas"
+                                class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")"
+                                title="Reporte Escotillas por Empresa">
                                 <i class="fas fa-chart-column"></i>
                             </a>
-                            
                             @{
                                 var hasTableData = Model.Tabla2Data != null && Model.Tabla2Data.Any();
                                 var enableDetailButton = isBarcoSelected && hasTableData;
                             }
-
-                            <a href="@(isBarcoSelected 
-                                     ? Url.Action("ReporteIndividual", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"]})
-                                     : "#")" 
-                               id="btnTablaDetallada" 
-                               class="btn btn-dark action-btn @(!enableDetailButton ? "disabled" : "")" 
-                               title="Vista detallada">
+                            <a href="@(isBarcoSelected ? Url.Action("ReporteIndividual", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
+                                id="btnTablaDetallada"
+                                class="btn btn-dark action-btn @(!enableDetailButton ? "disabled" : "")"
+                                title="Vista detallada">
                                 <i class="fas fa-table-cells"></i>
                             </a>
 
@@ -114,359 +103,15 @@
     <!-- Tables Container -->
     <div class="row g-4">
         <!-- Resumen Agregado -->
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-gradient bg-purple py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-white"><i class="fas fa-chart-bar me-2"></i>Resumen Agregado</h5>
-                    <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel" disabled>
-                        <i class="fas fa-file-excel me-1"></i>Exportar
-                    </button>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-scroll">
-                        <table id="tabla2" class="table table-hover align-middle table-fixed-header">
-                            <thead>
-                                <tr>
-                                    <th class="bg-white text-black">Empresa</th>
-                                    <th class="bg-white text-black text-end column-md">Req. (Kg)</th>
-                                    <th class="bg-white text-black text-end column-sm">Req. (Ton)</th>
-                                    <th class="bg-white text-black text-end column-md">Desc. (Kg)</th>
-                                    
-                                    <th class="text-end column-md unit-toggle-columns">
-                                        <div>Desc.</div>
-                                        <div><small>Lbs / Qq</small></div>
-                                    </th>
-                                    
-                                    <th class="bg-white text-black text-end column-md">Falt. (Kg)</th>
-                                    <th class="bg-white text-black text-end column-sm">Falt. (Ton)</th>
-                                    
-                                    <th class="text-end column-md unit-toggle-columns">
-                                        <div>Falt.</div>
-                                        <div><small>Lbs / Qq</small></div>
-                                    </th>
-                                    
-                                    <th class="bg-white text-black text-end column-sm">Cam. Falt.</th>
-                                    <th class="bg-white text-black text-center column-sm">Placas</th>
-                                    <th class="bg-white text-black text-end column-sm">% Desc.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.Tabla2Data == null || !Model.Tabla2Data.Any())
-                                {
-                                    <tr>
-                                        <td colspan="10" class="text-center">
-                                            <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle"></i>
-                                                <span>No hay registros disponibles</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    @foreach (var item in Model.Tabla2Data)
-                                    {
-                                        <tr>
-                                            <td>@item.Agroindustria</td>
-                                            <td class="text-end">@item.KilosRequeridos.ToString("N0")</td>
-                                            <td class="text-end">@item.ToneladasRequeridas.ToString("N2")</td>
-                                            <td class="text-end">@item.DescargaKilos.ToString("N0")</td>
-
-                                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                                <span class="top-value">@((item.DescargaKilos * 2.20462M).ToString("N0")) lbs</span>
-                                                <span class="divider"></span>
-                                                <span class="bottom-value">@((item.DescargaKilos / 45.359237M).ToString("N2")) qq</span>
-                                            </td>
-
-                                            <td class="text-end">@item.FaltanteKilos.ToString("N0")</td>
-                                            <td class="text-end">@item.ToneladasFaltantes.ToString("N2")</td>
-
-                                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                                <span class="top-value">@((item.FaltanteKilos * 2.20462M).ToString("N0")) lbs</span>
-                                                <span class="divider"></span>
-                                                <span class="bottom-value">@((item.FaltanteKilos / 45.359237M).ToString("N2")) qq</span>
-                                            </td>
-
-                                            <td class="text-end">@item.CamionesFaltantes.ToString("N2")</td>
-                                            <td class="text-center">@item.ConteoPlacas</td>
-                                            <td class="text-end">@item.PorcentajeDescarga.ToString("N2")%</td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                            @if (Model.Tabla2Data != null && Model.Tabla2Data.Any())
-                            {
-                                <tfoot>
-                                    <tr class="table-purple">
-                                        <td>Totales</td>
-                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.KilosRequeridos).ToString("N0")</td>
-                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasRequeridas).ToString("N2")</td>
-                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.DescargaKilos).ToString("N0")</td>
-
-                                        <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                            <span class="top-value">@((Model.Tabla2Data.Sum(x => x.DescargaKilos) * 2.20462M).ToString("N0")) lbs</span>
-                                            <span class="divider"></span>
-                                            <span class="bottom-value">@((Model.Tabla2Data.Sum(x => x.DescargaKilos) / 45.359237M).ToString("N2")) qq</span>
-                                        </td>
-
-                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.FaltanteKilos).ToString("N0")</td>
-                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.ToneladasFaltantes).ToString("N2")</td>
-
-                                        <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                            <span class="top-value">@((Model.Tabla2Data.Sum(x => x.FaltanteKilos) * 2.20462M).ToString("N0")) lbs</span>
-                                            <span class="divider"></span>
-                                            <span class="bottom-value">@((Model.Tabla2Data.Sum(x => x.FaltanteKilos) / 45.359237M).ToString("N2")) qq</span>
-                                        </td>
-
-                                        <td class="text-end">@Model.Tabla2Data.Sum(x => x.CamionesFaltantes).ToString("N2")</td>
-                                        <td class="text-center">@Model.Tabla2Data.Sum(x => x.ConteoPlacas)</td>
-                                        <td class="text-end">
-                                            @{
-                                                var kilosRequeridos = Model.Tabla2Data.Sum(x => x.KilosRequeridos);
-                                                var porcentaje = kilosRequeridos > 0 
-                                                    ? (Model.Tabla2Data.Sum(x => x.DescargaKilos) * 100.0M / kilosRequeridos) 
-                                                    : 0;
-                                            }
-                                            @porcentaje.ToString("N2")%
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            }
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
 
         <!-- Resumen General y Escotillas -->
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-gradient bg-success py-3">
-                    <h5 class="mb-0 text-white"><i class="fas fa-calculator me-2"></i>Resumen General y Escotillas</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-scroll">
-                        <table class="table table-hover align-middle table-fixed-header">
-                            <thead>
-                                <tr class="table-success-dark">
-                                    <th>Escotilla</th>
-                                    <th class="text-end">Capacidad (Kg)</th>
-                                    <th class="text-end">Descarga (Kg)</th>
-                                    
-                                    <th class="text-end unit-toggle-columns">
-                                        <div>Desc.</div>
-                                        <div><small>Lbs / Qq</small></div>
-                                    </th>
-                                    
-                                    <th class="text-end">Diferencia (Kg)</th>
-                                    
-                                    <th class="text-end unit-toggle-columns">
-                                        <div>Dif.</div>
-                                        <div><small>Lbs / Qq</small></div>
-                                    </th>
-                                    
-                                    <th class="text-end">% Descarga</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.EscotillasData == null || !Model.EscotillasData.Any())
-                                {
-                                    <tr>
-                                        <td colspan="8" class="text-center">
-                                            <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle"></i>
-                                                <span>No hay registros disponibles</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    @foreach (var escotilla in Model.EscotillasData)
-                                    {
-                                        <tr>
-                                            <td>Escotilla @escotilla.NumeroEscotilla</td>
-                                            <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
-                                            <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
-                                            
-                                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                                <span class="top-value">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
-                                                <span class="divider"></span>
-                                                <span class="bottom-value">@((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq</span>
-                                            </td>
-                                            
-                                            <td class="text-end">@escotilla.DiferenciaKg.ToString("N0")</td>
-                                            
-                                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                                <span class="top-value">@((escotilla.DiferenciaKg * 2.20462M).ToString("N0")) lbs</span>
-                                                <span class="divider"></span>
-                                                <span class="bottom-value">@((escotilla.DiferenciaKg / 45.359237M).ToString("N2")) qq</span>
-                                            </td>
-                                            
-                                            <td class="text-end">@escotilla.Porcentaje.ToString("N2")%</td>
-                                            <td>@escotilla.Estado</td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                            @if (Model.EscotillasData != null && Model.EscotillasData.Any())
-                            {
-                                <tfoot>
-                                    <tr class="table-success-dark">
-                                        <td>Totales</td>
-                                        <td class="text-end">@Model.CapacidadTotal.ToString("N0")</td>
-                                        <td class="text-end">@Model.DescargaTotal.ToString("N0")</td>
-                                        
-                                        <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                            <span class="top-value">@((Model.DescargaTotal * 2.20462M).ToString("N0")) lbs</span>
-                                            <span class="divider"></span>
-                                            <span class="bottom-value">@((Model.DescargaTotal / 45.359237M).ToString("N2")) qq</span>
-                                        </td>
-                                        
-                                        <td class="text-end">@Model.DiferenciaTotal.ToString("N0")</td>
-                                        
-                                        <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                            <span class="top-value">@((Model.DiferenciaTotal * 2.20462M).ToString("N0")) lbs</span>
-                                            <span class="divider"></span>
-                                            <span class="bottom-value">@((Model.DiferenciaTotal / 45.359237M).ToString("N2")) qq</span>
-                                        </td>
-                                        
-                                        <td class="text-end">@(Model.DiferenciaTotal < 0 ? "-" : "")@Math.Abs(Model.PorcentajeTotal).ToString("N2")%</td>
-                                        <td>@Model.EstadoGeneral</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="8" class="p-3 bg-light text-center">
-                                            <small class="text-muted">
-                                                <i class="fas fa-info-circle me-2"></i>
-                                                <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
-                                            </small>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            }
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @await Component.InvokeAsync("ResumenGeneralEscotillas", new { model = Model.EscotillasData, capacidadTotal =
+        Model.CapacidadTotal, descargaTotal = Model.DescargaTotal, diferenciaTotal = Model.DiferenciaTotal,
+                porcentajeTotal = Model.PorcentajeTotal, estadoGeneral = Model.EstadoGeneral })
 
         <!-- Tabla 1: Registros Individuales -->
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-gradient bg-info py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-white"><i class="fas fa-table me-2"></i>Registros Individuales</h5>
-                    <button id="btnExportarExcelIndividuales" class="btn btn-success btn-sm" title="Exportar a Excel" disabled>
-                        <i class="fas fa-file-excel me-1"></i>Exportar
-                    </button>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-scroll">
-                        <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
-                            <thead>
-                                <tr class="table-info-dark">
-                                    <th>Bodega</th>
-                                    <th>Guía</th>
-                                    <th>Guía Alterna</th>
-                                    <th>Placa</th>
-                                    <th>Placa Alterna</th>
-                                    <th>Peso Requerido</th>
-                                    <th>Peso Entregado</th>
-                                    
-                                    <th class="text-end unit-toggle-columns">
-                                        <div>Entreg.</div>
-                                        <div><small>Lbs / Qq</small></div>
-                                    </th>
-                                    
-                                    <th>Peso Faltante</th>
-                                    <th>Porcentaje</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-group-divider">
-                                @if (Model.Tabla1Data == null || !Model.Tabla1Data.Any())
-                                {
-                                    <tr>
-                                        <td colspan="11" class="text-center">
-                                            <div class="alert alert-info mb-0">
-                                                <i class="fas fa-info-circle"></i>
-                                                <span>No hay registros disponibles</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                                else
-                                {
-                                    @foreach (var item in Model.Tabla1Data)
-                                    {
-                                        <tr>
-                                            <td>@item.Bodega</td>
-                                            <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
-                                            <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
-                                            <td>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</td>
-                                            <td>@(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</td>
-                                            <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
-                                            <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
-                                            
-                                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                                <span class="top-value">@((item.PesoEntregado * 2.20462M).ToString("N0")) lbs</span>
-                                                <span class="divider"></span>
-                                                <span class="bottom-value">@((item.PesoEntregado / 45.359237M).ToString("N2")) qq</span>
-                                            </td>
-                                            
-                                            <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
-                                            <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a asp-controller="RegistroPesajes" 
-                                                    asp-action="Edit" 
-                                                    asp-route-id="@item.Id"
-                                                    asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
-                                                    asp-route-empresaId="@Context.Request.Query["empresaId"]"
-                                                    class="btn btn-warning btn-sm">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <a asp-controller="RegistroPesajes" 
-                                                    asp-action="Delete" 
-                                                    asp-route-id="@item.Id"
-                                                    asp-route-selectedBarco="@Context.Request.Query["selectedBarco"]"
-                                                    asp-route-empresaId="@Context.Request.Query["empresaId"]"
-                                                    class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                            </tbody>
-                            @if (Model.Tabla1Data != null && Model.Tabla1Data.Any())
-                            {
-                                <tfoot class="table-group-divider">
-                                    <tr class="table-info-dark">
-                                        <td>Totales</td>
-                                        <td colspan="3"></td>
-                                        <td class="text-end">Cant. registros: @Model.Tabla1Data.Count()</td>
-                                        <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.PesoRequerido.ToString("N0") ?? "0")</td>
-                                        <td class="text-end">@Model.Tabla1Data.Sum(x => x.PesoEntregado).ToString("N0")</td>
-                                        
-                                        <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                            <span class="top-value">@((Model.Tabla1Data.Sum(x => x.PesoEntregado) * 2.20462M).ToString("N0")) lbs</span>
-                                            <span class="divider"></span>
-                                            <span class="bottom-value">@((Model.Tabla1Data.Sum(x => x.PesoEntregado) / 45.359237M).ToString("N2")) qq</span>
-                                        </td>
-                                        
-                                        <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.PesoFaltante.ToString("N0") ?? "0")</td>
-                                        <td class="text-end">@(Model.Tabla1Data.LastOrDefault()?.Porcentaje.ToString("N2") ?? "0")%</td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            }
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @await Component.InvokeAsync("RegistrosIndividuales", new { model = Model.Tabla1Data })
 
         <!-- Tabla 3: Totales por Bodega -->
         @{
@@ -474,103 +119,49 @@
             var empresasList = (IEnumerable<SelectListItem>)ViewBag.Empresas;
             var selectedEmpresa = empresasList?.FirstOrDefault(e => e.Value == empresaSeleccionadaId);
             var empresaSeleccionadaNombre = selectedEmpresa?.Text;
-            
-            
-            var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) && 
-                                   empresaSeleccionadaNombre.IndexOf("INTERGLO", StringComparison.OrdinalIgnoreCase) >= 0;
-                                   
+
+            var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) &&
+            empresaSeleccionadaNombre.IndexOf("INTERGLO", StringComparison.OrdinalIgnoreCase) >= 0;
+
             System.Diagnostics.Debug.WriteLine($"Mostrar tabla bodegas: {mostrarTablaBodegas}");
             System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
         }
 
         @if (mostrarTablaBodegas && Model.TotalesPorBodega != null && Model.TotalesPorBodega.Any())
         {
-            <div class="col-12">
-                <div class="card shadow">
-                    <div class="card-header bg-gradient bg-warning py-3">
-                        <h5 class="mb-0 text-dark"><i class="fas fa-warehouse me-2"></i>Totales por Bodega</h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-scroll">
-                            <table id="tabla3" class="table table-hover align-middle mb-0 table-fixed-header">
-                                <thead>
-                                    <tr class="table-warning-dark">
-                                        <th>Bodega</th>
-                                        <th class="text-end">Total Kilos</th>
-                                        <th class="text-center">Cantidad de Traslados</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (Model.TotalesPorBodega == null || !Model.TotalesPorBodega.Any())
-                                    {
-                                        <tr>
-                                            <td colspan="10" class="text-center">
-                                                <div class="alert alert-info mb-0">
-                                                    <i class="fas fa-info-circle"></i>
-                                                    <span>No hay registros disponibles</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                    else
-                                    {
-                                        @foreach (var item in Model.TotalesPorBodega)
-                                        {
-                                            <tr>
-                                                <td>@item.Bodega</td>
-                                                <td class="text-end">@item.TotalKilos.ToString("N2")</td>
-                                                <td class="text-center">@item.CantidadMovimientos</td>
-                                            </tr>
-                                        }
-                                    }
-                                </tbody>
-                                @if (Model.TotalesPorBodega != null && Model.TotalesPorBodega.Any())
-                                {
-                                    <tfoot>
-                                        <tr class="table-warning-dark">
-                                            <td>Totales</td>
-                                            <td class="text-end">@Model.TotalesPorBodega.Sum(x => x.TotalKilos).ToString("N2")</td>
-                                            <td class="text-center">@Model.TotalesPorBodega.Sum(x => x.CantidadMovimientos)</td>
-                                        </tr>
-                                    </tfoot>
-                                }
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @await Component.InvokeAsync("TotalesPorBodega", new { model = Model.TotalesPorBodega })
         }
-            </div>
+    </div>
 </div>
 
 @section Scripts {
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="~/js/registroPesajes.js"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             console.log("Page ready. Checking ViewBag data:");
-            
+
             // Log data for debugging
             var barcoOptions = @Json.Serialize(ViewBag.Barcos?.Items ?? new List<SelectListItem>());
             var empresaOptions = @Json.Serialize(ViewBag.Empresas?.Items ?? new List<SelectListItem>());
-            
+
             console.log("Barcos options:", barcoOptions);
             console.log("Empresas options:", empresaOptions);
-            
+
             initializeServerData(
                 '@Context.Request.Query["selectedBarco"]',
                 '@Context.Request.Query["empresaId"]'
             );
-            
+
             // Check if we need to manually set dropdown values
             const selectedBarco = '@Context.Request.Query["selectedBarco"]';
             const empresaId = '@Context.Request.Query["empresaId"]';
-            
+
             if (selectedBarco) {
                 $('#selectedBarco').val(selectedBarco);
                 console.log('Set selectedBarco to:', selectedBarco);
             }
-            
+
             if (empresaId) {
                 $('#empresaId').val(empresaId);
                 console.log('Set empresaId to:', empresaId);

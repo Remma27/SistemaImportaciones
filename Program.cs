@@ -13,8 +13,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using System.Net.Http.Headers;
 using Sistema_de_Gestion_de_Importaciones.Services;
+using System.Net;
+using Sistema_de_Gestion_de_Importaciones.ViewComponents;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews()
+    .AddRazorRuntimeCompilation();
+
+builder.Services.AddTransient<ResumenAgregadoViewComponent>();
+builder.Services.AddTransient<ResumenGeneralEscotillasViewComponent>();
+builder.Services.AddTransient<RegistrosIndividualesViewComponent>();
+builder.Services.AddTransient<TotalesPorBodegaViewComponent>();
 
 builder.Services.AddCors(options =>
 {
@@ -200,13 +210,18 @@ builder.Services.AddScoped<IBodegaService>(sp =>
 
 builder.Services.AddHttpClient<IMovimientoService, MovimientoService>(client =>
 {
-    client.Timeout = TimeSpan.FromSeconds(10);
+    client.Timeout = TimeSpan.FromSeconds(15);
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("br"));
+    client.DefaultRequestHeaders.Connection.Add("keep-alive");
 })
 .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
 {
-    PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-    MaxConnectionsPerServer = 20
+    PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+    MaxConnectionsPerServer = 30,
+    EnableMultipleHttp2Connections = true,
+    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Brotli
 });
 
 builder.Services.AddScoped<IMovimientoService>(sp =>

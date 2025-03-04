@@ -6,6 +6,12 @@
     var diferenciaTotal = ViewData["DiferenciaTotal"] is decimal value3 ? value3 : 0;
     var porcentajeTotal = ViewData["PorcentajeTotal"] is decimal value4 ? value4 : 0;
     var estadoGeneral = ViewData["EstadoGeneral"] is string value5 ? value5 : "";
+    
+    // Crear un diccionario con todas las escotillas disponibles para búsqueda rápida
+    var escotillasDiccionario = Model?.ToDictionary(e => e.NumeroEscotilla, e => e) ?? new Dictionary<int, Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>();
+    
+    // Definir todas las escotillas posibles (1-7)
+    var todasLasEscotillas = Enumerable.Range(1, 7);
 }
 
 <div class="col-lg-12">
@@ -35,7 +41,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model == null || !Model.Any())
+                        @if (Model == null && !todasLasEscotillas.Any())
                         {
                             <tr>
                                 <td colspan="8" class="text-center">
@@ -48,8 +54,20 @@
                         }
                         else
                         {
-                            @foreach (var escotilla in Model)
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
                             {
+                                var escotilla = escotillasDiccionario.ContainsKey(numeroEscotilla) 
+                                    ? escotillasDiccionario[numeroEscotilla] 
+                                    : new Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel 
+                                    { 
+                                        NumeroEscotilla = numeroEscotilla,
+                                        CapacidadKg = 0,
+                                        DescargaRealKg = 0,
+                                        DiferenciaKg = 0,
+                                        Porcentaje = 0,
+                                        Estado = " - "
+                                    };
+                                
                                 <tr>
                                     <td>Escotilla @escotilla.NumeroEscotilla</td>
                                     <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
@@ -71,37 +89,34 @@
                             }
                         }
                     </tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        <tfoot>
-                            <tr class="table-success-dark">
-                                <td>Totales</td>
-                                <td class="text-end">@capacidadTotal.ToString("N0")</td>
-                                <td class="text-end">@descargaTotal.ToString("N0")</td>
-                                <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                    <span class="top-value">@((descargaTotal * 2.20462M).ToString("N0")) lbs</span>
-                                    <span class="divider"></span>
-                                    <span class="bottom-value">@((descargaTotal / 45.359237M).ToString("N2")) qq</span>
-                                </td>
-                                <td class="text-end">@diferenciaTotal.ToString("N0")</td>
-                                <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                    <span class="top-value">@((diferenciaTotal * 2.20462M).ToString("N0")) lbs</span>
-                                    <span class="divider"></span>
-                                    <span class="bottom-value">@((diferenciaTotal / 45.359237M).ToString("N2")) qq</span>
-                                </td>
-                                <td class="text-end">@(diferenciaTotal < 0 ? "-" : "")@Math.Abs(porcentajeTotal).ToString("N2")%</td>
-                                <td>@estadoGeneral</td>
-                            </tr>
-                            <tr>
-                                <td colspan="8" class="p-3 bg-light text-center">
-                                    <small class="text-muted">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
-                                    </small>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    }
+                    <tfoot>
+                        <tr class="table-success-dark">
+                            <td>Totales</td>
+                            <td class="text-end">@capacidadTotal.ToString("N0")</td>
+                            <td class="text-end">@descargaTotal.ToString("N0")</td>
+                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                <span class="top-value">@((descargaTotal * 2.20462M).ToString("N0")) lbs</span>
+                                <span class="divider"></span>
+                                <span class="bottom-value">@((descargaTotal / 45.359237M).ToString("N2")) qq</span>
+                            </td>
+                            <td class="text-end">@diferenciaTotal.ToString("N0")</td>
+                            <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                <span class="top-value">@((diferenciaTotal * 2.20462M).ToString("N0")) lbs</span>
+                                <span class="divider"></span>
+                                <span class="bottom-value">@((diferenciaTotal / 45.359237M).ToString("N2")) qq</span>
+                            </td>
+                            <td class="text-end">@(diferenciaTotal < 0 ? "-" : "")@Math.Abs(porcentajeTotal).ToString("N2")%</td>
+                            <td>@estadoGeneral</td>
+                        </tr>
+                        <tr>
+                            <td colspan="8" class="p-3 bg-light text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Nota:</strong> Diferencia con números positivos indica lo que falta, en negativo indica sobrante
+                                </small>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>

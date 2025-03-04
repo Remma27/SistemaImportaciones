@@ -17,7 +17,8 @@
                         <div class="row">
                             <div class="col-md-12 mb-3">
                                 <label asp-for="nombrebarco" class="form-label"></label>
-                                <input asp-for="nombrebarco" class="form-control" placeholder="Ingrese el nombre del barco"/>
+                                <input asp-for="nombrebarco" class="form-control"
+                                    placeholder="Ingrese el nombre del barco" />
                                 <span asp-validation-for="nombrebarco" class="text-danger"></span>
                             </div>
                         </div>
@@ -76,22 +77,26 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script>
         $(document).ready(function () {
             $('form').submit(function (e) {
                 var isValid = true;
                 $('input[type="number"]').each(function () {
-                    var value = $(this).val();
-                    if (value && (value < 0 || value > 999999.99)) {
-                        alert("La capacidad debe estar entre 0 y 999,999.99");
-                        isValid = false;
+                    if ($(this).val() !== '') {
+                        var value = parseFloat($(this).val());
+                        if (isNaN(value) || value < 0) {
+                            alert("La capacidad debe ser un número igual o mayor a 0");
+                            $(this).focus();
+                            isValid = false;
+                            return false;
+                        }
                     }
                 });
                 return isValid;
             });
         });
     </script>
-
-    <partial name="_ValidationScriptsPartial" />
 }

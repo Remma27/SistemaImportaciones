@@ -111,7 +111,13 @@
                 porcentajeTotal = Model.PorcentajeTotal, estadoGeneral = Model.EstadoGeneral })
 
         <!-- Tabla 1: Registros Individuales -->
-        @await Component.InvokeAsync("RegistrosIndividuales", new { model = Model.Tabla1Data })
+        @await Component.InvokeAsync("RegistrosIndividuales",
+                new
+                {
+                    registros = Model.Tabla1Data,
+                    selectedBarco = ViewContext.HttpContext.Request.Query["selectedBarco"].ToString(),
+                    empresaId = ViewContext.HttpContext.Request.Query["empresaId"].ToString()
+                })
 
         <!-- Tabla 3: Totales por Bodega -->
         @{

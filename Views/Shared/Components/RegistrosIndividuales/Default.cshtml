@@ -10,6 +10,7 @@
                 <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
                     <thead>
                         <tr class="table-info-dark">
+                            <th>#</th>
                             <th>Bodega</th>
                             <th>Guía</th>
                             <th>Guía Alterna</th>
@@ -30,7 +31,7 @@
                         @if (Model == null || !Model.Any())
                         {
                             <tr>
-                                <td colspan="11" class="text-center">
+                                <td colspan="12" class="text-center">
                                     <div class="alert alert-info mb-0">
                                         <i class="fas fa-info-circle"></i>
                                         <span>No hay registros disponibles</span>
@@ -40,10 +41,12 @@
                         }
                         else
                         {
+                            int rowNumber = 0;
                             @foreach (var item in Model)
                             {
                                 <tr>
-                                    <td>@item.Bodega</td>
+                                    <td class="text-center">@rowNumber</td>
+                                    <td>@(string.IsNullOrEmpty(item.Bodega) ? "-" : item.Bodega)</td>
                                     <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
                                     <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
                                     <td>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</td>
@@ -59,25 +62,19 @@
                                     <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a asp-controller="RegistroPesajes" 
-                                               asp-action="Edit" 
-                                               asp-route-id="@item.Id"
-                                               asp-route-selectedBarco="@ViewBag.SelectedBarco"
-                                               asp-route-empresaId="@ViewBag.EmpresaId"
+                                            <a href="/mvc/RegistroPesajes/Edit/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
                                                class="btn btn-warning btn-sm">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a asp-controller="RegistroPesajes" 
-                                               asp-action="Delete" 
-                                               asp-route-id="@item.Id"
-                                               asp-route-selectedBarco="@ViewBag.SelectedBarco"
-                                               asp-route-empresaId="@ViewBag.EmpresaId"
+                                            
+                                            <a href="/mvc/RegistroPesajes/Delete/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
                                                class="btn btn-danger btn-sm">
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
                                     </td>
                                 </tr>
+                                rowNumber++;
                             }
                         }
                     </tbody>
@@ -85,9 +82,10 @@
                     {
                         <tfoot class="table-group-divider">
                             <tr class="table-info-dark">
+                                <td></td>
                                 <td>Totales</td>
                                 <td colspan="3"></td>
-                                <td class="text-end">Cant. registros: @Model.Count()</td>
+                                <td class="text-end">Conteo: @Model.Count()</td>
                                 <td class="text-end">@(Model.LastOrDefault()?.PesoRequerido.ToString("N0") ?? "0")</td>
                                 <td class="text-end">@Model.Sum(x => x.PesoEntregado).ToString("N0")</td>
                                 <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">

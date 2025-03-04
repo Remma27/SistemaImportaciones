@@ -489,7 +489,26 @@ namespace API.Controllers
                     .Select(m => m.cantidadrequerida ?? 0)
                     .FirstOrDefaultAsync();
 
-                var movimientos = await _context.Movimientos
+                var movimientosTipo1 = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId &&
+                               m.idempresa == idempresa &&
+                               m.tipotransaccion == 1)
+                    .OrderBy(m => m.fechahora)
+                    .Select(m => new
+                    {
+                        m.id,
+                        m.bodega,
+                        m.guia,
+                        m.guia_alterna,
+                        m.placa,
+                        m.placa_alterna,
+                        m.cantidadrequerida,
+                        m.tipotransaccion,
+                        m.fechahora
+                    })
+                    .ToListAsync();
+
+                var movimientosTipo2 = await _context.Movimientos
                     .Where(m => m.idimportacion == importacionId &&
                                m.idempresa == idempresa &&
                                m.tipotransaccion == 2)
@@ -502,25 +521,34 @@ namespace API.Controllers
                         m.guia_alterna,
                         m.placa,
                         m.placa_alterna,
-                        m.cantidadentregada
+                        m.cantidadentregada,
+                        m.tipotransaccion,
+                        m.fechahora,
+                        m.escotilla
                     })
                     .ToListAsync();
 
-                if (!movimientos.Any())
+                var result = new List<MovimientosCumulatedDto>();
+                decimal acumulado = 0;
+
+                foreach (var mov in movimientosTipo1)
                 {
-                    return Ok(new
+                    result.Add(new MovimientosCumulatedDto
                     {
-                        count = 0,
-                        data = new List<MovimientosCumulatedDto>(),
-                        requeridoTotal = requerimientoTotal,
-                        message = "No hay movimientos registrados"
+                        id = mov.id,
+                        bodega = mov.bodega?.ToString() ?? "",
+                        guia = mov.guia?.ToString() ?? "",
+                        guia_alterna = mov.guia_alterna ?? "",
+                        placa = mov.placa ?? "",
+                        placa_alterna = mov.placa_alterna ?? "",
+                        cantidadrequerida = (decimal)(mov.cantidadrequerida ?? 0),
+                        cantidadentregada = 0,
+                        peso_faltante = (decimal)(mov.cantidadrequerida ?? 0),
+                        porcentaje = 0,
                     });
                 }
 
-                var result = new List<MovimientosCumulatedDto>(movimientos.Count);
-                decimal acumulado = 0;
-
-                foreach (var mov in movimientos)
+                foreach (var mov in movimientosTipo2)
                 {
                     acumulado += mov.cantidadentregada;
 
@@ -532,12 +560,23 @@ namespace API.Controllers
                         guia_alterna = mov.guia_alterna ?? "",
                         placa = mov.placa ?? "",
                         placa_alterna = mov.placa_alterna ?? "",
-                        cantidadrequerida = requerimientoTotal,
+                        cantidadrequerida = 0,
                         cantidadentregada = mov.cantidadentregada,
                         peso_faltante = requerimientoTotal - acumulado,
                         porcentaje = requerimientoTotal > 0
                             ? Math.Round((acumulado * 100 / requerimientoTotal), 2)
-                            : 0
+                            : 0,
+                    });
+                }
+
+                if (!result.Any())
+                {
+                    return Ok(new
+                    {
+                        count = 0,
+                        data = new List<MovimientosCumulatedDto>(),
+                        requeridoTotal = requerimientoTotal,
+                        message = "No hay movimientos registrados"
                     });
                 }
 
@@ -580,16 +619,22 @@ namespace API.Controllers
                     return Ok(cachedResult);
                 }
 
-                var importacionQuery = _context.Importaciones
+                // Execute these queries one after another instead of concurrently to avoid DbContext issues
+                var importacion = await _context.Importaciones
                     .Where(i => i.id == importacionId)
                     .Select(i => new
                     {
                         Barco = i.Barco,
                         CapacidadesEscotillas = i.Barco != null ? i.Barco.ObtenerCapacidadesEscotillas() : new Dictionary<int, decimal>()
-                    });
+                    })
+                    .FirstOrDefaultAsync();
 
+                if (importacion?.Barco == null)
+                {
+                    return NotFound(new { message = "No se encontró la importación o el barco asociado" });
+                }
 
-                var movimientosPorEscotillaQuery = _context.Movimientos
+                var movimientosPorEscotilla = await _context.Movimientos
                     .Where(m => m.idimportacion == importacionId &&
                            m.tipotransaccion == 2 &&
                            m.escotilla != null)
@@ -598,21 +643,10 @@ namespace API.Controllers
                     {
                         Escotilla = g.Key,
                         DescargaReal = g.Sum(x => x.cantidadentregada)
-                    });
+                    })
+                    .ToListAsync();
 
-                var importacionTask = importacionQuery.FirstOrDefaultAsync();
-                var movimientosPorEscotillaTask = movimientosPorEscotillaQuery.ToListAsync();
-
-                await Task.WhenAll(importacionTask, movimientosPorEscotillaTask);
-
-                var importacion = await importacionTask;
-                var movimientosPorEscotilla = await movimientosPorEscotillaTask;
-
-                if (importacion?.Barco == null)
-                {
-                    return NotFound(new { message = "No se encontró la importación o el barco asociado" });
-                }
-
+                // Continue with the rest of the method...
                 var descargasPorEscotilla = movimientosPorEscotilla
                     .ToDictionary(m => m.Escotilla!.Value, m => m.DescargaReal);
 

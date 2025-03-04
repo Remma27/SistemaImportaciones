@@ -6,13 +6,26 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewComponents
 {
     public class RegistrosIndividualesViewComponent : ViewComponent
     {
-        public IViewComponentResult Invoke(IEnumerable<RegistroPesajesIndividual> model)
+        public IViewComponentResult Invoke(List<RegistroPesajesIndividual> registros, object selectedBarco, object empresaId)
         {
-            var modelList = model?.ToList() ?? new List<RegistroPesajesIndividual>();
-            ViewBag.SelectedBarco = HttpContext.Request.Query["selectedBarco"].ToString();
-            ViewBag.EmpresaId = HttpContext.Request.Query["empresaId"].ToString();
+            // Parse the values safely
+            var selectedBarcoValue = 0;
+            var empresaIdValue = 0;
 
-            return View(modelList);
+            if (selectedBarco != null)
+            {
+                int.TryParse(selectedBarco.ToString(), out selectedBarcoValue);
+            }
+
+            if (empresaId != null)
+            {
+                int.TryParse(empresaId.ToString(), out empresaIdValue);
+            }
+
+            ViewBag.SelectedBarco = selectedBarcoValue;
+            ViewBag.EmpresaId = empresaIdValue;
+
+            return View(registros);
         }
     }
 }

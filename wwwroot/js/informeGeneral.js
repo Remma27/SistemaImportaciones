@@ -1,7 +1,18 @@
 $(document).ready(function () {
     $('#btnToggleEscotillas').on('click', function () {
-        $('#cardEscotillas').slideToggle()
-        $(this).find('i').toggleClass('fa-eye fa-eye-slash')
+        console.log('Toggle escotillas clicked')
+        const cardEscotillas = $('#cardEscotillas')
+        console.log('Escotillas element:', cardEscotillas.length)
+
+        const icon = $(this).find('i')
+
+        cardEscotillas.slideToggle(300, function () {
+            const isVisible = cardEscotillas.is(':visible')
+            icon.toggleClass('fa-eye fa-eye-slash')
+            $('#btnToggleEscotillas')
+                .attr('title', isVisible ? 'Ocultar escotillas' : 'Mostrar escotillas')
+                .toggleClass('btn-secondary btn-outline-secondary')
+        })
     })
 
     $('#exportToExcel').on('click', function () {

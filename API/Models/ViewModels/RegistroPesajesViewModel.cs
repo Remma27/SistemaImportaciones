@@ -56,7 +56,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         [Range(1, 7, ErrorMessage = "La escotilla debe estar entre 1 y 7")]
         public int Escotilla { get; set; }
 
-        [Required(ErrorMessage = "La bodega es requerida")]
+        //[Required(ErrorMessage = "La bodega es requerida")]
         public string? Bodega { get; set; }
 
         public int TipoTransaccion { get; set; } = 2;

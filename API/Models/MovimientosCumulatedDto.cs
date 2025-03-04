@@ -12,5 +12,6 @@ namespace API.Models
         public decimal cantidadentregada { get; set; }
         public decimal peso_faltante { get; set; }
         public decimal porcentaje { get; set; }
+
     }
 }

@@ -39,15 +39,13 @@
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" name="selectedBarco" value="@Model.IdImportacion" />
                 <input type="hidden" name="empresaId" value="@Model.IdEmpresa" />
-                
+
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash me-2"></i>Eliminar
                     </button>
-                    <a asp-action="Index" 
-                       asp-route-selectedBarco="@Model.IdImportacion" 
-                       asp-route-empresaId="@Model.IdEmpresa" 
-                       class="btn btn-secondary">
+                    <a asp-action="Index" asp-route-selectedBarco="@Model.IdImportacion"
+                        asp-route-empresaId="@Model.IdEmpresa" class="btn btn-secondary">
                         <i class="fas fa-times me-2"></i>Cancelar
                     </a>
                 </div>

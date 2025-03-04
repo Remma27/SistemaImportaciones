@@ -159,7 +159,7 @@ function initializeServerData(selectedBarco, empresaId) {
 
 function setupEscotillasToggle() {
     const btnToggle = $('#btnToggleEscotillas')
-    const escotillasSection = $('.card-header.bg-gradient.bg-success').closest('.card.shadow')
+    const escotillasSection = $('.escotillas-card').closest('.col-lg-12')
     let isVisible = true
 
     btnToggle.on('click', function () {

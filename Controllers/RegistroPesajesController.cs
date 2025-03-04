@@ -18,7 +18,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         private readonly ILogger<RegistroPesajesController> _logger;
         private readonly IImportacionService _importacionService;
         private readonly IMemoryCache _memoryCache;
-        private const int BARCOS_CACHE_DURATION_HOURS = 1;
+        private const double BARCOS_CACHE_DURATION_HOURS = 0.25;
         private const int BODEGAS_CACHE_DURATION_HOURS = 1;
         private const int REPORTE_CACHE_DURATION_MINUTES = 30;
         private const int DATA_CACHE_DURATION_MINUTES = 5;
@@ -37,7 +37,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _memoryCache = memoryCache;
         }
 
-        public async Task<IActionResult> Index(int? selectedBarco, int? empresaId)
+        public async Task<IActionResult> Index(int? selectedBarco, int? empresaId, bool refreshData = false)
         {
             var watch = Stopwatch.StartNew();
             try
@@ -59,7 +59,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return View(viewModel);
                 }
 
-                if (_memoryCache.TryGetValue(cacheKey, out RegistroPesajesViewModel? cachedViewModel) && cachedViewModel != null)
+                if (!refreshData && _memoryCache.TryGetValue(cacheKey, out RegistroPesajesViewModel? cachedViewModel) && cachedViewModel != null)
                 {
                     _logger.LogDebug($"Datos recuperados desde caché para barco {selectedBarco}, empresa {empresaId}");
                     return View(cachedViewModel);
@@ -67,147 +67,40 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 int importacionId = selectedBarco.Value;
 
+                try
+                {
+                    await LoadEscotillasData(viewModel, importacionId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error al cargar datos de escotillas, continuando con el resto de datos");
+                    SetDefaultEscotillasValues(viewModel, "Error al cargar datos");
+                }
+
+                try
+                {
+                    await LoadTabla2Data(viewModel, importacionId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Error al cargar datos de tabla 2, continuando con el resto de datos");
+                    viewModel.Tabla2Data = new List<RegistroPesajesAgregado>();
+                }
+
                 if (empresaId.HasValue)
                 {
-                    var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId.Value);
-
-                    if (calculo != null && calculo.Any())
+                    try
                     {
-                        viewModel.Tabla1Data = calculo
-                            .Where(c => c != null)
-                            .Select(c => new RegistroPesajesIndividual
-                            {
-                                Id = c.id,
-                                IdImportacion = c.idimportacion,
-                                IdEmpresa = c.idempresa,
-                                Guia = c.guia?.ToString() ?? string.Empty,
-                                GuiaAlterna = c.guia_alterna,
-                                Placa = c.placa,
-                                PlacaAlterna = c.placa_alterna,
-                                PesoRequerido = c.cantidadrequerida ?? 0,
-                                PesoEntregado = c.cantidadentregada,
-                                PesoFaltante = c.peso_faltante,
-                                Porcentaje = c.porcentaje,
-                                Escotilla = c.escotilla ?? 0,
-                                Bodega = c.bodega?.ToString() ?? string.Empty,
-                            }).ToList();
-
-                        var bodegasDict = await GetBodegasDictionaryAsync();
-                        viewModel.TotalesPorBodega = CalculateTotalesPorBodega(calculo, bodegasDict);
+                        await LoadTabla1Data(viewModel, importacionId, empresaId.Value, forceRefresh: refreshData);
                     }
-
-                    var informeGeneralTask = _movimientoService.GetInformeGeneralAsync(importacionId);
-                    var escotillasTask = _movimientoService.GetEscotillasDataAsync(importacionId);
-
-                    await Task.WhenAll(informeGeneralTask, escotillasTask);
-
-                    var informeGeneral = await informeGeneralTask;
-                    if (informeGeneral != null)
+                    catch (Exception ex)
                     {
-                        viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
-                        {
-                            Agroindustria = ig.Empresa ?? "Sin nombre",
-                            KilosRequeridos = (decimal)ig.RequeridoKg,
-                            ToneladasRequeridas = (decimal)ig.RequeridoTon,
-                            DescargaKilos = (decimal)ig.DescargaKg,
-                            FaltanteKilos = (decimal)ig.FaltanteKg,
-                            ToneladasFaltantes = (decimal)ig.TonFaltantes,
-                            CamionesFaltantes = (decimal)ig.CamionesFaltantes,
-                            ConteoPlacas = ig.ConteoPlacas,
-                            PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
-                        }).ToList();
-                    }
-                    var escotillasData = await escotillasTask;
-                    if (escotillasData != null)
-                        if (escotillasData != null)
-                        {
-                            viewModel.EscotillasData = escotillasData.Escotillas ?? new List<EscotillaViewModel>();
-                            viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
-                            viewModel.DescargaTotal = escotillasData.DescargaTotal;
-                            viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
-                            viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
-                            viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
-                        }
-                }
-                else
-                {
-                    var informeGeneralTask = _movimientoService.GetInformeGeneralAsync(importacionId);
-                    var escotillasTask = _movimientoService.GetEscotillasDataAsync(importacionId);
-                    Task<List<Movimiento>>? calculoTask = empresaId.HasValue
-                        ? _movimientoService.CalculoMovimientos(importacionId, empresaId.Value)
-                        : null;
-
-                    await Task.WhenAll(new Task[] { informeGeneralTask, escotillasTask }
-                        .Concat(calculoTask != null ? new[] { calculoTask } : Enumerable.Empty<Task>()));
-
-                    var informeGeneral = await informeGeneralTask;
-                    if (informeGeneral != null)
-                    {
-                        viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
-                        {
-                            Agroindustria = ig.Empresa ?? "Sin nombre",
-                            KilosRequeridos = (decimal)ig.RequeridoKg,
-                            ToneladasRequeridas = (decimal)ig.RequeridoTon,
-                            DescargaKilos = (decimal)ig.DescargaKg,
-                            FaltanteKilos = (decimal)ig.FaltanteKg,
-                            ToneladasFaltantes = (decimal)ig.TonFaltantes,
-                            CamionesFaltantes = (decimal)ig.CamionesFaltantes,
-                            ConteoPlacas = ig.ConteoPlacas,
-                            PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
-                        }).ToList();
-                    }
-
-                    var escotillasData = await escotillasTask;
-                    if (escotillasData != null)
-                    {
-                        viewModel.EscotillasData = escotillasData.Escotillas ?? new List<EscotillaViewModel>();
-                        viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
-                        viewModel.DescargaTotal = escotillasData.DescargaTotal;
-                        viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
-                        viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
-                        viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
-                    }
-
-                    if (empresaId.HasValue && calculoTask != null)
-                    {
-                        try
-                        {
-                            var calculo = await calculoTask;
-
-                            if (calculo != null && calculo.Any())
-                            {
-                                viewModel.Tabla1Data = calculo
-                                    .Where(c => c != null)
-                                    .Select(c => new RegistroPesajesIndividual
-                                    {
-                                        Id = c.id,
-                                        IdImportacion = c.idimportacion,
-                                        IdEmpresa = c.idempresa,
-                                        Guia = c.guia?.ToString() ?? string.Empty,
-                                        GuiaAlterna = c.guia_alterna,
-                                        Placa = c.placa,
-                                        PlacaAlterna = c.placa_alterna,
-                                        PesoRequerido = c.cantidadrequerida ?? 0,
-                                        PesoEntregado = c.cantidadentregada,
-                                        PesoFaltante = c.peso_faltante,
-                                        Porcentaje = c.porcentaje,
-                                        Escotilla = c.escotilla ?? 0,
-                                        Bodega = c.bodega?.ToString() ?? string.Empty,
-                                    }).ToList();
-
-                                var bodegasDict = await GetBodegasDictionaryAsync();
-
-                                viewModel.TotalesPorBodega = CalculateTotalesPorBodega(calculo, bodegasDict);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"Error al procesar datos de empresa {empresaId.Value}");
-                            TempData["Warning"] = $"Algunos datos no pudieron cargarse: {ex.Message}";
-                        }
+                        _logger.LogError(ex, $"Error al cargar datos de tabla 1, continuando sin estos datos");
+                        viewModel.Tabla1Data = new List<RegistroPesajesIndividual>();
                     }
                 }
 
+                // Store in cache
                 _memoryCache.Set(cacheKey, viewModel, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
 
                 watch.Stop();
@@ -233,6 +126,142 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 TempData["Error"] = $"Error al cargar los datos: {ex.Message}";
                 return View(new RegistroPesajesViewModel());
             }
+        }
+
+        private async Task LoadTabla1Data(RegistroPesajesViewModel viewModel, int importacionId, int empresaId, bool forceRefresh = false)
+        {
+            try
+            {
+                string calculoCacheKey = $"CalculoMovimientos_{importacionId}_{empresaId}";
+                List<Movimiento>? calculo = null;
+
+                if (!forceRefresh && _memoryCache.TryGetValue(calculoCacheKey, out calculo) && calculo != null)
+                {
+                    _logger.LogDebug($"Usando datos en caché para cálculo de movimientos, importación {importacionId}, empresa {empresaId}");
+                }
+                else
+                {
+                    calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId);
+
+                    if (calculo != null && calculo.Any())
+                    {
+                        _memoryCache.Set(calculoCacheKey, calculo, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
+                        _logger.LogDebug($"Actualizando caché de cálculo de movimientos para importación {importacionId}, empresa {empresaId}");
+                    }
+                }
+
+                if (calculo != null && calculo.Any())
+                {
+                    viewModel.Tabla1Data = calculo
+                        .Where(c => c != null)
+                        .Select(c => new RegistroPesajesIndividual
+                        {
+                            Id = c.id,
+                            IdImportacion = c.idimportacion,
+                            IdEmpresa = c.idempresa,
+                            Guia = c.guia?.ToString() ?? string.Empty,
+                            GuiaAlterna = c.guia_alterna,
+                            Placa = c.placa,
+                            PlacaAlterna = c.placa_alterna,
+                            PesoRequerido = c.cantidadrequerida ?? 0,
+                            PesoEntregado = c.cantidadentregada,
+                            PesoFaltante = c.peso_faltante,
+                            Porcentaje = c.porcentaje,
+                            Escotilla = c.escotilla ?? 0,
+                            Bodega = c.bodega?.ToString() ?? string.Empty,
+                        }).ToList();
+
+                    var bodegasDict = await GetBodegasDictionaryAsync();
+                    viewModel.TotalesPorBodega = CalculateTotalesPorBodega(calculo, bodegasDict);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar datos de tabla 1 para empresa {empresaId}");
+                throw;
+            }
+        }
+
+        private async Task LoadTabla2Data(RegistroPesajesViewModel viewModel, int importacionId)
+        {
+            try
+            {
+                var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
+
+                if (informeGeneral != null)
+                {
+                    viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
+                    {
+                        Agroindustria = ig.Empresa ?? "Sin nombre",
+                        KilosRequeridos = (decimal)ig.RequeridoKg,
+                        ToneladasRequeridas = (decimal)ig.RequeridoTon,
+                        DescargaKilos = (decimal)ig.DescargaKg,
+                        FaltanteKilos = (decimal)ig.FaltanteKg,
+                        ToneladasFaltantes = (decimal)ig.TonFaltantes,
+                        CamionesFaltantes = (decimal)ig.CamionesFaltantes,
+                        ConteoPlacas = ig.ConteoPlacas,
+                        PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
+                    }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar datos de informe general para importación {importacionId}");
+                throw;
+            }
+        }
+
+        private async Task LoadEscotillasData(RegistroPesajesViewModel viewModel, int importacionId)
+        {
+            try
+            {
+                // Add additional logging to diagnose the problem
+                _logger.LogInformation($"Solicitando datos de escotillas para importación {importacionId}");
+
+                var escotillasData = await _movimientoService.GetEscotillasDataAsync(importacionId);
+
+                // Check if data is null and provide meaningful defaults
+                if (escotillasData == null)
+                {
+                    _logger.LogWarning($"API devolvió NULL para datos de escotillas de importación {importacionId}");
+                    SetDefaultEscotillasValues(viewModel, $"No hay datos disponibles para la importación {importacionId}");
+                    return;
+                }
+
+                // Check if Escotillas collection is null or empty
+                if (escotillasData.Escotillas == null || !escotillasData.Escotillas.Any())
+                {
+                    _logger.LogWarning($"API devolvió escotillas vacías para importación {importacionId}");
+                    SetDefaultEscotillasValues(viewModel, "No hay datos de escotillas disponibles");
+                    return;
+                }
+
+                // Assign data with null-safety
+                viewModel.EscotillasData = escotillasData.Escotillas;
+                viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
+                viewModel.DescargaTotal = escotillasData.DescargaTotal;
+                viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
+                viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
+                viewModel.EstadoGeneral = escotillasData.EstadoGeneral ?? "Estado no definido";
+
+                // Log success
+                _logger.LogDebug($"Datos de escotillas cargados exitosamente para importación {importacionId}: {viewModel.EscotillasData.Count} escotillas");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar datos de escotillas para importación {importacionId}: {ex.Message}");
+                SetDefaultEscotillasValues(viewModel, $"Error: {ex.Message}");
+            }
+        }
+
+        private void SetDefaultEscotillasValues(RegistroPesajesViewModel viewModel, string estado)
+        {
+            viewModel.EscotillasData = new List<EscotillaViewModel>();
+            viewModel.CapacidadTotal = 0;
+            viewModel.DescargaTotal = 0;
+            viewModel.DiferenciaTotal = 0;
+            viewModel.PorcentajeTotal = 0;
+            viewModel.EstadoGeneral = estado;
         }
 
         private async Task PopulateDropdowns(int? selectedBarco, int? empresaId)
@@ -304,16 +333,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return bodegasDict ?? new Dictionary<int, string>();
         }
 
-        private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodegaSafe(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
-        {
-            if (calculo == null)
-            {
-                return new List<TotalesPorBodegaViewModel>();
-            }
-
-            return CalculateTotalesPorBodega(calculo, bodegasDict);
-        }
-
         private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodega(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
         {
             return calculo
@@ -365,7 +384,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
 
                 return RedirectToAction(nameof(Index),
-                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
+                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa, refreshData = true });
             }
             catch (Exception ex)
             {
@@ -432,6 +451,52 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id, int selectedBarco, int empresaId)
+        {
+            try
+            {
+                _logger.LogInformation($"Cargando formulario de edición para movimiento ID: {id}");
+
+                var movimiento = await _movimientoService.GetByIdAsync(id);
+                if (movimiento == null)
+                {
+                    _logger.LogWarning($"No se encontró el movimiento con ID: {id}");
+                    TempData["Error"] = "No se encontró el registro para editar";
+                    return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+                }
+
+                var viewModel = new RegistroPesajesIndividual
+                {
+                    Id = movimiento.id,
+                    IdImportacion = movimiento.idimportacion,
+                    IdEmpresa = movimiento.idempresa,
+                    TipoTransaccion = movimiento.tipotransaccion,
+                    Guia = movimiento.guia?.ToString() ?? string.Empty,
+                    GuiaAlterna = movimiento.guia_alterna,
+                    Placa = movimiento.placa,
+                    PlacaAlterna = movimiento.placa_alterna,
+                    PesoEntregado = movimiento.cantidadentregada,
+                    Escotilla = movimiento.escotilla ?? 0,
+                    Bodega = movimiento.bodega?.ToString() ?? string.Empty,
+                };
+
+                var bodegas = await _bodegaService.GetAllAsync();
+                ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega", viewModel.Bodega);
+
+                ViewBag.SelectedBarco = selectedBarco;
+                ViewBag.EmpresaId = empresaId;
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar el formulario de edición para movimiento ID: {id}");
+                TempData["Error"] = $"Error al cargar el formulario: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id, int selectedBarco, int empresaId)
@@ -456,6 +521,48 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 _logger.LogError(ex, $"Error al eliminar el registro {id}");
                 TempData["Error"] = $"Error al eliminar el registro: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id, int selectedBarco, int empresaId)
+        {
+            try
+            {
+                _logger.LogInformation($"Cargando formulario de eliminación para movimiento ID: {id}");
+
+                var movimiento = await _movimientoService.GetByIdAsync(id);
+                if (movimiento == null)
+                {
+                    _logger.LogWarning($"No se encontró el movimiento con ID: {id}");
+                    TempData["Error"] = "No se encontró el registro para eliminar";
+                    return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+                }
+
+                var viewModel = new RegistroPesajesIndividual
+                {
+                    Id = movimiento.id,
+                    IdImportacion = movimiento.idimportacion,
+                    IdEmpresa = movimiento.idempresa,
+                    Guia = movimiento.guia?.ToString() ?? string.Empty,
+                    GuiaAlterna = movimiento.guia_alterna,
+                    Placa = movimiento.placa,
+                    PlacaAlterna = movimiento.placa_alterna,
+                    PesoEntregado = movimiento.cantidadentregada,
+                    Escotilla = movimiento.escotilla ?? 0,
+                    Bodega = movimiento.bodega?.ToString() ?? string.Empty,
+                };
+
+                ViewBag.SelectedBarco = selectedBarco;
+                ViewBag.EmpresaId = empresaId;
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar el formulario de eliminación para movimiento ID: {id}");
+                TempData["Error"] = $"Error al cargar el formulario: {ex.Message}";
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
             }
         }
@@ -519,11 +626,128 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ReporteIndividual(string selectedBarco, int? barcoId, string returnController = "RegistroPesajes", string returnAction = "Index")
+        {
+            try
+            {
+                int? importacionId = null;
+
+                if (!string.IsNullOrEmpty(selectedBarco) && int.TryParse(selectedBarco, out int barcoIdFromString))
+                {
+                    importacionId = barcoIdFromString;
+                }
+                else if (barcoId.HasValue)
+                {
+                    importacionId = barcoId.Value;
+                }
+
+                if (!importacionId.HasValue || importacionId <= 0)
+                {
+                    TempData["Error"] = "No se ha seleccionado una importación válida.";
+                    return RedirectToAction(returnAction, returnController);
+                }
+
+                _logger.LogInformation($"Cargando ReporteIndividual para importación: {importacionId}");
+
+                var viewModel = new RegistroPesajesViewModel();
+
+                await PopulateDropdowns(importacionId, null);
+
+                var movimientosTask = _movimientoService.GetAllMovimientosByImportacionAsync(importacionId.Value);
+                var informeGeneralTask = _movimientoService.GetInformeGeneralAsync(importacionId.Value);
+                var escotillasTask = _movimientoService.GetEscotillasDataAsync(importacionId.Value);
+
+                await Task.WhenAll(movimientosTask, informeGeneralTask, escotillasTask);
+
+                viewModel.Tabla1Data = await movimientosTask;
+
+                var informeGeneral = await informeGeneralTask;
+                if (informeGeneral != null)
+                {
+                    viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
+                    {
+                        Agroindustria = ig.Empresa ?? "Sin nombre",
+                        KilosRequeridos = (decimal)ig.RequeridoKg,
+                        ToneladasRequeridas = (decimal)ig.RequeridoTon,
+                        DescargaKilos = (decimal)ig.DescargaKg,
+                        FaltanteKilos = (decimal)ig.FaltanteKg,
+                        ToneladasFaltantes = (decimal)ig.TonFaltantes,
+                        CamionesFaltantes = (decimal)ig.CamionesFaltantes,
+                        ConteoPlacas = ig.ConteoPlacas,
+                        PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
+                    }).ToList();
+                }
+
+                var escotillasData = await escotillasTask;
+                if (escotillasData != null)
+                {
+                    viewModel.EscotillasData = escotillasData.Escotillas;
+                    viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
+                    viewModel.DescargaTotal = escotillasData.DescargaTotal;
+                    viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
+                    viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
+                    viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                }
+
+                ViewBag.ReturnController = returnController;
+                ViewBag.ReturnAction = returnAction;
+                ViewBag.SelectedBarco = importacionId;
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el reporte individual");
+                TempData["Error"] = $"Error al cargar el reporte: {ex.Message}";
+                return RedirectToAction(returnAction, returnController);
+            }
+        }
+
         private void InvalidateRelatedCaches(int importacionId, int empresaId)
         {
             _memoryCache.Remove($"RegistroPesajes_{importacionId}_{empresaId}");
             _memoryCache.Remove($"ReporteEscotillas_{importacionId}");
-            _logger.LogDebug($"Caché invalidado para importación {importacionId}, empresa {empresaId}");
+            _memoryCache.Remove($"CalculoMovimientos_{importacionId}_{empresaId}");
+
+            _memoryCache.Remove("BarcosDropdown");
+            _memoryCache.Remove("EmpresasDropdown");
+            _memoryCache.Remove("BodegasDictionary");
+
+            _logger.LogDebug($"Caché invalidado para importación {importacionId}, empresa {empresaId} y listas generales");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Create(int selectedBarco, int empresaId)
+        {
+            try
+            {
+                _logger.LogInformation($"Cargando formulario de creación para barco: {selectedBarco}, empresa: {empresaId}");
+
+                // Crear un nuevo viewModel inicializado con los IDs necesarios
+                var viewModel = new RegistroPesajesIndividual
+                {
+                    IdImportacion = selectedBarco,
+                    IdEmpresa = empresaId,
+                    TipoTransaccion = 2, // Valor predeterminado para tipo de transacción
+                };
+
+                // Cargar las bodegas para el dropdown
+                var bodegas = await _bodegaService.GetAllAsync();
+                ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega");
+
+                // Pasar los parámetros de ruta al ViewBag para mantener el contexto
+                ViewBag.SelectedBarco = selectedBarco;
+                ViewBag.EmpresaId = empresaId;
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error al cargar el formulario de creación para barco: {selectedBarco}, empresa: {empresaId}");
+                TempData["Error"] = $"Error al cargar el formulario: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
         }
     }
 }

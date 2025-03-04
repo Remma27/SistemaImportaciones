@@ -48,7 +48,8 @@
                     <!-- Kilos -->
                     <div class="col-md-6">
                         <div class="form-floating">
-                            <input asp-for="PesoEntregado" class="form-control" type="number" min="0" step="0.01" required />
+                            <input asp-for="PesoEntregado" class="form-control" type="number" min="0" step="0.01"
+                                required />
                             <label><i class="fas fa-weight me-2"></i>Kilos</label>
                             <span asp-validation-for="PesoEntregado" class="text-danger"></span>
                         </div>
@@ -70,10 +71,10 @@
                     <!-- Bodega -->
                     <div class="col-md-6">
                         <div class="form-floating">
-                            <select asp-for="Bodega" class="form-select" asp-items="ViewBag.Bodegas" required>
+                            <select asp-for="Bodega" class="form-select" asp-items="ViewBag.Bodegas">
                                 <option value="">Seleccione una bodega</option>
                             </select>
-                            <label><i class="fas fa-warehouse me-2"></i>Bodega</label>
+                            <label><i class="fas fa-warehouse me-2"></i>Bodega (Opcional)</label>
                             <span asp-validation-for="Bodega" class="text-danger"></span>
                         </div>
                     </div>
@@ -82,7 +83,8 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-2"></i>Guardar
                     </button>
-                    <a asp-action="Index" class="btn btn-secondary">
+                    <a asp-action="Index" asp-route-selectedBarco="@ViewBag.SelectedBarco"
+                        asp-route-empresaId="@ViewBag.EmpresaId" class="btn btn-secondary">
                         <i class="fas fa-times me-2"></i>Cancelar
                     </a>
                 </div>
@@ -92,5 +94,7 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

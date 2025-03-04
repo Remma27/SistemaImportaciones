@@ -392,7 +392,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}");
+                string cacheKey = $"InformeGeneral_{barcoId}";
+
+                if (_memoryCache.TryGetValue(cacheKey, out List<InformeGeneralViewModel>? cachedResult) && cachedResult != null)
+                {
+                    return cachedResult;
+                }
+
+                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -417,13 +424,19 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         options
                     );
 
+                    if (informes != null)
+                    {
+                        _memoryCache.Set(cacheKey, informes, TimeSpan.FromMinutes(5));
+                    }
+
                     return informes ?? new List<InformeGeneralViewModel>();
                 }
 
-                throw new Exception($"Estructura de respuesta inválida. Contenido: {content}");
+                throw new Exception($"Estructura de respuesta inválida");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Error obteniendo informe general para barco {BarcoId}", barcoId);
                 throw;
             }
         }
@@ -546,18 +559,18 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 var result = apiResponse.Data.Select(dto => new Movimiento
                 {
-                    id = dto.Id,
-                    bodega = string.IsNullOrEmpty(dto.Bodega) ? null :
-                            int.TryParse(dto.Bodega, out int bod) ? bod : null,
-                    guia = string.IsNullOrEmpty(dto.Guia) ? null :
-                          int.TryParse(dto.Guia, out int gui) ? gui : null,
-                    guia_alterna = dto.GuiaAlterna,
-                    placa = dto.Placa,
-                    placa_alterna = dto.PlacaAlterna,
-                    cantidadentregada = dto.CantidadEntregada,
-                    cantidadrequerida = dto.CantidadRequerida,
-                    peso_faltante = dto.PesoFaltante,
-                    porcentaje = dto.Porcentaje
+                    id = dto.id,
+                    bodega = string.IsNullOrEmpty(dto.bodega) ? null :
+                            int.TryParse(dto.bodega, out int bod) ? bod : null,
+                    guia = string.IsNullOrEmpty(dto.guia) ? null :
+                          int.TryParse(dto.guia, out int gui) ? gui : null,
+                    guia_alterna = dto.guia_alterna,
+                    placa = dto.placa,
+                    placa_alterna = dto.placa_alterna,
+                    cantidadentregada = dto.cantidadentregada,
+                    cantidadrequerida = dto.cantidadrequerida,
+                    peso_faltante = dto.peso_faltante,
+                    porcentaje = dto.porcentaje
                 }).ToList();
 
                 _memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(3));

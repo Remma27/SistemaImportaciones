@@ -570,7 +570,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     cantidadentregada = dto.cantidadentregada,
                     cantidadrequerida = dto.cantidadrequerida,
                     peso_faltante = dto.peso_faltante,
-                    porcentaje = dto.porcentaje
+                    porcentaje = dto.porcentaje,
+                    escotilla = dto.escotilla,
                 }).ToList();
 
                 _memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(3));

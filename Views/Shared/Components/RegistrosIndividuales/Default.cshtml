@@ -11,6 +11,7 @@
                     <thead>
                         <tr class="table-info-dark">
                             <th>#</th>
+                            <th>Esc.</th>
                             <th>Bodega</th>
                             <th>Guía</th>
                             <th>Guía Alterna</th>
@@ -31,7 +32,7 @@
                         @if (Model == null || !Model.Any())
                         {
                             <tr>
-                                <td colspan="12" class="text-center">
+                                <td colspan="13" class="text-center">
                                     <div class="alert alert-info mb-0">
                                         <i class="fas fa-info-circle"></i>
                                         <span>No hay registros disponibles</span>
@@ -46,6 +47,7 @@
                             {
                                 <tr>
                                     <td class="text-center">@rowNumber</td>
+                                    <td class="text-center">@(item.Escotilla > 0 ? item.Escotilla.ToString() : "-")</td>
                                     <td>@(string.IsNullOrEmpty(item.Bodega) ? "-" : item.Bodega)</td>
                                     <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
                                     <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
@@ -83,10 +85,10 @@
                         <tfoot class="table-group-divider">
                             <tr class="table-info-dark">
                                 <td></td>
+                                <td></td>
                                 <td>Totales</td>
                                 <td colspan="3"></td>
-                                <td class="text-end">Conteo: @Model.Count()</td>
-                                <td class="text-end">@(Model.LastOrDefault()?.PesoRequerido.ToString("N0") ?? "0")</td>
+                                <td class="text-end">Cant: @Model.Count(x => x.PesoEntregado > 0)</td>                                <td class="text-end">@(Model.LastOrDefault()?.PesoRequerido.ToString("N0") ?? "0")</td>
                                 <td class="text-end">@Model.Sum(x => x.PesoEntregado).ToString("N0")</td>
                                 <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                     <span class="top-value">@((Model.Sum(x => x.PesoEntregado) * 2.20462M).ToString("N0")) lbs</span>

@@ -497,6 +497,7 @@ namespace API.Controllers
                     .Select(m => new
                     {
                         m.id,
+                        m.escotilla,
                         m.bodega,
                         m.guia,
                         m.guia_alterna,
@@ -536,6 +537,7 @@ namespace API.Controllers
                     result.Add(new MovimientosCumulatedDto
                     {
                         id = mov.id,
+                        escotilla = mov.escotilla ?? 0,
                         bodega = mov.bodega?.ToString() ?? "",
                         guia = mov.guia?.ToString() ?? "",
                         guia_alterna = mov.guia_alterna ?? "",
@@ -555,6 +557,7 @@ namespace API.Controllers
                     result.Add(new MovimientosCumulatedDto
                     {
                         id = mov.id,
+                        escotilla = mov.escotilla ?? 0,
                         bodega = mov.bodega?.ToString() ?? "",
                         guia = mov.guia?.ToString() ?? "",
                         guia_alterna = mov.guia_alterna ?? "",
@@ -580,9 +583,11 @@ namespace API.Controllers
                     });
                 }
 
+                int countPesajes = movimientosTipo2.Count;
+
                 return Ok(new
                 {
-                    count = result.Count,
+                    count = countPesajes,
                     data = result,
                     requeridoTotal = requerimientoTotal,
                     message = requerimientoTotal == 0

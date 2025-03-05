@@ -178,127 +178,6 @@ function setupEscotillasToggle() {
     })
 }
 
-function exportTableToExcel(tableId, filename = '') {
-    const table = document.getElementById(tableId)
-    if (!table) {
-        console.error(`Table with ID '${tableId}' not found`)
-        return
-    }
-
-    if (typeof XLSX === 'undefined') {
-        const script = document.createElement('script')
-        script.src = 'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js'
-        script.onload = function () {
-            exportTableToExcelWithXLSX(tableId, filename)
-        }
-        document.head.appendChild(script)
-        return
-    }
-
-    exportTableToExcelWithXLSX(tableId, filename)
-}
-
-function exportTableToExcelWithXLSX(tableId, filename = '') {
-    const table = document.getElementById(tableId)
-    if (!table) {
-        console.error(`Table with ID '${tableId}' not found`)
-        return
-    }
-
-    const wb = XLSX.utils.book_new()
-    const ws_data = []
-
-    const headerRow = []
-    const headerCells = table.querySelectorAll('thead tr:first-child th')
-    headerCells.forEach(cell => {
-        if (!cell.classList.contains('unit-toggle-columns')) {
-            headerRow.push(cell.innerText.trim())
-        }
-    })
-    ws_data.push(headerRow)
-
-    const rows = table.querySelectorAll('tbody tr')
-    rows.forEach(row => {
-        const rowData = []
-        const cells = row.querySelectorAll('td')
-
-        rowData.push(cells[0].innerText.trim())
-        rowData.push(cells[1].innerText.trim())
-        rowData.push(cells[2].innerText.trim())
-        rowData.push(cells[3].innerText.trim())
-        rowData.push(cells[5].innerText.trim())
-        rowData.push(cells[6].innerText.trim())
-        rowData.push(cells[8].innerText.trim())
-        rowData.push(cells[9].innerText.trim())
-        rowData.push(cells[10].innerText.trim())
-
-        ws_data.push(rowData)
-    })
-
-    const footerCells = table.querySelectorAll('tfoot tr:first-child td')
-    if (footerCells.length > 0) {
-        const footerRow = [
-            footerCells[0]?.innerText.trim() || '',
-            '',
-            '',
-            '',
-            footerCells[4]?.innerText.trim() || '',
-            footerCells[5]?.innerText.trim() || '',
-            footerCells[6]?.innerText.trim() || '',
-            footerCells[8]?.innerText.trim() || '',
-            footerCells[9]?.innerText.trim() || '',
-        ]
-        ws_data.push(footerRow)
-    }
-
-    const ws = XLSX.utils.aoa_to_sheet(ws_data)
-
-    for (let i = 1; i < ws_data.length; i++) {
-        for (let j = 0; j < ws_data[i].length; j++) {
-            const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
-            let cellValue = ws_data[i][j]
-
-            if (j === 0) continue
-
-            if (typeof cellValue === 'string') {
-                const isPercentage = cellValue.includes('%')
-                let rawValue = cellValue
-                    .replace(/[^\d.,\-]/g, '')
-                    .replace(/\./g, '')
-                    .replace(',', '.')
-
-                if (!isNaN(rawValue) && rawValue.length > 0) {
-                    const numValue = parseFloat(rawValue)
-                    ws[cellRef] = {
-                        v: numValue,
-                        t: 'n',
-                        z: isPercentage ? '0.00%' : j === 2 || j === 5 ? '0.00' : j === 6 ? '0.00' : '0',
-                    }
-
-                    if (isPercentage) {
-                        ws[cellRef].v = numValue / 100
-                    }
-                }
-            }
-        }
-    }
-
-    ws['!cols'] = [
-        { width: 30 }, // Empresa
-        { width: 12 }, // Req. (Kg)
-        { width: 10 }, // Req. (Ton)
-        { width: 12 }, // Desc. (Kg)
-        { width: 12 }, // Falt. (Kg)
-        { width: 10 }, // Falt. (Ton)
-        { width: 10 }, // Cam. Falt.
-        { width: 8 }, // Placas
-        { width: 10 }, // % Desc.
-    ]
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Resumen Agregado')
-    XLSX.writeFile(wb, filename + '.xlsx')
-}
-
 function createExcelDataFromTable(table) {
     const headerCells = table.querySelectorAll('thead tr:first-child th')
     const headerInfo = getHeaderStructure(headerCells)
@@ -402,16 +281,110 @@ function processTableRow(row, headerInfo) {
     return rowData
 }
 
+// Versión unificada y mejorada de la función para extraer números
+function extraerNumero(texto) {
+    if (!texto) return 0
+
+    // Handle European format (1.234,56) by removing dots and replacing comma with decimal point
+    let cleaned = texto.toString().replace(/\s/g, '')
+
+    if (cleaned.includes('.') && cleaned.includes(',')) {
+        // European format: dots are thousand separators, comma is decimal
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.')
+    } else if (cleaned.includes('.') && !cleaned.includes(',')) {
+        // Format with only dots could be either thousand separators or decimal
+        // If there are multiple dots or the dot is not near the end, treat as thousand separators
+        const parts = cleaned.split('.')
+        if (parts.length > 2 || (parts.length === 2 && parts[1].length !== 2)) {
+            cleaned = cleaned.replace(/\./g, '')
+        }
+    } else if (cleaned.includes(',')) {
+        // If only comma, treat as decimal point
+        cleaned = cleaned.replace(',', '.')
+    }
+
+    // Remove any non-numeric characters except decimal point and minus sign
+    cleaned = cleaned.replace(/[^\d.\-]/g, '')
+
+    const value = parseFloat(cleaned)
+    return isNaN(value) ? 0 : value
+}
+
 function formatNumbersInExcelSheet(worksheet, data) {
+    // Get header row to understand column types
+    const headers = data[0] || []
+
     for (let i = 1; i < data.length; i++) {
         for (let j = 0; j < data[i].length; j++) {
             const cellAddress = XLSX.utils.encode_cell({ r: i, c: j })
             const cellValue = data[i][j]
 
-            if (/^-?[\d.,]+$/.test(cellValue)) {
-                const numValue = parseFloat(cellValue.replace(/,/g, ''))
-                if (!isNaN(numValue)) {
-                    worksheet[cellAddress] = { v: numValue, t: 'n' }
+            // Skip empty cells
+            if (!cellValue && cellValue !== 0) continue
+
+            // Check header to determine column type
+            const header = headers[j] || ''
+            const isPercentageColumn =
+                header.includes('%') ||
+                header.toLowerCase().includes('porc') ||
+                header.toLowerCase().includes('desc.') ||
+                header === '% Desc.'
+
+            const isWeightColumn =
+                header.includes('Kg') ||
+                header.includes('Ton') ||
+                header.includes('Lbs') ||
+                header.includes('Qq') ||
+                header.includes('Libras') ||
+                header.includes('Quintales')
+
+            // Convert string to number if it looks like a number
+            if (typeof cellValue === 'string' && /^-?[\d.,]+%?$/.test(cellValue.trim())) {
+                // Handle percentage values
+                if (cellValue.includes('%')) {
+                    const numValue = extraerNumero(cellValue) / 100
+                    worksheet[cellAddress] = {
+                        v: numValue,
+                        t: 'n',
+                        z: '0.00%',
+                    }
+                }
+                // Handle regular number values
+                else {
+                    const numValue = extraerNumero(cellValue)
+                    worksheet[cellAddress] = {
+                        v: numValue,
+                        t: 'n',
+                        // Format based on column type
+                        z: isPercentageColumn
+                            ? '0.00%'
+                            : isWeightColumn
+                            ? numValue >= 1000
+                                ? '#,##0.00'
+                                : '0.00'
+                            : '#,##0.00',
+                    }
+                }
+            }
+            // If it's already a number
+            else if (typeof cellValue === 'number') {
+                worksheet[cellAddress] = {
+                    v: cellValue,
+                    t: 'n',
+                    z: isPercentageColumn
+                        ? '0.00%'
+                        : isWeightColumn
+                        ? cellValue >= 1000
+                            ? '#,##0.00'
+                            : '0.00'
+                        : '#,##0.00',
+                }
+
+                // Adjust percentage values that were passed as decimals
+                if (isPercentageColumn && cellValue < 1) {
+                    worksheet[cellAddress].v = cellValue
+                } else if (isPercentageColumn) {
+                    worksheet[cellAddress].v = cellValue / 100
                 }
             }
         }
@@ -605,6 +578,221 @@ function handleEmpresaChange(selectElement) {
     }, 100)
 }
 
+// Versión unificada de la función de exportación
+function exportResumenAgregadoToExcel(tableId, filename) {
+    const table = document.getElementById(tableId)
+    if (!table) {
+        console.error('Table not found: ' + tableId)
+        return
+    }
+
+    try {
+        console.log('Exportando tabla de resumen agregado')
+        const wb = XLSX.utils.book_new()
+
+        // Preparar encabezados
+        const headerCells = table.querySelectorAll('thead th')
+        const headerRow = []
+        const unitToggleIndexes = [] // Almacena los índices originales de columnas duales
+
+        headerCells.forEach((cell, i) => {
+            if (cell.classList.contains('unit-toggle-columns')) {
+                // Para columnas con unidades duales, crear dos encabezados separados
+                const headerBase =
+                    cell.querySelector('div:first-child')?.textContent.trim() || cell.innerText.split('\n')[0].trim()
+                headerRow.push(`${headerBase} (Libras)`)
+                headerRow.push(`${headerBase} (Quintales)`)
+                unitToggleIndexes.push(i)
+            } else {
+                headerRow.push(cell.innerText.trim())
+            }
+        })
+
+        const data = [headerRow]
+
+        // Procesar filas del cuerpo
+        const bodyRows = table.querySelectorAll('tbody tr')
+        bodyRows.forEach(row => {
+            const cells = row.querySelectorAll('td')
+            const rowData = []
+
+            cells.forEach((cell, i) => {
+                if (cell.classList.contains('unit-toggle-columns')) {
+                    // Extraer valores separados para libras y quintales
+                    const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
+                    const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+
+                    // Añadir cada valor en su propia columna
+                    rowData.push(lbsValue)
+                    rowData.push(qqValue)
+                } else {
+                    rowData.push(cell.innerText.trim())
+                }
+            })
+
+            data.push(rowData)
+        })
+
+        // Procesar filas de pie de tabla
+        const footerRows = table.querySelectorAll('tfoot tr')
+        footerRows.forEach(row => {
+            if (!row.classList.contains('no-export')) {
+                const cells = row.querySelectorAll('td')
+                const rowData = []
+
+                cells.forEach((cell, i) => {
+                    if (cell.classList.contains('unit-toggle-columns')) {
+                        // Extraer valores separados para libras y quintales en el footer
+                        const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
+                        const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+
+                        rowData.push(lbsValue)
+                        rowData.push(qqValue)
+                    } else {
+                        rowData.push(cell.innerText.trim())
+                    }
+                })
+
+                data.push(rowData)
+            }
+        })
+
+        // Crear hoja de cálculo y aplicar formato
+        const ws = XLSX.utils.aoa_to_sheet(data)
+
+        // Configurar anchos de columna
+        const colWidths = []
+        for (let i = 0; i < headerRow.length; i++) {
+            // Determinar ancho máximo para esta columna
+            let maxChars = headerRow[i].length
+
+            // Verificar todas las filas para el ancho máximo
+            for (let j = 1; j < data.length; j++) {
+                if (data[j][i]) {
+                    maxChars = Math.max(maxChars, String(data[j][i]).length)
+                }
+            }
+
+            // Establecer ancho apropiado
+            let width
+            if (i === 0) {
+                // Columna Empresa
+                width = Math.max(30, maxChars)
+            } else if (headerRow[i].includes('Desc.') || headerRow[i].includes('Falt.')) {
+                width = Math.max(20, maxChars)
+            } else if (headerRow[i].includes('Libras')) {
+                width = Math.max(18, maxChars)
+            } else if (headerRow[i].includes('Quintales')) {
+                width = Math.max(18, maxChars)
+            } else if (headerRow[i].includes('%')) {
+                width = Math.max(12, maxChars)
+            } else {
+                width = Math.max(15, maxChars)
+            }
+
+            colWidths.push({ wch: width })
+        }
+
+        ws['!cols'] = colWidths
+
+        // Aplicar formato de números y alineación a todas las celdas
+        for (let r = 0; r < data.length; r++) {
+            for (let c = 0; c < data[r].length; c++) {
+                const cellRef = XLSX.utils.encode_cell({ r, c })
+                if (!ws[cellRef]) continue
+
+                const cellValue = data[r][c]
+
+                // Configurar estilo si no existe
+                if (!ws[cellRef].s) ws[cellRef].s = {}
+
+                // Configurar alineación basada en el tipo de columna
+                if (c === 0) {
+                    // Columna Empresa - alineación izquierda
+                    ws[cellRef].s.alignment = { horizontal: 'left' }
+                } else {
+                    // Otras columnas - alineación derecha
+                    ws[cellRef].s.alignment = { horizontal: 'right' }
+                }
+
+                // Negritas para encabezados
+                if (r === 0) {
+                    ws[cellRef].s.font = { bold: true }
+                }
+
+                // Formatear números - solo para filas de datos (no encabezados)
+                if (r > 0 && typeof cellValue === 'string' && /^[\d., ]+$/.test(cellValue.replace(/[^\d., ]/g, ''))) {
+                    const headerText = headerRow[c]
+                    const numValue = extraerNumero(cellValue)
+
+                    ws[cellRef].v = numValue
+                    ws[cellRef].t = 'n'
+
+                    // Aplicar formato basado en el tipo de columna
+                    if (headerText.includes('Libras') || headerText.includes('Quintales')) {
+                        ws[cellRef].z = '#,##0.00'
+                    } else if (headerText.includes('%')) {
+                        ws[cellRef].v = numValue / 100
+                        ws[cellRef].z = '0.00%'
+                    } else if (headerText.includes('Desc.') || headerText.includes('Falt.')) {
+                        ws[cellRef].z = '#,##0.00'
+                    }
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
+        XLSX.writeFile(wb, filename + '_' + new Date().toISOString().slice(0, 10) + '.xlsx')
+        console.log('Excel export successful')
+    } catch (error) {
+        console.error('Error exporting to Excel:', error)
+        alert('Error al exportar a Excel: ' + error.message)
+    }
+}
+
+// Función para exportar tabla a Excel
+function exportTableToExcel(tableId, filename) {
+    const table = document.getElementById(tableId)
+    if (!table) {
+        console.error('Table not found: ' + tableId)
+        return
+    }
+
+    try {
+        const { data } = createExcelDataFromTable(table)
+        const wb = XLSX.utils.book_new()
+        const ws = XLSX.utils.aoa_to_sheet(data)
+
+        // Format numbers in worksheet
+        formatNumbersInExcelSheet(ws, data)
+
+        // Set column widths
+        ws['!cols'] = calculateColumnWidths(data)
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
+        XLSX.writeFile(wb, filename + '_' + new Date().toISOString().slice(0, 10) + '.xlsx')
+
+        console.log('Excel export successful')
+    } catch (error) {
+        console.error('Error exporting to Excel:', error)
+        alert('Error al exportar a Excel: ' + error.message)
+    }
+}
+
+// Función unificada para actualizar estado de botones
+function updateAllExcelButtonStates() {
+    // Existing button updates
+    const selectedBarco = $('select[name="selectedBarco"]').val()
+    const hasDataTabla2 = hasTableData('tabla2')
+    const hasDataTabla1 = hasTableData('tabla1')
+
+    $('#btnExportarExcel').prop('disabled', !selectedBarco || !hasDataTabla2)
+    $('#btnExportarExcelIndividuales').prop('disabled', !selectedBarco || !hasDataTabla1)
+
+    // New button update
+    $('#btnExportarExcelResumen').prop('disabled', !hasDataTabla2)
+}
+
 $(document).ready(function () {
     cargarImportaciones()
 
@@ -656,7 +844,7 @@ $(document).ready(function () {
 
     $(document).ajaxComplete(function () {
         initializeTableScroll()
-        updateExcelButtonState()
+        updateAllExcelButtonStates()
     })
 
     setupEscotillasToggle()
@@ -665,11 +853,12 @@ $(document).ready(function () {
         initializeServerData('@Context.Request.Query["selectedBarco"]', '@Context.Request.Query["empresaId"]')
     }
 
-    updateExcelButtonState()
+    updateAllExcelButtonStates()
 
     $('select[name="selectedBarco"]').on('change', function () {
-        updateExcelButtonState()
+        updateAllExcelButtonStates()
     })
+
     $('#btnExportarExcel').on('click', function () {
         exportTableToExcel('tabla2', 'Resumen_Agregado')
     })
@@ -682,384 +871,167 @@ $(document).ready(function () {
 
     initializeReporteIndividualLink()
 
+    // Manejador para exportar registros individuales
     $('#btnExportarExcelIndividuales')
         .off('click')
         .on('click', function () {
-            console.log('Botón de exportación de registros individuales clickeado')
+            console.log('Exportando registros individuales')
 
             if (typeof XLSX === 'undefined') {
+                console.error('La librería XLSX no está cargada correctamente')
                 alert('La librería XLSX no está cargada correctamente')
                 return
             }
 
             const tabla = document.getElementById('tabla1')
             if (!tabla) {
+                console.error('No se encontró la tabla de registros individuales')
                 alert('No se encontró la tabla de registros individuales')
                 return
             }
 
-            const wb = XLSX.utils.book_new()
-            const ws_data = []
+            try {
+                const wb = XLSX.utils.book_new()
 
-            const headerRow = []
-            const headers = tabla.querySelectorAll('thead th')
-            headers.forEach(header => {
-                if (!header.classList.contains('unit-toggle-columns') && header.innerText.trim() !== 'Acciones') {
-                    headerRow.push(header.innerText.trim())
-                }
-            })
-            ws_data.push(headerRow)
+                const originalHeaders = Array.from(tabla.querySelectorAll('thead th'))
+                    .map(th => th.textContent.trim())
+                    .filter(header => header !== 'Acciones')
 
-            const rows = tabla.querySelectorAll('tbody tr')
-            if (
-                rows.length === 0 ||
-                (rows.length === 1 && rows[0].querySelector('td').innerText.includes('No hay registros'))
-            ) {
-                alert('No hay datos para exportar')
-                return
-            }
-
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td')
-                if (cells.length > 1) {
-                    const rowData = []
-
-                    rowData.push(cells[0].innerText.trim())
-                    rowData.push(cells[1].innerText.trim())
-                    rowData.push(cells[2].innerText.trim())
-                    rowData.push(cells[3].innerText.trim())
-                    rowData.push(cells[4].innerText.trim())
-                    rowData.push(cells[5].innerText.trim())
-                    rowData.push(cells[6].innerText.trim())
-                    rowData.push(cells[8].innerText.trim())
-
-                    rowData.push(cells[9].innerText.trim())
-
-                    ws_data.push(rowData)
-                }
-            })
-
-            const ws = XLSX.utils.aoa_to_sheet(ws_data)
-
-            for (let i = 1; i < ws_data.length; i++) {
-                for (let j = 5; j < 9; j++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
-                    if (ws[cellRef]) {
-                        let value = ws_data[i][j]
-                        if (typeof value === 'string') {
-                            value = value
-                                .replace(/[^\d.,\-]/g, '')
-                                .replace(/\./g, '')
-                                .replace(',', '.')
-
-                            if (!isNaN(value) && value.length > 0) {
-                                ws[cellRef] = {
-                                    v: parseFloat(value),
-                                    t: 'n',
-                                    z: j === 8 ? '0.00%' : '0',
-                                }
-
-                                if (j === 8) {
-                                    ws[cellRef].v = parseFloat(value) / 100
-                                }
-                            }
-                        }
+                const headerRow = []
+                for (const header of originalHeaders) {
+                    if (header.includes('Entreg.')) {
+                        headerRow.push('Entreg. (Lbs)', 'Entreg. (Qq)')
+                    } else {
+                        headerRow.push(header)
                     }
                 }
-            }
 
-            ws['!cols'] = [
-                { width: 15 }, // Bodega
-                { width: 12 }, // Guía
-                { width: 12 }, // Guía Alterna
-                { width: 12 }, // Placa
-                { width: 12 }, // Placa Alterna
-                { width: 15 }, // Peso Requerido
-                { width: 15 }, // Peso Entregado
-                { width: 15 }, // Peso Faltante
-                { width: 12 }, // Porcentaje
-            ]
+                console.log('Encabezados procesados:', headerRow)
 
-            XLSX.utils.book_append_sheet(wb, ws, 'Registros Individuales')
-            XLSX.writeFile(wb, 'Registros_Individuales_' + new Date().toISOString().slice(0, 10) + '.xlsx')
-        })
+                const data = [headerRow]
 
-    updateExcelButtonState()
+                const bodyRows = tabla.querySelectorAll('tbody tr')
+                console.log(`Procesando ${bodyRows.length} filas`)
 
-    $('#selectImportacion, select[name="selectedBarco"], select[name="empresaId"]').on('change', function () {
-        updateExcelButtonState()
-    })
+                Array.from(bodyRows).forEach((row, idx) => {
+                    try {
+                        const cells = row.querySelectorAll('td')
+                        if (cells.length < 11) return
 
-    function adjustNoteWidth() {
-        $('.table-scroll').each(function () {
-            var $tableContainer = $(this)
-            var $table = $tableContainer.find('table')
-            var $note = $tableContainer.find('.border-top.text-center')
+                        const pesoRequerido = extraerNumero(cells[7].textContent)
+                        const pesoEntregado = extraerNumero(cells[8].textContent)
 
-            if ($table.length && $note.length) {
-                $note.width($table.outerWidth())
-                console.log('Note width adjusted to: ' + $table.outerWidth() + 'px')
-            }
-        })
-    }
+                        const entregadoCell = cells[9].textContent.trim()
+                        const matches = entregadoCell.match(/(\d[\d.,]*)\s*lbs.*?(\d[\d.,]*)\s*qq/s)
 
-    adjustNoteWidth()
+                        let libras = 0,
+                            quintales = 0
+                        if (matches && matches.length >= 3) {
+                            libras = extraerNumero(matches[1])
+                            quintales = extraerNumero(matches[2])
+                        }
 
-    $(window).resize(function () {
-        adjustNoteWidth()
-    })
+                        const pesoFaltante = extraerNumero(cells[10].textContent)
 
-    $('.table-scroll').each(function () {
-        var $container = $(this)
-        if ($container[0].scrollWidth > $container.innerWidth()) {
-            console.log('Horizontal scrollbar detected')
-            $container.addClass('has-h-scroll')
-        }
-    })
+                        let porcentaje = 0
+                        const porcentajeText = cells[11].textContent.trim()
+                        if (porcentajeText) {
+                            porcentaje = extraerNumero(porcentajeText) / 100
+                        }
 
-    function adjustNoteWidth() {
-        $('.table-scroll').each(function () {
-            var $tableContainer = $(this)
-            var $table = $tableContainer.find('table')
-            var $note = $tableContainer.find('.p-3.bg-light.border-top')
+                        const rowData = [
+                            cells[0].textContent.trim(), // #
+                            cells[1].textContent.trim(), // Escotilla
+                            cells[2].textContent.trim(), // Bodega
+                            cells[3].textContent.trim(), // Guía
+                            cells[4].textContent.trim(), // Guía Alterna
+                            cells[5].textContent.trim(), // Placa
+                            cells[6].textContent.trim(), // Placa Alterna
+                            pesoRequerido, // Peso Requerido
+                            pesoEntregado, // Peso Entregado
+                            libras, // Entregado (Lbs)
+                            quintales, // Entregado (Qq)
+                            pesoFaltante, // Peso Faltante
+                            porcentaje, // Porcentaje
+                        ]
 
-            if ($table.length && $note.length) {
-                $note.width($table.width())
-                console.log('Note width adjusted to: ' + $table.width() + 'px')
-            }
-        })
-    }
-
-    adjustNoteWidth()
-
-    $(window).resize(function () {
-        adjustNoteWidth()
-    })
-
-    $('.table-scroll').on('scroll', function () {
-        var $tableContainer = $(this)
-        var $table = $tableContainer.find('table')
-        var $note = $tableContainer.find('.p-3.bg-light.border-top')
-
-        if ($table.length && $note.length) {
-            $note.css({
-                left: -1 * $(this).scrollLeft() + 'px',
-                position: 'relative',
-                width: $table.width() + 'px',
-            })
-        }
-    })
-
-    function adjustNoteWidth() {
-        $('.table-scroll').each(function () {
-            var $table = $(this).find('table')
-            var $note = $(this).find('.p-3.bg-light.border-top')
-
-            if ($table.length && $note.length) {
-                $note.width($table.width())
-
-                console.log('Table width:', $table.width(), 'Note width:', $note.width())
-            }
-        })
-    }
-
-    adjustNoteWidth()
-
-    $(window).resize(function () {
-        adjustNoteWidth()
-    })
-
-    $('.table-scroll').on('scroll', function () {
-        adjustNoteWidth()
-    })
-
-    setNoteWidths()
-
-    $(window).resize(setNoteWidths)
-
-    function setNoteWidths() {
-        $('.table-scroll').each(function () {
-            const $tableScroll = $(this)
-            const $table = $tableScroll.find('table')
-            const $note = $tableScroll.find('.p-3.bg-light.border-top.text-center')
-
-            if ($table.length && $note.length) {
-                const tableWidth = $table[0].offsetWidth
-
-                $tableScroll.css('--table-width', tableWidth + 'px')
-
-                $note.width(tableWidth)
-
-                console.log(`Table width: ${tableWidth}px, Note width set`)
-            }
-        })
-    }
-
-    $('.table-scroll').on('scroll', function () {
-        setNoteWidths()
-    })
-
-    $('.table-scroll').off('scroll.notefix')
-    $(window).off('resize.notefix')
-
-    function fixNoteWidth() {
-        $('.table-scroll').each(function () {
-            const $container = $(this)
-            const $table = $container.find('table')
-            const $note = $container.find('.p-3.bg-light.border-top')
-
-            if ($table.length && $note.length) {
-                const tableWidth = $table[0].offsetWidth
-
-                $note.width(tableWidth)
-                $note.css({
-                    'min-width': tableWidth + 'px',
-                    'max-width': tableWidth + 'px',
+                        data.push(rowData)
+                    } catch (rowError) {
+                        console.error(`Error procesando fila ${idx}:`, rowError)
+                    }
                 })
 
-                console.log(`Fixed note width: ${tableWidth}px`)
-            }
-        })
-    }
+                const footerRow = tabla.querySelector('tfoot tr')
+                if (footerRow) {
+                    const cells = footerRow.querySelectorAll('td')
 
-    setTimeout(fixNoteWidth, 100)
+                    const pesoRequeridoTotal = extraerNumero(cells[7]?.textContent || '0')
+                    const pesoEntregadoTotal = extraerNumero(cells[8]?.textContent || '0')
 
-    $(window).on('resize.notefix', fixNoteWidth)
+                    const entregadoCell = cells[9]?.textContent.trim() || ''
+                    const matches = entregadoCell.match(/(\d[\d.,]*)\s*lbs.*?(\d[\d.,]*)\s*qq/s)
 
-    $('.table-scroll').on('scroll.notefix', function () {
-        fixNoteWidth()
-    })
+                    let librasTotal = 0,
+                        quintalesTotal = 0
+                    if (matches && matches.length >= 3) {
+                        librasTotal = extraerNumero(matches[1])
+                        quintalesTotal = extraerNumero(matches[2])
+                    }
 
-    function updateNoteWidth() {
-        $('.table-scroll').each(function () {
-            const $table = $(this).find('table')
-            const $note = $(this).find('.p-3.bg-light.border-top')
+                    const pesoFaltanteTotal = extraerNumero(cells[10]?.textContent || '0')
+                    const porcentajeTotal = extraerNumero(cells[11]?.textContent || '0') / 100
 
-            if ($table.length && $note.length) {
-                $note.css('left', '')
+                    const totalRow = Array(headerRow.length).fill('')
+                    totalRow[0] = 'Totales'
+                    totalRow[7] = pesoRequeridoTotal
+                    totalRow[8] = pesoEntregadoTotal
+                    totalRow[9] = librasTotal
+                    totalRow[10] = quintalesTotal
+                    totalRow[11] = pesoFaltanteTotal
+                    totalRow[12] = porcentajeTotal
 
-                const tableWidth = $table.outerWidth()
-                $note.width(tableWidth)
-                $note.css('min-width', tableWidth + 'px')
-            }
-        })
-    }
-
-    updateNoteWidth()
-
-    $(window).on('resize', updateNoteWidth)
-
-    if ($('#tabla1 tbody tr').length > 0 && !$('#tabla1 tbody tr:first td:first').text().includes('No hay registros')) {
-        $('#btnExportarExcelIndividuales').prop('disabled', false)
-    }
-
-    $('#btnExportarExcelIndividuales')
-        .off('click')
-        .on('click', function () {
-            console.log('Botón de exportación de registros individuales clickeado')
-
-            if (typeof XLSX === 'undefined') {
-                alert('La librería XLSX no está cargada correctamente')
-                return
-            }
-
-            const tabla = document.getElementById('tabla1')
-            if (!tabla) {
-                alert('No se encontró la tabla de registros individuales')
-                return
-            }
-
-            const wb = XLSX.utils.book_new()
-            const ws_data = []
-
-            const headerRow = []
-            const headers = tabla.querySelectorAll('thead th')
-            headers.forEach(header => {
-                if (!header.classList.contains('unit-toggle-columns') && header.innerText.trim() !== 'Acciones') {
-                    headerRow.push(header.innerText.trim())
+                    data.push(totalRow)
                 }
-            })
-            ws_data.push(headerRow)
 
-            const rows = tabla.querySelectorAll('tbody tr')
-            if (
-                rows.length === 0 ||
-                (rows.length === 1 && rows[0].querySelector('td').innerText.includes('No hay registros'))
-            ) {
-                alert('No hay datos para exportar')
-                return
-            }
+                const ws = XLSX.utils.aoa_to_sheet(data)
 
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('td')
-                if (cells.length > 1) {
-                    const rowData = []
-
-                    rowData.push(cells[0].innerText.trim())
-                    rowData.push(cells[1].innerText.trim())
-                    rowData.push(cells[2].innerText.trim())
-                    rowData.push(cells[3].innerText.trim())
-                    rowData.push(cells[4].innerText.trim())
-                    rowData.push(cells[5].innerText.trim())
-                    rowData.push(cells[6].innerText.trim())
-                    rowData.push(cells[8].innerText.trim())
-                    rowData.push(cells[9].innerText.trim())
-
-                    ws_data.push(rowData)
-                }
-            })
-
-            const ws = XLSX.utils.aoa_to_sheet(ws_data)
-
-            for (let i = 1; i < ws_data.length; i++) {
-                for (let j = 5; j < 9; j++) {
-                    const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
-                    if (ws[cellRef]) {
-                        let value = ws_data[i][j]
-                        if (typeof value === 'string') {
-                            value = value
-                                .replace(/[^\d.,\-]/g, '')
-                                .replace(/\./g, '')
-                                .replace(',', '.')
-
-                            if (!isNaN(value) && value.length > 0) {
-                                ws[cellRef] = {
-                                    v: parseFloat(value),
-                                    t: 'n',
-                                    z: j === 8 ? '0.00%' : '0',
-                                }
-
-                                if (j === 8) {
-                                    ws[cellRef].v = parseFloat(value) / 100
-                                }
-                            }
+                for (let i = 1; i < data.length; i++) {
+                    for (let j of [7, 8, 9, 10, 11]) {
+                        const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
+                        if (ws[cellRef] && typeof data[i][j] === 'number') {
+                            ws[cellRef].t = 'n'
+                            ws[cellRef].z = '#,##0.00'
                         }
                     }
+
+                    const percentRef = XLSX.utils.encode_cell({ r: i, c: 12 })
+                    if (ws[percentRef] && typeof data[i][12] === 'number') {
+                        ws[percentRef].t = 'n'
+                        ws[percentRef].z = '0.00%'
+                    }
                 }
+
+                ws['!cols'] = headerRow.map(h => ({ wch: Math.max(h.length * 1.2, 10) }))
+
+                XLSX.utils.book_append_sheet(wb, ws, 'Registros Individuales')
+                XLSX.writeFile(wb, 'Registros_Individuales_' + new Date().toISOString().slice(0, 10) + '.xlsx')
+
+                console.log('Exportación completada con éxito')
+            } catch (error) {
+                console.error('Error durante la exportación:', error)
+                alert('Error durante la exportación: ' + error.message)
             }
-
-            ws['!cols'] = [
-                { width: 15 }, // Bodega
-                { width: 12 }, // Guía
-                { width: 12 }, // Guía Alterna
-                { width: 12 }, // Placa
-                { width: 12 }, // Placa Alterna
-                { width: 15 }, // Peso Requerido
-                { width: 15 }, // Peso Entregado
-                { width: 15 }, // Peso Faltante
-                { width: 12 }, // Porcentaje
-            ]
-
-            XLSX.utils.book_append_sheet(wb, ws, 'Registros Individuales')
-            XLSX.writeFile(wb, 'Registros_Individuales_' + new Date().toISOString().slice(0, 10) + '.xlsx')
         })
 
-    setTimeout(function () {
-        if (
-            $('#tabla1 tbody tr').length > 0 &&
-            !$('#tabla1 tbody tr:first td:first').text().includes('No hay registros')
-        ) {
-            $('#btnExportarExcelIndividuales').prop('disabled', false)
-        }
-    }, 500)
+    // Manejador para el botón de resumen agregado
+    $('#btnExportarExcelResumen')
+        .off('click')
+        .on('click', function () {
+            console.log('Exportando resumen agregado')
+            exportResumenAgregadoToExcel('tabla2', 'Resumen_Agregado')
+        })
+
+    // Make functions available globally if needed
+    window.exportTableToExcel = exportTableToExcel
+    window.extraerNumero = extraerNumero
 })

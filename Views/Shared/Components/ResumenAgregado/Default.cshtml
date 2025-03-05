@@ -2,8 +2,12 @@
 
 <div class="col-lg-12">
     <div class="card mb-4 shadow">
-        <div class="card-header bg-gradient bg-success text-white py-3">
+        <div class="card-header bg-gradient bg-success text-white py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Resumen Agregado</h5>
+            <button id="btnExportarExcelResumen" class="btn btn-light btn-sm" title="Exportar a Excel" 
+                    @(Model == null || !Model.Any() ? "disabled" : "")>
+                <i class="fas fa-file-excel me-1"></i>Exportar Excel
+            </button>
         </div>
         <div class="card-body p-0">
             <div class="table-scroll">
@@ -108,3 +112,13 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Update the event handler for the Resumen button
+    $('#btnExportarExcelResumen')
+        .off('click')
+        .on('click', function () {
+            console.log('Exportando resumen agregado');
+            exportResumenAgregadoToExcel('tabla2', 'Resumen_Agregado');
+        });
+</script>

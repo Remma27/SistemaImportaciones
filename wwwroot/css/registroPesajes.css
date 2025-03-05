@@ -89,7 +89,7 @@
 /*==============================================
   TABLES - OPTIMIZED
 ==============================================*/
-/* Base table styles */
+/* Base table styles and containers */
 .table {
     width: 100%;
     margin-bottom: 0;
@@ -104,7 +104,21 @@
     white-space: nowrap;
 }
 
-/* Table header styles */
+.table-responsive-custom,
+.table-container,
+.table-scroll {
+    width: 100%;
+    margin-bottom: 1rem;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+.card-body .table-responsive-custom {
+    margin-bottom: 0;
+}
+
+/* Table header and footer styles */
 .table > thead > tr > th {
     background-color: var(--light-bg);
     border-bottom: 2px solid var(--border-color);
@@ -118,11 +132,10 @@
     z-index: 2;
 }
 
-/* Table footer styles */
 .table tfoot tr td {
     font-weight: 600;
     padding: 0.75rem;
-    background-color: #f8f9fa;
+    background-color: var(--light-bg);
     border-top: 2px solid var(--border-color);
     position: sticky;
     bottom: 0;
@@ -134,35 +147,13 @@
     background-color: var(--hover-bg);
 }
 
-/* Table container */
-.table-responsive-custom,
-.table-container,
-.table-scroll {
-    width: 100%;
-    margin-bottom: 1rem;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-    position: relative;
-}
-
-/* Fixed header table */
-.table-fixed-header {
-    position: relative;
-    border-collapse: separate;
-    border-spacing: 0;
-    width: 100%;
-}
-
-/* Card with table inside - no bottom margin */
-.card-body .table-responsive-custom {
-    margin-bottom: 0;
-}
-
-/* Table with note at bottom */
+/* Table scroll styles */
 .table-scroll {
     max-height: 400px;
     border-radius: 0 0 0.375rem 0.375rem;
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+    overflow: auto;
 }
 
 .table-scroll .table {
@@ -170,25 +161,33 @@
     width: max-content;
 }
 
+.table-scroll table {
+    min-width: 100%;
+}
+
 .table-scroll .p-3.bg-light.border-top.text-center {
     position: sticky;
     left: 0;
-    width: 100%;
-    white-space: normal;
     min-width: 100%;
+    width: max-content;
+    white-space: normal;
     padding: 0.75rem;
-    background-color: #f8f9fa !important;
-    border-top: 1px solid #dee2e6 !important;
+    background-color: var(--light-bg) !important;
+    border-top: 1px solid var(--border-color) !important;
     text-align: center !important;
     display: table;
 }
 
-/* Custom scrollbars - unified */
+.table-scroll:has(table) .p-3.bg-light.border-top.text-center {
+    width: var(--table-width);
+}
+
+/* Custom scrollbars */
 .table-responsive-custom::-webkit-scrollbar,
 .table-container::-webkit-scrollbar,
 .table-scroll::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+    height: var(--scrollbar-size);
+    width: var(--scrollbar-size);
 }
 
 .table-responsive-custom::-webkit-scrollbar-track,
@@ -211,7 +210,7 @@
     background: #555;
 }
 
-/* Color variants for table headers */
+/* Table row color variants */
 .table-purple thead th,
 .bg-purple,
 tr.bg-purple {
@@ -237,6 +236,48 @@ tr.bg-purple {
     color: var(--text-dark) !important;
 }
 
+.table-purple {
+    background-color: var(--purple-color);
+    color: var(--text-white);
+}
+
+.table-success-dark {
+    background-color: var(--success-color);
+    color: var(--text-white);
+}
+
+/* Force white background on totals rows */
+.table tfoot tr,
+.table tfoot tr td,
+.table tr.total-row,
+.table tr.total-row td,
+.table tr.bg-purple.totals-row,
+.table tr.bg-success.totals-row,
+tr[data-is-total='true'],
+tr.totals {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+}
+
+.table tfoot tr th,
+.table tr.total-row th,
+.table tr.bg-purple.totals-row th,
+.table tr.bg-success.totals-row th,
+tr[data-is-total='true'] th,
+tr.totals th {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+    font-weight: 600;
+}
+
+/* Add a visual separator for totals */
+.table tfoot tr td,
+.table tr.total-row td,
+tr[data-is-total='true'] td,
+tr.totals td {
+    border-top: 2px solid var(--border-color) !important;
+}
+
 /* Message when no data available */
 .table tbody tr td[colspan] {
     padding: 1rem !important;
@@ -258,9 +299,8 @@ tr.bg-purple {
     opacity: 0;
     width: 0;
     padding: 0;
-    transition: opacity 0.3s ease;
-    overflow: hidden;
-    background-color: #ffffff !important;
+    transition: all 0.3s ease;
+    background-color: transparent !important;
 }
 
 .unit-toggle-columns.visible {
@@ -269,8 +309,36 @@ tr.bg-purple {
     padding: 0.75rem;
     display: table-cell;
     animation: fadeIn 0.3s ease;
-    background-color: #ffffff !important;
-    color: #212529 !important;
+    background-color: transparent !important;
+    color: inherit !important;
+}
+
+/* Fix for colored rows with unit toggle columns */
+tr.bg-purple th.unit-toggle-columns.visible,
+tr.bg-purple td.unit-toggle-columns.visible {
+    background-color: var(--purple-color) !important;
+    color: var(--text-white) !important;
+}
+
+.table-success-dark th.unit-toggle-columns.visible,
+.bg-success th.unit-toggle-columns.visible,
+.bg-success td.unit-toggle-columns.visible {
+    background-color: var(--success-color) !important;
+    color: var(--text-white) !important;
+}
+
+.table-info-dark th.unit-toggle-columns.visible,
+.bg-info th.unit-toggle-columns.visible,
+.bg-info td.unit-toggle-columns.visible {
+    background-color: var(--info-color) !important;
+    color: var(--text-dark) !important;
+}
+
+/* Normal row toggle columns */
+tr:not(.bg-purple):not(.bg-success):not(.bg-info) th.unit-toggle-columns.visible,
+tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible {
+    background-color: inherit !important;
+    color: var(--text-dark) !important;
 }
 
 /* Dual value cells (for unit conversion) */
@@ -279,7 +347,7 @@ tr.bg-purple {
     min-height: 48px;
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
-    background-color: #ffffff !important;
+    background-color: transparent !important;
 }
 
 .dual-value-cell .top-value {
@@ -302,16 +370,16 @@ tr.bg-purple {
 
 /* Conversion cell highlighting */
 .conversion-cell {
-    background-color: rgba(248, 250, 255, 0.7) !important;
+    background-color: rgba(248, 250, 255, 0.5) !important;
     color: #0056b3;
     font-weight: 500;
-    border-left: 2px solid #e9ecef;
-    border-right: 2px solid #e9ecef;
+    border-left: 1px solid #e9ecef;
+    border-right: 1px solid #e9ecef;
     transition: background-color 0.2s ease;
 }
 
 .conversion-cell:hover {
-    background-color: rgba(240, 245, 255, 0.9) !important;
+    background-color: rgba(240, 245, 255, 0.7) !important;
 }
 
 /* Column widths */
@@ -325,49 +393,6 @@ tr.bg-purple {
     width: 15%;
 }
 
-/* Responsive tables */
-@media (max-width: 1199.98px) {
-    #tabla1 {
-        min-width: 1200px;
-    }
-    #tabla2,
-    .table-responsive-custom .table {
-        min-width: 1000px;
-    }
-    #tabla3 {
-        min-width: 800px;
-    }
-
-    .table-scroll .p-3.bg-light.border-top.text-center {
-        width: max-content;
-        min-width: 100%;
-    }
-}
-
-@media (min-width: 1200px) {
-    #tabla1,
-    #tabla2,
-    #tabla3,
-    .table-responsive-custom .table {
-        min-width: auto;
-        width: 100%;
-    }
-}
-
-/* Small screen adjustments */
-@media (max-width: 575.98px) {
-    .table th,
-    .table td {
-        font-size: 0.8rem;
-        padding: 0.5rem;
-    }
-
-    .table tbody tr td[colspan] {
-        white-space: normal;
-        min-width: 200px;
-    }
-}
-
 /* Animation */
 @keyframes fadeIn {
     from {
@@ -376,6 +401,24 @@ tr.bg-purple {
     to {
         opacity: 1;
     }
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Loading spinner */
+.spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: text-bottom;
+    border: 0.25em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
 }
 
 /*==============================================
@@ -534,13 +577,23 @@ tr.bg-purple {
 /*==============================================
   RESPONSIVE LAYOUT
 ==============================================*/
-.row.gy-3 {
-    --bs-gutter-y: 1rem;
-}
-
+/* Consolidated media queries */
 @media (min-width: 768px) {
+    .card-body {
+        padding: var(--card-spacing-md);
+    }
     .row.gy-3 {
         --bs-gutter-y: 1.5rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    #tabla1,
+    #tabla2,
+    #tabla3,
+    .table-responsive-custom .table {
+        min-width: auto;
+        width: 100%;
     }
 }
 
@@ -555,20 +608,13 @@ tr.bg-purple {
     #tabla3 {
         min-width: 800px;
     }
-
+    .table-scroll .p-3.bg-light.border-top.text-center {
+        width: max-content;
+        min-width: 100%;
+    }
     .container-fluid {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-    }
-}
-
-@media (min-width: 1200px) {
-    #tabla1,
-    #tabla2,
-    #tabla3,
-    .table-responsive-custom .table {
-        min-width: auto;
-        width: 100%;
     }
 }
 
@@ -582,17 +628,14 @@ tr.bg-purple {
     .action-buttons {
         justify-content: center;
     }
-
     .action-buttons .btn span {
         display: none;
     }
-
     .action-buttons .action-btn {
         min-width: auto;
         width: 38px;
         height: 38px;
     }
-
     .action-buttons .action-btn i {
         margin-right: 0;
     }
@@ -604,140 +647,25 @@ tr.bg-purple {
         font-size: 0.8rem;
         padding: 0.5rem;
     }
-
     .card-header h4,
     .card-header h5 {
         font-size: 1rem;
     }
-
     .btn {
         padding: 0.3rem 0.5rem;
         font-size: 0.8rem;
         height: 34px;
     }
-
     .btn i {
         font-size: 0.8rem;
     }
-
     .action-buttons .action-btn,
     .action-buttons .view-controls .btn {
         width: 34px;
         height: 34px;
     }
-
     .table tbody tr td[colspan] {
         white-space: normal;
         min-width: 200px;
-    }
-}
-
-.unit-toggle-columns,
-.unit-toggle-columns.visible {
-    background-color: #ffffff !important;
-}
-
-.dual-value-cell {
-    background-color: #ffffff !important;
-}
-
-.table-purple thead th.unit-toggle-columns,
-.bg-purple th.unit-toggle-columns,
-th.unit-toggle-columns,
-td.unit-toggle-columns {
-    background-color: #ffffff !important;
-    color: #212529 !important;
-}
-
-.conversion-cell {
-    background-color: rgba(248, 250, 255, 0.7) !important;
-    color: #0056b3;
-}
-
-.conversion-cell:hover {
-    background-color: rgba(240, 245, 255, 0.9) !important;
-}
-
-tr.bg-purple {
-    background-color: var(--purple-color) !important;
-}
-
-tr.bg-purple th.unit-toggle-columns,
-tr.bg-purple td.unit-toggle-columns {
-    background-color: #ffffff !important;
-    color: #212529 !important;
-    border-left: 1px solid #e9ecef;
-    border-right: 1px solid #e9ecef;
-}
-
-.unit-toggle-columns {
-    background-color: #ffffff !important;
-}
-
-.unit-toggle-columns.visible {
-    background-color: #ffffff !important;
-    color: #212529 !important;
-}
-
-tr.bg-purple .unit-toggle-columns * {
-    color: #212529 !important;
-}
-
-.dual-value-cell,
-tr.bg-purple .dual-value-cell,
-.unit-toggle-columns .dual-value-cell {
-    background-color: #ffffff !important;
-}
-
-.conversion-cell {
-    background-color: rgba(248, 250, 255, 0.7) !important;
-    color: #0056b3;
-}
-
-/* Fix for the note at the bottom of tables */
-.table-scroll {
-    position: relative;
-    overflow: auto;
-}
-
-/* This is the key fix - make the note div take up the exact same width as the table */
-.table-scroll table {
-    min-width: 100%;
-}
-
-.table-scroll .p-3.bg-light.border-top.text-center {
-    min-width: 100%; /* Minimum width same as container */
-    width: max-content; /* This is the crucial part - matches table's width */
-}
-
-/* Force the note to have the exact same width as its table */
-.table-scroll:has(table) .p-3.bg-light.border-top.text-center {
-    width: var(--table-width); /* Will be set by JS */
-}
-
-.table-success-dark {
-    background-color: #198754;
-    color: white;
-}
-
-.table-purple {
-    background-color: #6f42c1;
-    color: white;
-}
-
-.spinner-border {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    vertical-align: text-bottom;
-    border: 0.25em solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: spinner-border 0.75s linear infinite;
-}
-
-@keyframes spinner-border {
-    to {
-        transform: rotate(360deg);
     }
 }

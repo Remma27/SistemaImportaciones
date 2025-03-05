@@ -15,8 +15,24 @@ using System.Net.Http.Headers;
 using Sistema_de_Gestion_de_Importaciones.Services;
 using System.Net;
 using Sistema_de_Gestion_de_Importaciones.ViewComponents;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenLocalhost(5079);
+    options.ListenLocalhost(7079, listenOptions =>
+    {
+        listenOptions.UseHttps();
+    });
+
+    options.Limits.MaxRequestBodySize = 10 * 1024 * 1024;
+    options.Limits.MaxRequestHeadersTotalSize = 32 * 1024;
+});
 
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();
@@ -62,6 +78,16 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = 5,
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(15)
+            }));
+
+    options.AddPolicy("api", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "localhost",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1)
             }));
 });
 
@@ -152,6 +178,30 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SessionStore = new MemoryCookieSessionStore();
     });
 
+builder.Services.AddAuthentication()
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured")))
+        };
+    })
+    .AddApiKeySupport(options => { });
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.AllowedForNewUsers = true;
+});
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<CookieDelegatingHandler>();
@@ -233,6 +283,20 @@ builder.Services.AddScoped<IMovimientoService>(sp =>
     return new MovimientoService(httpClient, configuration, logger, memoryCache);
 });
 
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -266,6 +330,8 @@ app.UseCors("ApiPolicy");
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<SecurityLoggingMiddleware>();
+app.UseMiddleware<ApiLoggingMiddleware>();
+app.UseMiddleware<RequestSanitizationMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

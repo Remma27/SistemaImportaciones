@@ -35,10 +35,11 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Sistema_de_Gestion_de_Importaciones": {
+    "Sistema de Gestion de Importaciones": {
       "commandName": "Project",
+      "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:5080",
+      "applicationUrl": "https://localhost:7079;http://localhost:5079",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

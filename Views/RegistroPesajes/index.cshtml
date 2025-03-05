@@ -173,5 +173,13 @@
                 console.log('Set empresaId to:', empresaId);
             }
         });
+
+        // Update the event handler for the Resumen button
+        $('#btnExportarExcelResumen')
+            .off('click')
+            .on('click', function () {
+                console.log('Exportando resumen agregado');
+                exportResumenAgregadoToExcel('tabla2', 'Resumen_Agregado');
+            });
     </script>
 }

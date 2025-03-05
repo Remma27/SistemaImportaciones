@@ -55,6 +55,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
                 context.Response.Headers.Append("Permissions-Policy", _policy.PermissionsPolicy);
             }
 
+            context.Response.Headers.Append("Content-Security-Policy",
+                "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'");
+
             await _next(context);
         }
     }

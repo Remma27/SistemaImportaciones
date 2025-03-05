@@ -152,6 +152,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 if (calculo != null && calculo.Any())
                 {
+                    var bodegasDict = await GetBodegasDictionaryAsync();
+
                     viewModel.Tabla1Data = calculo
                         .Where(c => c != null)
                         .Select(c => new RegistroPesajesIndividual
@@ -168,10 +170,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                             PesoFaltante = c.peso_faltante,
                             Porcentaje = c.porcentaje,
                             Escotilla = c.escotilla ?? 0,
-                            Bodega = c.bodega?.ToString() ?? string.Empty,
+                            Bodega = c.bodega.HasValue && bodegasDict.TryGetValue(c.bodega.Value, out var nombreBodega)
+                                ? nombreBodega
+                                : c.bodega?.ToString() ?? string.Empty,
                         }).ToList();
 
-                    var bodegasDict = await GetBodegasDictionaryAsync();
                     viewModel.TotalesPorBodega = CalculateTotalesPorBodega(calculo, bodegasDict);
                 }
             }
@@ -335,18 +338,26 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodega(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
         {
-            return calculo
-                .Where(c => c.bodega.HasValue)
-                .GroupBy(c => c.bodega)
-                .Select(g => new TotalesPorBodegaViewModel
+            var bodegasTotales = bodegasDict.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new TotalesPorBodegaViewModel
                 {
-                    Bodega = g.Key.HasValue && bodegasDict.TryGetValue(g.Key.Value, out var nombre)
-                        ? nombre ?? "Sin Bodega"
-                        : "Sin Bodega",
-                    TotalKilos = g.Sum(m => m.cantidadentregada),
-                    CantidadMovimientos = g.Count()
-                })
-                .ToList();
+                    Bodega = kvp.Value ?? "Sin Bodega",
+                    TotalKilos = 0,
+                    CantidadMovimientos = 0
+                }
+            );
+
+            foreach (var movimiento in calculo.Where(c => c.bodega.HasValue))
+            {
+                if (movimiento.bodega.HasValue && bodegasTotales.TryGetValue(movimiento.bodega.Value, out var bodegaViewModel))
+                {
+                    bodegaViewModel.TotalKilos += movimiento.cantidadentregada;
+                    bodegaViewModel.CantidadMovimientos += 1;
+                }
+            }
+
+            return bodegasTotales.Values.ToList();
         }
 
         [HttpPost]

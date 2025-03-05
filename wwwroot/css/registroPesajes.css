@@ -259,8 +259,7 @@ tr.bg-purple {
     width: 0;
     padding: 0;
     transition: opacity 0.3s ease;
-    overflow: hidden;
-    background-color: #ffffff !important;
+    background-color: transparent !important;
 }
 
 .unit-toggle-columns.visible {
@@ -269,8 +268,8 @@ tr.bg-purple {
     padding: 0.75rem;
     display: table-cell;
     animation: fadeIn 0.3s ease;
-    background-color: #ffffff !important;
-    color: #212529 !important;
+    background-color: transparent !important;
+    color: inherit !important;
 }
 
 /* Dual value cells (for unit conversion) */
@@ -279,7 +278,7 @@ tr.bg-purple {
     min-height: 48px;
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
-    background-color: #ffffff !important;
+    background-color: transparent !important;
 }
 
 .dual-value-cell .top-value {
@@ -302,16 +301,16 @@ tr.bg-purple {
 
 /* Conversion cell highlighting */
 .conversion-cell {
-    background-color: rgba(248, 250, 255, 0.7) !important;
+    background-color: rgba(248, 250, 255, 0.5) !important;
     color: #0056b3;
     font-weight: 500;
-    border-left: 2px solid #e9ecef;
-    border-right: 2px solid #e9ecef;
+    border-left: 1px solid #e9ecef;
+    border-right: 1px solid #e9ecef;
     transition: background-color 0.2s ease;
 }
 
 .conversion-cell:hover {
-    background-color: rgba(240, 245, 255, 0.9) !important;
+    background-color: rgba(240, 245, 255, 0.7) !important;
 }
 
 /* Column widths */
@@ -634,64 +633,73 @@ tr.bg-purple {
 
 .unit-toggle-columns,
 .unit-toggle-columns.visible {
-    background-color: #ffffff !important;
+    background-color: transparent !important;
 }
 
 .dual-value-cell {
-    background-color: #ffffff !important;
+    background-color: transparent !important;
 }
 
 .table-purple thead th.unit-toggle-columns,
 .bg-purple th.unit-toggle-columns,
 th.unit-toggle-columns,
 td.unit-toggle-columns {
-    background-color: #ffffff !important;
+    background-color: transparent !important;
     color: #212529 !important;
 }
 
 .conversion-cell {
-    background-color: rgba(248, 250, 255, 0.7) !important;
+    background-color: rgba(248, 250, 255, 0.5) !important;
     color: #0056b3;
 }
 
 .conversion-cell:hover {
-    background-color: rgba(240, 245, 255, 0.9) !important;
+    background-color: rgba(240, 245, 255, 0.7) !important;
 }
 
 tr.bg-purple {
     background-color: var(--purple-color) !important;
 }
 
-tr.bg-purple th.unit-toggle-columns,
-tr.bg-purple td.unit-toggle-columns {
-    background-color: #ffffff !important;
-    color: #212529 !important;
-    border-left: 1px solid #e9ecef;
-    border-right: 1px solid #e9ecef;
+tr.bg-purple th.unit-toggle-columns.visible,
+tr.bg-purple td.unit-toggle-columns.visible {
+    background-color: var(--purple-color) !important;
+    color: var(--text-white) !important;
 }
 
-.unit-toggle-columns {
-    background-color: #ffffff !important;
+.table-success-dark th.unit-toggle-columns.visible,
+.bg-success th.unit-toggle-columns.visible,
+.bg-success td.unit-toggle-columns.visible {
+    background-color: var(--success-color) !important;
+    color: var(--text-white) !important;
 }
 
-.unit-toggle-columns.visible {
-    background-color: #ffffff !important;
-    color: #212529 !important;
+.table-info-dark th.unit-toggle-columns.visible,
+.bg-info th.unit-toggle-columns.visible,
+.bg-info td.unit-toggle-columns.visible {
+    background-color: var(--info-color) !important;
+    color: var(--text-dark) !important;
 }
 
-tr.bg-purple .unit-toggle-columns * {
-    color: #212529 !important;
+tr:not(.bg-purple):not(.bg-success):not(.bg-info) th.unit-toggle-columns.visible,
+tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible {
+    background-color: inherit !important;
+    color: var(--text-dark) !important;
 }
 
-.dual-value-cell,
 tr.bg-purple .dual-value-cell,
-.unit-toggle-columns .dual-value-cell {
-    background-color: #ffffff !important;
+.bg-success .dual-value-cell,
+.bg-info .dual-value-cell {
+    background-color: transparent !important;
+    color: inherit;
 }
 
-.conversion-cell {
-    background-color: rgba(248, 250, 255, 0.7) !important;
-    color: #0056b3;
+.unit-toggle-columns,
+.unit-toggle-columns.visible,
+.dual-value-cell,
+tr.bg-purple .unit-toggle-columns *,
+.unit-toggle-columns .dual-value-cell {
+    color: inherit;
 }
 
 /* Fix for the note at the bottom of tables */
@@ -740,4 +748,36 @@ tr.bg-purple .dual-value-cell,
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Force white background on totals rows */
+.table tfoot tr,
+.table tfoot tr td,
+.table tr.total-row,
+.table tr.total-row td,
+.table tr.bg-purple.totals-row,
+.table tr.bg-success.totals-row,
+tr[data-is-total='true'],
+tr.totals {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+}
+
+.table tfoot tr th,
+.table tr.total-row th,
+.table tr.bg-purple.totals-row th,
+.table tr.bg-success.totals-row th,
+tr[data-is-total='true'] th,
+tr.totals th {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+    font-weight: 600;
+}
+
+/* Add a visual separator for totals instead of background color */
+.table tfoot tr td,
+.table tr.total-row td,
+tr[data-is-total='true'] td,
+tr.totals td {
+    border-top: 2px solid var(--border-color) !important;
 }

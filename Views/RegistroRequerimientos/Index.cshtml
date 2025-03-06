@@ -65,11 +65,12 @@
                             <thead class="table-light sticky-top">
                                 <tr>
                                     <th style="width: 8%">ID</th>
-                                    <th style="width: 18%">Fecha y Hora</th>
-                                    <th style="width: 18%">Importación</th>
-                                    <th style="width: 18%">Empresa</th>
-                                    <th style="width: 19%">Cantidad Requerida</th>
-                                    <th style="width: 19%">Cantidad de Camiones</th>
+                                    <th style="width: 16%">Fecha y Hora</th>
+                                    <th style="width: 16%">Importación</th>
+                                    <th style="width: 16%">Empresa</th>
+                                    <th style="width: 16%">Cantidad Requerida</th>
+                                    <th style="width: 16%">Cantidad de Camiones</th>
+                                    <th style="width: 12%">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -82,6 +83,20 @@
                                         <td>@item.Empresa</td>
                                         <td>@item.CantidadRequerida kg</td>
                                         <td>@item.CantidadCamiones</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a asp-action="Edit" asp-route-id="@item.IdMovimiento"
+                                                    asp-route-selectedBarco="@selectedBarco" class="btn btn-sm btn-warning"
+                                                    title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a asp-action="Delete" asp-route-id="@item.IdMovimiento"
+                                                    asp-route-selectedBarco="@selectedBarco" class="btn btn-sm btn-danger"
+                                                    title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -95,11 +110,15 @@
                         <table class="table mb-0" id="totalsTable" style="table-layout: fixed; width: 100%;">
                             <tr class="table-secondary">
                                 <td style="width: 8%"></td> <!-- ID column -->
-                                <td style="width: 18%"></td> <!-- Fecha y Hora column -->
-                                <td style="width: 18%"></td> <!-- Importación column -->
-                                <td style="width: 18%; text-align: right; font-weight: bold;">Totales:</td> <!-- Empresa column -->
-                                <td style="width: 19%; font-weight: bold;">@totalRequerida kg</td> <!-- Cantidad Requerida column -->
-                                <td style="width: 19%; font-weight: bold;">@totalCamiones</td> <!-- Cantidad de Camiones column -->
+                                <td style="width: 16%"></td> <!-- Fecha y Hora column -->
+                                <td style="width: 16%"></td> <!-- Importación column -->
+                                <td style="width: 16%; text-align: right; font-weight: bold;">Totales:</td>
+                                <!-- Empresa column -->
+                                <td style="width: 16%; font-weight: bold;">@totalRequerida kg</td>
+                                <!-- Cantidad Requerida column -->
+                                <td style="width: 16%; font-weight: bold;">@totalCamiones</td>
+                                <!-- Cantidad de Camiones column -->
+                                <td style="width: 12%"></td> <!-- Actions column -->
                             </tr>
                         </table>
                     }

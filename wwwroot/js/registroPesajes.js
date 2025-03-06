@@ -215,6 +215,22 @@ function getHeaderStructure(headerCells) {
             return
         }
 
+        if (headerText === 'Guía') {
+            headerRow.push('Guía')
+            headerRow.push('Guía Alterna')
+            columnMapping[index] = outputColIndex
+            outputColIndex += 2
+            return
+        }
+
+        if (headerText === 'Placa') {
+            headerRow.push('Placa')
+            headerRow.push('Placa Alterna')
+            columnMapping[index] = outputColIndex
+            outputColIndex += 2
+            return
+        }
+
         if (cell.classList.contains('unit-toggle-columns')) {
             const headerName =
                 cell.querySelector('div:first-child')?.textContent.trim() || headerText.split('\n')[0].trim()
@@ -271,7 +287,24 @@ function processTableRow(row, headerInfo) {
             rowData[columnMapping[colIndex]] = cell.innerText.trim()
         } else {
             if (columnMapping[colIndex] !== undefined && columnMapping[colIndex] !== -1) {
-                rowData[columnMapping[colIndex]] = cell.innerText.trim()
+                // Manejamos los campos de guía y placa con sus alternativas
+                if (cell.querySelector('.data-alt-guia') || cell.querySelector('.data-alt-placa')) {
+                    const mainText = cell.querySelector('div > span')?.textContent.trim() || cell.innerText.trim()
+                    rowData[columnMapping[colIndex]] = mainText
+
+                    // Si es la columna de Guía, la siguiente columna es para Guía Alterna
+                    if (cell.querySelector('.data-alt-guia')) {
+                        const altText = cell.querySelector('.data-alt-guia').textContent.trim()
+                        rowData[columnMapping[colIndex] + 1] = altText !== '' ? altText : '-'
+                    }
+                    // Si es la columna de Placa, la siguiente columna es para Placa Alterna
+                    else if (cell.querySelector('.data-alt-placa')) {
+                        const altText = cell.querySelector('.data-alt-placa').textContent.trim()
+                        rowData[columnMapping[colIndex] + 1] = altText !== '' ? altText : '-'
+                    }
+                } else {
+                    rowData[columnMapping[colIndex]] = cell.innerText.trim()
+                }
             }
         }
 
@@ -893,22 +926,24 @@ $(document).ready(function () {
             try {
                 const wb = XLSX.utils.book_new()
 
-                const originalHeaders = Array.from(tabla.querySelectorAll('thead th'))
-                    .map(th => th.textContent.trim())
-                    .filter(header => header !== 'Acciones')
+                // Obtenemos encabezados manualmente para manejar las columnas especiales
+                const headers = [
+                    '#',
+                    'Esc.',
+                    'Bodega',
+                    'Guía',
+                    'Guía Alterna',
+                    'Placa',
+                    'Placa Alterna',
+                    'Peso Requerido',
+                    'Peso Entregado',
+                    'Entreg. (Lbs)',
+                    'Entreg. (Qq)',
+                    'Peso Faltante',
+                    'Porcentaje',
+                ]
 
-                const headerRow = []
-                for (const header of originalHeaders) {
-                    if (header.includes('Entreg.')) {
-                        headerRow.push('Entreg. (Lbs)', 'Entreg. (Qq)')
-                    } else {
-                        headerRow.push(header)
-                    }
-                }
-
-                console.log('Encabezados procesados:', headerRow)
-
-                const data = [headerRow]
+                const data = [headers]
 
                 const bodyRows = tabla.querySelectorAll('tbody tr')
                 console.log(`Procesando ${bodyRows.length} filas`)
@@ -916,37 +951,54 @@ $(document).ready(function () {
                 Array.from(bodyRows).forEach((row, idx) => {
                     try {
                         const cells = row.querySelectorAll('td')
-                        if (cells.length < 11) return
+                        if (cells.length < 9) return
 
-                        const pesoRequerido = extraerNumero(cells[7].textContent)
-                        const pesoEntregado = extraerNumero(cells[8].textContent)
+                        // Extraemos el número de fila
+                        const numfila = cells[0].textContent.trim()
 
-                        const entregadoCell = cells[9].textContent.trim()
-                        const matches = entregadoCell.match(/(\d[\d.,]*)\s*lbs.*?(\d[\d.,]*)\s*qq/s)
+                        // Extraemos la escotilla
+                        const escotilla = cells[1].textContent.trim()
 
+                        // Extraemos la bodega
+                        const bodega = cells[2].textContent.trim()
+
+                        // Extraemos la guía y guía alterna
+                        const guia =
+                            cells[3].querySelector('div > span')?.textContent.trim() || cells[3].textContent.trim()
+                        const guiaAlt = cells[3].querySelector('.data-alt-guia')?.textContent.trim() || ''
+
+                        // Extraemos la placa y placa alterna
+                        const placa =
+                            cells[4].querySelector('div > span')?.textContent.trim() || cells[4].textContent.trim()
+                        const placaAlt = cells[4].querySelector('.data-alt-placa')?.textContent.trim() || ''
+
+                        // Extraemos pesos
+                        const pesoRequerido = extraerNumero(cells[5].textContent)
+                        const pesoEntregado = extraerNumero(cells[6].textContent)
+
+                        // Extraemos conversiones
                         let libras = 0,
                             quintales = 0
-                        if (matches && matches.length >= 3) {
-                            libras = extraerNumero(matches[1])
-                            quintales = extraerNumero(matches[2])
+                        const conversionCell = cells[7]
+                        if (conversionCell) {
+                            const lbsText = conversionCell.querySelector('.top-value')?.textContent || ''
+                            const qqText = conversionCell.querySelector('.bottom-value')?.textContent || ''
+                            libras = extraerNumero(lbsText)
+                            quintales = extraerNumero(qqText)
                         }
 
-                        const pesoFaltante = extraerNumero(cells[10].textContent)
-
-                        let porcentaje = 0
-                        const porcentajeText = cells[11].textContent.trim()
-                        if (porcentajeText) {
-                            porcentaje = extraerNumero(porcentajeText) / 100
-                        }
+                        // Extraemos el faltante y porcentaje
+                        const pesoFaltante = extraerNumero(cells[8].textContent)
+                        const porcentaje = extraerNumero(cells[9].textContent) / 100
 
                         const rowData = [
-                            cells[0].textContent.trim(), // #
-                            cells[1].textContent.trim(), // Escotilla
-                            cells[2].textContent.trim(), // Bodega
-                            cells[3].textContent.trim(), // Guía
-                            cells[4].textContent.trim(), // Guía Alterna
-                            cells[5].textContent.trim(), // Placa
-                            cells[6].textContent.trim(), // Placa Alterna
+                            numfila, // #
+                            escotilla, // Escotilla
+                            bodega, // Bodega
+                            guia, // Guía
+                            guiaAlt, // Guía Alterna
+                            placa, // Placa
+                            placaAlt, // Placa Alterna
                             pesoRequerido, // Peso Requerido
                             pesoEntregado, // Peso Entregado
                             libras, // Entregado (Lbs)
@@ -961,40 +1013,40 @@ $(document).ready(function () {
                     }
                 })
 
+                // Procesar fila de totales
                 const footerRow = tabla.querySelector('tfoot tr')
                 if (footerRow) {
                     const cells = footerRow.querySelectorAll('td')
 
-                    const pesoRequeridoTotal = extraerNumero(cells[7]?.textContent || '0')
-                    const pesoEntregadoTotal = extraerNumero(cells[8]?.textContent || '0')
+                    const totalRow = Array(headers.length).fill('')
+                    totalRow[0] = '' // #
+                    totalRow[1] = '' // Esc.
+                    totalRow[2] = 'Totales' // Totales
+                    // No hay valores para guías y placas en totales
+                    totalRow[3] = ''
+                    totalRow[4] = ''
+                    totalRow[5] = ''
+                    totalRow[6] = ''
 
-                    const entregadoCell = cells[9]?.textContent.trim() || ''
-                    const matches = entregadoCell.match(/(\d[\d.,]*)\s*lbs.*?(\d[\d.,]*)\s*qq/s)
+                    totalRow[7] = extraerNumero(cells[5]?.textContent || '0') // Peso Requerido
+                    totalRow[8] = extraerNumero(cells[6]?.textContent || '0') // Peso Entregado
 
-                    let librasTotal = 0,
-                        quintalesTotal = 0
-                    if (matches && matches.length >= 3) {
-                        librasTotal = extraerNumero(matches[1])
-                        quintalesTotal = extraerNumero(matches[2])
+                    // Conversiones
+                    const conversionCell = cells[7]
+                    if (conversionCell) {
+                        totalRow[9] = extraerNumero(conversionCell.querySelector('.top-value')?.textContent || '0')
+                        totalRow[10] = extraerNumero(conversionCell.querySelector('.bottom-value')?.textContent || '0')
                     }
 
-                    const pesoFaltanteTotal = extraerNumero(cells[10]?.textContent || '0')
-                    const porcentajeTotal = extraerNumero(cells[11]?.textContent || '0') / 100
-
-                    const totalRow = Array(headerRow.length).fill('')
-                    totalRow[0] = 'Totales'
-                    totalRow[7] = pesoRequeridoTotal
-                    totalRow[8] = pesoEntregadoTotal
-                    totalRow[9] = librasTotal
-                    totalRow[10] = quintalesTotal
-                    totalRow[11] = pesoFaltanteTotal
-                    totalRow[12] = porcentajeTotal
+                    totalRow[11] = extraerNumero(cells[8]?.textContent || '0') // Peso Faltante
+                    totalRow[12] = extraerNumero(cells[9]?.textContent || '0') / 100 // Porcentaje
 
                     data.push(totalRow)
                 }
 
                 const ws = XLSX.utils.aoa_to_sheet(data)
 
+                // Formatos para las celdas
                 for (let i = 1; i < data.length; i++) {
                     for (let j of [7, 8, 9, 10, 11]) {
                         const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
@@ -1011,7 +1063,7 @@ $(document).ready(function () {
                     }
                 }
 
-                ws['!cols'] = headerRow.map(h => ({ wch: Math.max(h.length * 1.2, 10) }))
+                ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 1.2, 10) }))
 
                 XLSX.utils.book_append_sheet(wb, ws, 'Registros Individuales')
                 XLSX.writeFile(wb, 'Registros_Individuales_' + new Date().toISOString().slice(0, 10) + '.xlsx')

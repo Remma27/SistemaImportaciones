@@ -1,0 +1,84 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroRequerimientosViewModel
+
+@{
+    ViewData["Title"] = "Editar Requerimiento";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow">
+        <div class="card-header bg-gradient bg-warning text-dark py-3">
+            <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Editar Registro de Requerimiento</h4>
+        </div>
+        <div class="card-body">
+            <!-- Display any ModelState errors -->
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach (var modelState in ViewData.ModelState.Values)
+                        {
+                            foreach (var error in modelState.Errors)
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        }
+                    </ul>
+                </div>
+            }
+            
+            <form asp-action="Edit"
+                  asp-controller="RegistroRequerimientos"
+                  method="post"
+                  id="editForm"
+                  class="needs-validation">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="IdMovimiento" />
+                <input type="hidden" asp-for="IdImportacion" />
+                <input type="hidden" asp-for="TipoTransaccion" />
+                <input type="hidden" asp-for="FechaHora" />
+                <input type="hidden" name="selectedBarco" value="@ViewBag.SelectedBarco" />
+
+                <div class="row g-3">
+                    <!-- Empresa -->
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            <select asp-for="IdEmpresa" class="form-select" asp-items="ViewBag.Empresas" required>
+                                <option value="">Seleccione una empresa</option>
+                            </select>
+                            <label><i class="fas fa-building me-2"></i>Empresa</label>
+                            <span asp-validation-for="IdEmpresa" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- Cantidad Requerida -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="CantidadRequerida" class="form-control" type="number" min="0" step="0.01"
+                                required />
+                            <label><i class="fas fa-weight me-2"></i>Cantidad Requerida (kg)</label>
+                            <span asp-validation-for="CantidadRequerida" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <!-- Cantidad de Camiones -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="CantidadCamiones" class="form-control" type="number" min="0" required />
+                            <label><i class="fas fa-truck me-2"></i>Cantidad de Camiones</label>
+                            <span asp-validation-for="CantidadCamiones" class="text-danger"></span>
+                        </div>
+                </div>        
+               </div>    
+                         
+        <div class="mt-4">                
+                    <button type="submit" class="btn btn-warning" id  ="bt  nGuardar">
+                            <i class="fas fa-save me-2"></i>Guardar Cambios
+                    </button>
+                    <a asp-action="Index" asp-route-selectedBarco="@ViewBag.SelectedBarco" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

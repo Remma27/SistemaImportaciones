@@ -379,12 +379,132 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<RegistroRequerimientosViewModel>($"{_apiBaseUrl}/{id}");
-                return response ?? throw new Exception($"No se encontró el registro con ID {id}");
+                _logger.LogInformation($"Solicitando registro requerimiento con ID: {id}");
+                var url = $"{_apiBaseUrl}/Get?id={id}";
+                _logger.LogInformation($"URL de la solicitud: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta de la API: {content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = TryGetErrorMessage(content);
+                    _logger.LogError($"Error al obtener el registro requerimiento {id}: {errorMessage}");
+                    throw new HttpRequestException($"Error al obtener el registro requerimiento {id}: {response.StatusCode}, {content}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                using JsonDocument document = JsonDocument.Parse(content);
+                Movimiento? movimiento = null;
+
+                if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    var movimientoJson = valueElement.GetRawText();
+                    movimiento = JsonSerializer.Deserialize<Movimiento>(movimientoJson, options);
+                }
+                else
+                {
+                    movimiento = JsonSerializer.Deserialize<Movimiento>(content, options);
+                }
+
+                if (movimiento == null)
+                    throw new InvalidOperationException($"No se encontró el movimiento con ID {id}");
+
+                // Depurar los valores de IDs para diagnosticar el problema
+                _logger.LogInformation($"Movimiento ID: {movimiento.id}, ImportacionID: {movimiento.idimportacion}, EmpresaID: {movimiento.idempresa}");
+
+                // Obtener el nombre de la importación (barco) directamente desde la API
+                string importacionNombre = "Desconocido";
+                if (movimiento.idimportacion > 0)
+                {
+                    try
+                    {
+                        var importacionResponse = await _httpClient.GetAsync($"/api/Importaciones/Get?id={movimiento.idimportacion}");
+                        if (importacionResponse.IsSuccessStatusCode)
+                        {
+                            var importacionContent = await importacionResponse.Content.ReadAsStringAsync();
+                            _logger.LogInformation($"Respuesta API importación: {importacionContent}");
+
+                            using var importacionDoc = JsonDocument.Parse(importacionContent);
+
+                            if (importacionDoc.RootElement.TryGetProperty("value", out var impValueElement))
+                            {
+                                var importacion = JsonSerializer.Deserialize<Importacion>(impValueElement.GetRawText(), options);
+                                if (importacion?.Barco != null)
+                                {
+                                    importacionNombre = $"{importacion.Barco.nombrebarco} - {importacion.fechahora:dd/MM/yyyy}";
+                                    _logger.LogInformation($"Nombre importación encontrado: {importacionNombre}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al obtener detalles de la importación");
+                    }
+                }
+
+                // Obtener el nombre de la empresa directamente desde la API
+                string empresaNombre = "Desconocida";
+                if (movimiento.idempresa > 0)
+                {
+                    try
+                    {
+                        var empresaResponse = await _httpClient.GetAsync($"/api/Empresa/Get?id={movimiento.idempresa}");
+                        if (empresaResponse.IsSuccessStatusCode)
+                        {
+                            var empresaContent = await empresaResponse.Content.ReadAsStringAsync();
+                            _logger.LogInformation($"Respuesta API empresa: {empresaContent}");
+
+                            using var empresaDoc = JsonDocument.Parse(empresaContent);
+
+                            if (empresaDoc.RootElement.TryGetProperty("value", out var empValueElement))
+                            {
+                                var empresa = JsonSerializer.Deserialize<Empresa>(empValueElement.GetRawText(), options);
+                                if (empresa != null && !string.IsNullOrEmpty(empresa.nombreempresa))
+                                {
+                                    empresaNombre = empresa.nombreempresa;
+                                    _logger.LogInformation($"Nombre empresa encontrado: {empresaNombre}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error al obtener detalles de la empresa");
+                    }
+                }
+
+                // Convertir el Movimiento a RegistroRequerimientosViewModel
+                var viewModel = new RegistroRequerimientosViewModel
+                {
+                    IdMovimiento = movimiento.id,
+                    FechaHora = movimiento.fechahora,
+                    IdImportacion = movimiento.idimportacion,
+                    IdEmpresa = movimiento.idempresa,
+                    TipoTransaccion = movimiento.tipotransaccion,
+                    CantidadRequerida = movimiento.cantidadrequerida,
+                    CantidadCamiones = movimiento.cantidadcamiones,
+                    Importacion = importacionNombre,
+                    Empresa = empresaNombre
+                };
+
+                return viewModel;
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, $"Error de HTTP al obtener el registro requerimiento {id}");
                 throw new Exception($"Error al obtener el registro: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error general al obtener el registro requerimiento {id}");
+                throw new Exception($"Error al procesar el registro: {ex.Message}", ex);
             }
         }
 
@@ -518,12 +638,45 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"{_apiBaseUrl}/{id}?userId={userId}", viewModel);
-                response.EnsureSuccessStatusCode();
+                _logger.LogInformation($"Actualizando registro requerimiento {id}...");
+
+                // Convert the view model to a Movimiento object
+                var movimiento = new Movimiento
+                {
+                    id = viewModel.IdMovimiento,
+                    idimportacion = viewModel.IdImportacion ?? 0,
+                    idempresa = viewModel.IdEmpresa ?? 0,
+                    tipotransaccion = viewModel.TipoTransaccion ?? 1,
+                    cantidadrequerida = viewModel.CantidadRequerida,
+                    cantidadcamiones = viewModel.CantidadCamiones,
+                    fechahora = viewModel.FechaHora ?? DateTime.Now,
+                    idusuario = int.TryParse(userId, out int parsedId) ? parsedId : null
+                };
+
+                // Use the Edit endpoint with PUT method, as defined in the API controller
+                var url = $"{_apiBaseUrl}/Edit";
+                _logger.LogInformation($"Calling API endpoint: {url}");
+
+                var response = await _httpClient.PutAsJsonAsync(url, movimiento);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"API error: {response.StatusCode}, Content: {content}");
+                    throw new HttpRequestException($"Response status code does not indicate success: {(int)response.StatusCode} ({response.StatusCode})");
+                }
+
+                _logger.LogInformation($"Registro requerimiento {id} actualizado con éxito");
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, $"Error al actualizar el registro {id}: {ex.Message}");
                 throw new Exception($"Error al actualizar el registro {id}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error inesperado al actualizar el registro {id}: {ex.Message}");
+                throw;
             }
         }
 

@@ -1,0 +1,51 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroRequerimientosViewModel
+
+@{
+    ViewData["Title"] = "Eliminar Requerimiento";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow">
+        <div class="card-header bg-danger text-white py-3">
+            <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ¿Está seguro que desea eliminar este registro de requerimiento?
+            </div>
+
+            <dl class="row">
+                <dt class="col-sm-3">Importación</dt>
+                <dd class="col-sm-9">@Model.Importacion</dd>
+
+                <dt class="col-sm-3">Fecha y Hora</dt>
+                <dd class="col-sm-9">@(Model.FechaHora?.ToString("dd/MM/yyyy HH:mm"))</dd>
+
+                <dt class="col-sm-3">Empresa</dt>
+                <dd class="col-sm-9">@Model.Empresa</dd>
+
+                <dt class="col-sm-3">Cantidad Requerida</dt>
+                <dd class="col-sm-9">@Model.CantidadRequerida kg</dd>
+
+                <dt class="col-sm-3">Cantidad de Camiones</dt>
+                <dd class="col-sm-9">@Model.CantidadCamiones</dd>
+            </dl>
+
+            <form asp-action="Delete" method="post" class="mt-4" id="deleteForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.IdMovimiento" />
+                <input type="hidden" name="selectedBarco" value="@ViewBag.SelectedBarco" />
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger" id="btnDelete">
+                        <i class="fas fa-trash me-2"></i>Eliminar
+                    </button>
+                    <a asp-action="Index" asp-route-selectedBarco="@ViewBag.SelectedBarco" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -669,3 +669,32 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
         min-width: 200px;
     }
 }
+
+/* Fix for transparent header columns - ensure they have white background */
+.table > thead > tr > th.unit-toggle-columns,
+.table > thead > tr > th.unit-toggle-columns.visible {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+}
+
+/* Ensure column headers with specific unit conversion classes have white background */
+.table > thead > tr > th.conversion-header,
+.table > thead > tr > th[data-unit-column='true'],
+.table > thead > tr > th.unit-toggle-header {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+}
+
+/* Make header row consistent */
+.table > thead > tr {
+    background-color: white;
+}
+
+/* Override any other transparent backgrounds in table headers */
+.table-purple thead th.unit-toggle-columns,
+.bg-purple thead th.unit-toggle-columns,
+.table thead th.unit-toggle-columns,
+.table thead th.unit-toggle-columns.visible {
+    background-color: white !important;
+    color: var(--text-dark) !important;
+}

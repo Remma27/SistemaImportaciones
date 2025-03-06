@@ -67,15 +67,22 @@
                                     <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="/mvc/RegistroPesajes/Edit/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
-                                               class="btn btn-warning btn-sm">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            
-                                            <a href="/mvc/RegistroPesajes/Delete/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
-                                               class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
+                                            @if (item.PesoRequerido == 0)
+                                            {
+                                                <a href="/mvc/RegistroPesajes/Edit/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
+                                                   class="btn btn-warning btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <a href="/mvc/RegistroPesajes/Delete/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
+                                                   class="btn btn-danger btn-sm" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

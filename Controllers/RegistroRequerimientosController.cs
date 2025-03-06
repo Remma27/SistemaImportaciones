@@ -51,6 +51,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var selectedBarcoItem = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
             ViewBag.NombreBarco = selectedBarcoItem != null ? selectedBarcoItem.Text : "Desconocido";
 
+            ViewBag.IdImportacion = selectedBarco.Value;
+
             ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
 
             var viewModel = new RegistroRequerimientosViewModel
@@ -98,70 +100,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            try
-            {
-                var viewModel = await _movimientoService.GetRegistroRequerimientoByIdAsync(id.Value);
-                if (viewModel == null)
-                    return NotFound();
-
-                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading edit form for movimiento ID {Id}: {Message}", id, ex.Message);
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("[controller]/Edit/{id}")]
-        public async Task<IActionResult> Edit(int id, [Bind("IdMovimiento,FechaHora,IdImportacion,IdEmpresa,TipoTransaccion,CantidadRequerida,CantidadCamiones")] RegistroRequerimientosViewModel viewModel)
-        {
-            if (id != viewModel.IdMovimiento)
-            {
-                _logger.LogWarning("ID mismatch in Edit Post. URL ID: {UrlId}, Model ID: {ModelId}", id, viewModel.IdMovimiento);
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var userId = HttpContext.User.GetUserId().ToString();
-                    await _movimientoService.UpdateAsync(id, viewModel, userId);
-                    _logger.LogInformation("Successfully updated movimiento ID: {Id}", id);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error updating movimiento ID {Id}: {Message}", id, ex.Message);
-                    ModelState.AddModelError("", "Ha ocurrido un error al guardar los cambios.");
-                }
-            }
-
-            try
-            {
-                ViewBag.Importaciones = new SelectList(await _movimientoService.GetImportacionesSelectListAsync(), "Value", "Text", viewModel.IdImportacion);
-                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error reloading edit form data: {Message}", ex.Message);
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Edit(int? id, int? selectedBarco)
         {
             if (id == null)
                 return NotFound();
@@ -170,17 +109,83 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             if (viewModel == null)
                 return NotFound();
 
+            ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+            ViewBag.SelectedBarco = selectedBarco;
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, RegistroRequerimientosViewModel viewModel, int? selectedBarco)
+        {
+            try
+            {
+                if (id != viewModel.IdMovimiento)
+                {
+                    TempData["Error"] = "ID mismatch error.";
+                    return RedirectToAction(nameof(Index), new { selectedBarco });
+                }
+
+                if (ModelState.IsValid)
+                {
+                    var userId = HttpContext.User.GetUserId();
+                    await _movimientoService.UpdateAsync(id, viewModel, userId.ToString());
+
+                    this.Success("Registro actualizado correctamente");
+                    return RedirectToAction(nameof(Index), new { selectedBarco });
+                }
+                else
+                {
+                    // Log validation errors
+                    foreach (var modelState in ModelState.Values)
+                    {
+                        foreach (var error in modelState.Errors)
+                        {
+                            _logger.LogError($"Validation error: {error.ErrorMessage}");
+                        }
+                    }
+
+                    // Reloading data for the view
+                    ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                    ViewBag.SelectedBarco = selectedBarco;
+                    return View(viewModel);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating movimiento ID {id}: {ex.Message}");
+                ModelState.AddModelError("", $"Ha ocurrido un error al guardar los cambios: {ex.Message}");
+
+                // Reloading data for the view
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                ViewBag.SelectedBarco = selectedBarco;
+                return View(viewModel);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int? id, int? selectedBarco)
+        {
+            if (id == null)
+                return NotFound();
+
+            var viewModel = await _movimientoService.GetRegistroRequerimientoByIdAsync(id.Value);
+            if (viewModel == null)
+                return NotFound();
+
+            ViewBag.SelectedBarco = selectedBarco;
             return View(viewModel);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id, int? selectedBarco)
         {
             try
             {
                 await _movimientoService.DeleteAsync(id);
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { selectedBarco });
             }
             catch (Exception ex)
             {

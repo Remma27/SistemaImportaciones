@@ -17,9 +17,7 @@
                             <th>Esc.</th>
                             <th>Bodega</th>
                             <th>Guía</th>
-                            <th>Guía Alterna</th>
                             <th>Placa</th>
-                            <th>Placa Alterna</th>
                             <th>Peso Requerido</th>
                             <th>Peso Entregado</th>
                             <th class="text-end unit-toggle-columns">
@@ -35,7 +33,7 @@
                         @if (Model == null || !Model.Any())
                         {
                             <tr>
-                                <td colspan="13" class="text-center">
+                                <td colspan="11" class="text-center">
                                     <div class="alert alert-info mb-0">
                                         <i class="fas fa-info-circle"></i>
                                         <span>No hay registros disponibles</span>
@@ -52,10 +50,20 @@
                                     <td class="text-center">@rowNumber</td>
                                     <td class="text-center">@(item.Escotilla > 0 ? item.Escotilla.ToString() : "-")</td>
                                     <td>@(string.IsNullOrEmpty(item.Bodega) ? "-" : item.Bodega)</td>
-                                    <td>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</td>
-                                    <td>@(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</td>
-                                    <td>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</td>
-                                    <td>@(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</span>
+                                            <small class="text-muted">Alt: @(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</small>
+                                        </div>
+                                        <span class="d-none data-alt-guia">@item.GuiaAlterna</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</span>
+                                            <small class="text-muted">Alt: @(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</small>
+                                        </div>
+                                        <span class="d-none data-alt-placa">@item.PlacaAlterna</span>
+                                    </td>
                                     <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
                                     <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
                                     <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
@@ -97,8 +105,8 @@
                                 <td></td>
                                 <td></td>
                                 <td>Totales</td>
-                                <td colspan="3"></td>
-                                <td class="text-end">Cant: @Model.Count(x => x.PesoEntregado > 0)</td>                                <td class="text-end">@(Model.LastOrDefault()?.PesoRequerido.ToString("N0") ?? "0")</td>
+                                <td colspan="2"></td>
+                                <td class="text-end">Cant: @Model.Count(x => x.PesoEntregado > 0)</td>
                                 <td class="text-end">@Model.Sum(x => x.PesoEntregado).ToString("N0")</td>
                                 <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
                                     <span class="top-value">@((Model.Sum(x => x.PesoEntregado) * 2.20462M).ToString("N0")) lbs</span>

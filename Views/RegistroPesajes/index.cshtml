@@ -67,11 +67,6 @@
                                 <span>Agregar</span>
                             </button>
 
-                            <button id="btnToggleEscotillas" class="btn btn-secondary action-btn"
-                                title="Mostrar/ocultar escotillas">
-                                <i class="fas fa-eye-slash"></i>
-                            </button>
-
                             <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
                                 id="btnReporteEscotillas"
                                 class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")"

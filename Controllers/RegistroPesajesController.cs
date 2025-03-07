@@ -59,6 +59,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return View(viewModel);
                 }
 
+                // Verificamos si hay cambios recientes usando TempData
+                refreshData = refreshData || TempData["RefreshData"] != null;
+
                 if (!refreshData && _memoryCache.TryGetValue(cacheKey, out RegistroPesajesViewModel? cachedViewModel) && cachedViewModel != null)
                 {
                     _logger.LogDebug($"Datos recuperados desde caché para barco {selectedBarco}, empresa {empresaId}");
@@ -100,8 +103,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     }
                 }
 
-                // Store in cache
-                _memoryCache.Set(cacheKey, viewModel, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
+                // Solo almacenamos en caché si no es un refresco forzado
+                if (!refreshData)
+                {
+                    _memoryCache.Set(cacheKey, viewModel, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
+                }
 
                 watch.Stop();
                 _logger.LogDebug($"Tiempo de ejecución Index: {watch.ElapsedMilliseconds}ms para barco {selectedBarco}, empresa {empresaId}");
@@ -218,12 +224,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Add additional logging to diagnose the problem
                 _logger.LogInformation($"Solicitando datos de escotillas para importación {importacionId}");
-
                 var escotillasData = await _movimientoService.GetEscotillasDataAsync(importacionId);
 
-                // Check if data is null and provide meaningful defaults
                 if (escotillasData == null)
                 {
                     _logger.LogWarning($"API devolvió NULL para datos de escotillas de importación {importacionId}");
@@ -231,29 +234,26 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return;
                 }
 
-                // Check if Escotillas collection is null or empty
-                if (escotillasData.Escotillas == null || !escotillasData.Escotillas.Any())
-                {
-                    _logger.LogWarning($"API devolvió escotillas vacías para importación {importacionId}");
-                    SetDefaultEscotillasValues(viewModel, "No hay datos de escotillas disponibles");
-                    return;
-                }
+                _logger.LogInformation($"TotalKilosRequeridos recibidos: {escotillasData.TotalKilosRequeridos}");
 
-                // Assign data with null-safety
                 viewModel.EscotillasData = escotillasData.Escotillas;
                 viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
                 viewModel.DescargaTotal = escotillasData.DescargaTotal;
                 viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
                 viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
-                viewModel.EstadoGeneral = escotillasData.EstadoGeneral ?? "Estado no definido";
+                viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
 
-                // Log success
-                _logger.LogDebug($"Datos de escotillas cargados exitosamente para importación {importacionId}: {viewModel.EscotillasData.Count} escotillas");
+                // Establecer ViewData que será utilizado por la vista parcial
+                ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
+                ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
+
+                _logger.LogInformation($"ViewData[KilosRequeridos] establecido a: {ViewData["KilosRequeridos"]}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al cargar datos de escotillas para importación {importacionId}: {ex.Message}");
-                SetDefaultEscotillasValues(viewModel, $"Error: {ex.Message}");
+                SetDefaultEscotillasValues(viewModel, $"Error al cargar datos de escotillas: {ex.Message}");
             }
         }
 
@@ -265,6 +265,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             viewModel.DiferenciaTotal = 0;
             viewModel.PorcentajeTotal = 0;
             viewModel.EstadoGeneral = estado;
+            viewModel.TotalKilosRequeridos = 0; // También establecemos esto a 0 por defecto
         }
 
         private async Task PopulateDropdowns(int? selectedBarco, int? empresaId)
@@ -392,10 +393,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var result = await _movimientoService.CreateAsync(movimiento);
                 TempData["Success"] = "Registro creado exitosamente.";
 
+                // Forzar refresco de datos
                 InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
+                TempData["RefreshData"] = true;
 
                 return RedirectToAction(nameof(Index),
-                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa, refreshData = true });
+                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
             }
             catch (Exception ex)
             {
@@ -446,7 +449,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.UpdateAsync(id, movimiento);
                 TempData["Success"] = "Registro actualizado exitosamente.";
 
+                // Forzar refresco de datos
                 InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
+                TempData["RefreshData"] = true;
 
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
@@ -524,7 +529,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.DeleteAsync(id);
                 TempData["Success"] = "Registro eliminado correctamente";
 
+                // Forzar refresco de datos
                 InvalidateRelatedCaches(selectedBarco, empresaId);
+                TempData["RefreshData"] = true;
 
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
             }

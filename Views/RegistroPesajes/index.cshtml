@@ -101,9 +101,15 @@
         @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
 
         <!-- Resumen General y Escotillas -->
-        @await Component.InvokeAsync("ResumenGeneralEscotillas", new { model = Model.EscotillasData, capacidadTotal =
-        Model.CapacidadTotal, descargaTotal = Model.DescargaTotal, diferenciaTotal = Model.DiferenciaTotal,
-                porcentajeTotal = Model.PorcentajeTotal, estadoGeneral = Model.EstadoGeneral })
+        @await Component.InvokeAsync("ResumenGeneralEscotillas", new {
+        model = Model.EscotillasData,
+                capacidadTotal = Model.CapacidadTotal,
+                descargaTotal = Model.DescargaTotal,
+                diferenciaTotal = Model.DiferenciaTotal,
+                porcentajeTotal = Model.PorcentajeTotal,
+                estadoGeneral = Model.EstadoGeneral,
+                kilosRequeridos = Model.TotalKilosRequeridos // Añade este parámetro
+                })
 
         <!-- Tabla 1: Registros Individuales -->
         @await Component.InvokeAsync("RegistrosIndividuales",

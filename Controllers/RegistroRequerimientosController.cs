@@ -67,10 +67,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(RegistroRequerimientosViewModel viewModel)
+        public async Task<IActionResult> Create(RegistroRequerimientosViewModel viewModel, int? selectedBarco)
         {
             if (!ModelState.IsValid)
             {
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
+                ViewBag.IdImportacion = viewModel.IdImportacion;
+                ViewBag.NombreBarco = (await _movimientoService.GetBarcosSelectListAsync())
+                    .FirstOrDefault(b => b.Value == viewModel.IdImportacion.ToString())?.Text ?? "Desconocido";
                 return View(viewModel);
             }
 
@@ -78,7 +82,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 fechahora = viewModel.FechaHora ?? DateTime.Now,
                 idimportacion = viewModel.IdImportacion ?? 0,
-                idempresa = viewModel.IdEmpresa ?? 0,
+                idempresa = viewModel.IdEmpresa,
                 tipotransaccion = viewModel.TipoTransaccion ?? 1,
                 cantidadrequerida = viewModel.CantidadRequerida,
                 cantidadcamiones = viewModel.CantidadCamiones,
@@ -89,12 +93,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 await _movimientoService.CreateAsync(movimiento);
                 this.Success("Requerimiento registrado exitosamente");
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { selectedBarco = viewModel.IdImportacion });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al crear el movimiento");
                 ModelState.AddModelError("", "Ocurrió un error al crear el movimiento.");
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
+                ViewBag.IdImportacion = viewModel.IdImportacion;
+                ViewBag.NombreBarco = (await _movimientoService.GetBarcosSelectListAsync())
+                    .FirstOrDefault(b => b.Value == viewModel.IdImportacion.ToString())?.Text ?? "Desconocido";
                 return View(viewModel);
             }
         }

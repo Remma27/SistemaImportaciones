@@ -17,11 +17,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         private readonly IBodegaService _bodegaService;
         private readonly ILogger<RegistroPesajesController> _logger;
         private readonly IImportacionService _importacionService;
-        private readonly IMemoryCache _memoryCache;
-        private const double BARCOS_CACHE_DURATION_HOURS = 0.25;
-        private const int BODEGAS_CACHE_DURATION_HOURS = 1;
-        private const int REPORTE_CACHE_DURATION_MINUTES = 30;
-        private const int DATA_CACHE_DURATION_MINUTES = 5;
 
         public RegistroPesajesController(
             IMovimientoService movimientoService,
@@ -34,7 +29,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _bodegaService = bodegaService;
             _logger = logger;
             _importacionService = importacionService;
-            _memoryCache = memoryCache;
         }
 
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId, bool refreshData = false)
@@ -42,8 +36,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var watch = Stopwatch.StartNew();
             try
             {
-                string cacheKey = $"RegistroPesajes_{selectedBarco}_{empresaId}";
-
                 var viewModel = new RegistroPesajesViewModel
                 {
                     Tabla1Data = new List<RegistroPesajesIndividual>(),
@@ -57,15 +49,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 if (!selectedBarco.HasValue)
                 {
                     return View(viewModel);
-                }
-
-                // Verificamos si hay cambios recientes usando TempData
-                refreshData = refreshData || TempData["RefreshData"] != null;
-
-                if (!refreshData && _memoryCache.TryGetValue(cacheKey, out RegistroPesajesViewModel? cachedViewModel) && cachedViewModel != null)
-                {
-                    _logger.LogDebug($"Datos recuperados desde caché para barco {selectedBarco}, empresa {empresaId}");
-                    return View(cachedViewModel);
                 }
 
                 int importacionId = selectedBarco.Value;
@@ -94,19 +77,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     try
                     {
-                        await LoadTabla1Data(viewModel, importacionId, empresaId.Value, forceRefresh: refreshData);
+                        await LoadTabla1Data(viewModel, importacionId, empresaId.Value);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, $"Error al cargar datos de tabla 1, continuando sin estos datos");
                         viewModel.Tabla1Data = new List<RegistroPesajesIndividual>();
                     }
-                }
-
-                // Solo almacenamos en caché si no es un refresco forzado
-                if (!refreshData)
-                {
-                    _memoryCache.Set(cacheKey, viewModel, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
                 }
 
                 watch.Stop();
@@ -134,27 +111,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        private async Task LoadTabla1Data(RegistroPesajesViewModel viewModel, int importacionId, int empresaId, bool forceRefresh = false)
+        private async Task LoadTabla1Data(RegistroPesajesViewModel viewModel, int importacionId, int empresaId)
         {
             try
             {
-                string calculoCacheKey = $"CalculoMovimientos_{importacionId}_{empresaId}";
-                List<Movimiento>? calculo = null;
-
-                if (!forceRefresh && _memoryCache.TryGetValue(calculoCacheKey, out calculo) && calculo != null)
-                {
-                    _logger.LogDebug($"Usando datos en caché para cálculo de movimientos, importación {importacionId}, empresa {empresaId}");
-                }
-                else
-                {
-                    calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId);
-
-                    if (calculo != null && calculo.Any())
-                    {
-                        _memoryCache.Set(calculoCacheKey, calculo, TimeSpan.FromMinutes(DATA_CACHE_DURATION_MINUTES));
-                        _logger.LogDebug($"Actualizando caché de cálculo de movimientos para importación {importacionId}, empresa {empresaId}");
-                    }
-                }
+                var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId);
 
                 if (calculo != null && calculo.Any())
                 {
@@ -265,49 +226,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             viewModel.DiferenciaTotal = 0;
             viewModel.PorcentajeTotal = 0;
             viewModel.EstadoGeneral = estado;
-            viewModel.TotalKilosRequeridos = 0; // También establecemos esto a 0 por defecto
+            viewModel.TotalKilosRequeridos = 0;
         }
 
         private async Task PopulateDropdowns(int? selectedBarco, int? empresaId)
         {
             try
             {
-                const string barcosCacheKey = "BarcosDropdown";
-                List<SelectListItem> barcos;
-
-                if (!_memoryCache.TryGetValue(barcosCacheKey, out List<SelectListItem>? cachedBarcos))
-                {
-                    var barcosData = await _movimientoService.GetBarcosSelectListAsync();
-                    barcos = barcosData?.ToList() ?? new List<SelectListItem>();
-
-                    _memoryCache.Set(barcosCacheKey, barcos, TimeSpan.FromHours(BARCOS_CACHE_DURATION_HOURS));
-                    _logger.LogDebug($"Actualizado caché de barcos: {barcos.Count} elementos");
-                }
-                else
-                {
-                    barcos = cachedBarcos ?? new List<SelectListItem>();
-                }
-
+                var barcosData = await _movimientoService.GetBarcosSelectListAsync();
+                var barcos = barcosData?.ToList() ?? new List<SelectListItem>();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
                 if (selectedBarco.HasValue)
                 {
-                    const string empresasCacheKey = "EmpresasDropdown";
-                    List<SelectListItem> empresas;
-
-                    if (!_memoryCache.TryGetValue(empresasCacheKey, out List<SelectListItem>? cachedEmpresas))
-                    {
-                        var empresasData = await _movimientoService.GetEmpresasSelectListAsync();
-                        empresas = empresasData?.ToList() ?? new List<SelectListItem>();
-
-                        _memoryCache.Set(empresasCacheKey, empresas, TimeSpan.FromHours(BARCOS_CACHE_DURATION_HOURS));
-                        _logger.LogDebug($"Actualizado caché de empresas: {empresas.Count} elementos");
-                    }
-                    else
-                    {
-                        empresas = cachedEmpresas ?? new List<SelectListItem>();
-                    }
-
+                    var empresasData = await _movimientoService.GetEmpresasSelectListAsync();
+                    var empresas = empresasData?.ToList() ?? new List<SelectListItem>();
                     ViewBag.Empresas = new SelectList(empresas, "Value", "Text", empresaId);
                 }
                 else
@@ -324,17 +257,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         private async Task<Dictionary<int, string>> GetBodegasDictionaryAsync()
         {
-            const string cacheKey = "BodegasDictionary";
-
-            if (!_memoryCache.TryGetValue(cacheKey, out Dictionary<int, string>? bodegasDict) || bodegasDict == null)
-            {
-                var bodegas = await _bodegaService.GetAllAsync();
-                bodegasDict = bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
-                _memoryCache.Set(cacheKey, bodegasDict, TimeSpan.FromHours(BODEGAS_CACHE_DURATION_HOURS));
-                _logger.LogDebug($"Actualizado caché de diccionario de bodegas: {bodegasDict.Count} elementos");
-            }
-
-            return bodegasDict ?? new Dictionary<int, string>();
+            var bodegas = await _bodegaService.GetAllAsync();
+            return bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
         }
 
         private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodega(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
@@ -393,10 +317,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var result = await _movimientoService.CreateAsync(movimiento);
                 TempData["Success"] = "Registro creado exitosamente.";
 
-                // Forzar refresco de datos
-                InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
-                TempData["RefreshData"] = true;
-
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
             }
@@ -448,10 +368,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 await _movimientoService.UpdateAsync(id, movimiento);
                 TempData["Success"] = "Registro actualizado exitosamente.";
-
-                // Forzar refresco de datos
-                InvalidateRelatedCaches(viewModel.IdImportacion, viewModel.IdEmpresa);
-                TempData["RefreshData"] = true;
 
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
@@ -529,10 +445,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.DeleteAsync(id);
                 TempData["Success"] = "Registro eliminado correctamente";
 
-                // Forzar refresco de datos
-                InvalidateRelatedCaches(selectedBarco, empresaId);
-                TempData["RefreshData"] = true;
-
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
             }
             catch (Exception ex)
@@ -591,20 +503,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var watch = Stopwatch.StartNew();
             try
             {
-                const string barcosCacheKey = "BarcosDropdown";
-                List<SelectListItem> barcos;
-
-                if (!_memoryCache.TryGetValue(barcosCacheKey, out List<SelectListItem>? cachedBarcos))
-                {
-                    barcos = (await _movimientoService.GetBarcosSelectListAsync())?.ToList() ?? new List<SelectListItem>();
-                    _memoryCache.Set(barcosCacheKey, barcos, TimeSpan.FromHours(BARCOS_CACHE_DURATION_HOURS));
-                    _logger.LogDebug($"Actualizado caché de barcos en ReporteGeneral: {barcos.Count} elementos");
-                }
-                else
-                {
-                    barcos = cachedBarcos ?? new List<SelectListItem>();
-                }
-
+                var barcosData = await _movimientoService.GetBarcosSelectListAsync();
+                var barcos = barcosData?.ToList() ?? new List<SelectListItem>();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
                 if (!selectedBarco.HasValue)
@@ -612,20 +512,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return View(new ReporteEscotillasPorEmpresaViewModel());
                 }
 
-                string reporteCacheKey = $"ReporteEscotillas_{selectedBarco}";
-                ReporteEscotillasPorEmpresaViewModel viewModel;
-
-                if (!_memoryCache.TryGetValue(reporteCacheKey, out ReporteEscotillasPorEmpresaViewModel? cachedViewModel))
-                {
-                    viewModel = await _movimientoService.GetEscotillasPorEmpresaAsync(selectedBarco.Value);
-                    _memoryCache.Set(reporteCacheKey, viewModel, TimeSpan.FromMinutes(REPORTE_CACHE_DURATION_MINUTES));
-                    _logger.LogDebug($"Datos de reporte escotillas cargados de API para barco {selectedBarco}");
-                }
-                else
-                {
-                    viewModel = cachedViewModel ?? new ReporteEscotillasPorEmpresaViewModel();
-                    _logger.LogDebug($"Datos de reporte escotillas recuperados de caché para barco {selectedBarco}");
-                }
+                var viewModel = await _movimientoService.GetEscotillasPorEmpresaAsync(selectedBarco.Value);
 
                 var barcoSeleccionado = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
                 ViewBag.BarcoSeleccionado = barcoSeleccionado?.Text ?? "Desconocido";
@@ -720,19 +607,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 TempData["Error"] = $"Error al cargar el reporte: {ex.Message}";
                 return RedirectToAction(returnAction, returnController);
             }
-        }
-
-        private void InvalidateRelatedCaches(int importacionId, int empresaId)
-        {
-            _memoryCache.Remove($"RegistroPesajes_{importacionId}_{empresaId}");
-            _memoryCache.Remove($"ReporteEscotillas_{importacionId}");
-            _memoryCache.Remove($"CalculoMovimientos_{importacionId}_{empresaId}");
-
-            _memoryCache.Remove("BarcosDropdown");
-            _memoryCache.Remove("EmpresasDropdown");
-            _memoryCache.Remove("BodegasDictionary");
-
-            _logger.LogDebug($"Caché invalidado para importación {importacionId}, empresa {empresaId} y listas generales");
         }
 
         [HttpGet]

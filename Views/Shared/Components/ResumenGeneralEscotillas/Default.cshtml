@@ -26,13 +26,14 @@
         descargaTotal += escotilla.DescargaRealKg;
     }
     
-    // Calculamos la diferencia usando los kilos requeridos en lugar de capacidad
+    // Calculamos la diferencia: valor positivo = faltante, valor negativo = sobrante
     decimal diferenciaTotal = totalKilosRequeridos - descargaTotal;
     
     // Calculamos el porcentaje total
     var porcentajeTotal = totalKilosRequeridos > 0 ? (descargaTotal / totalKilosRequeridos) * 100 : 0;
     var porcentajeFaltanteSobrante = totalKilosRequeridos > 0 ? Math.Abs(diferenciaTotal) / totalKilosRequeridos * 100 : 0;
     var esSobrante = diferenciaTotal < 0; // Si diferenciaTotal es negativa, hay sobrante
+    var esFaltante = diferenciaTotal > 0; // Si diferenciaTotal es positiva, hay faltante
 }
 
 <div class="col-lg-12">
@@ -122,12 +123,12 @@
                                     var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
                                     EscotillaViewModel
                                     { DiferenciaKg = 0 });
-                                    <td class="text-end @(escotilla.DiferenciaKg < 0 ? "text-danger" : "text-success")">
-                                        @escotilla.DiferenciaKg.ToString("N0")
+                                    <td class="text-end @(escotilla.DiferenciaKg < 0 ? "text-success" : (escotilla.DiferenciaKg > 0 ? "text-danger" : ""))">
+                                        @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
                                     </td>
                                 }
                                 <td class="text-end fw-bold @(diferenciaTotal < 0 ? "text-success" : (diferenciaTotal > 0 ? "text-danger" : ""))">
-                                    @((esSobrante ? "+" : "") + Math.Abs(diferenciaTotal).ToString("N0"))
+                                    @(esSobrante ? "+" : "")@Math.Abs(diferenciaTotal).ToString("N0")
                                 </td>
                             </tr>
                             <tr>

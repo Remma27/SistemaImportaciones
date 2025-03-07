@@ -493,7 +493,8 @@ namespace API.Controllers
                     .Where(m => m.idimportacion == importacionId &&
                                m.idempresa == idempresa &&
                                m.tipotransaccion == 1)
-                    .OrderBy(m => m.fechahora)
+                    .OrderBy(m => m.id)
+                    .ThenBy(m => m.guia)
                     .Select(m => new
                     {
                         m.id,
@@ -513,8 +514,9 @@ namespace API.Controllers
                     .Where(m => m.idimportacion == importacionId &&
                                m.idempresa == idempresa &&
                                m.tipotransaccion == 2)
-                    .OrderBy(m => m.fechahora)
-                    .Select(m => new
+                    .OrderBy(m => m.id)
+                    .ThenBy(m => m.guia).
+                    Select(m => new
                     {
                         m.id,
                         m.bodega,
@@ -607,7 +609,6 @@ namespace API.Controllers
 
         // Endpoint para obtener el cálculo de escotillas por empresa, equivalente a la tabla del barco en el sistema de importaciones
         [HttpGet]
-        [ResponseCache(Duration = 60)]
         public async Task<IActionResult> CalculoEscotillas([FromQuery] int importacionId)
         {
             try
@@ -617,60 +618,46 @@ namespace API.Controllers
                     return BadRequest(new { message = "ImportacionId debe ser mayor a 0" });
                 }
 
-                string cacheKey = $"CalculoEscotillas_{importacionId}";
-
-                if (_memoryCache.TryGetValue(cacheKey, out var cachedResult))
-                {
-                    return Ok(cachedResult);
-                }
-
-                // Execute these queries one after another instead of concurrently to avoid DbContext issues
+                // Primero obtenemos el barco y sus capacidades por escotilla
                 var importacion = await _context.Importaciones
-                    .Where(i => i.id == importacionId)
-                    .Select(i => new
-                    {
-                        Barco = i.Barco,
-                        CapacidadesEscotillas = i.Barco != null ? i.Barco.ObtenerCapacidadesEscotillas() : new Dictionary<int, decimal>()
-                    })
-                    .FirstOrDefaultAsync();
+                    .Include(i => i.Barco)
+                    .FirstOrDefaultAsync(i => i.id == importacionId);
 
                 if (importacion?.Barco == null)
                 {
                     return NotFound(new { message = "No se encontró la importación o el barco asociado" });
                 }
 
-                var movimientosPorEscotilla = await _context.Movimientos
-                    .Where(m => m.idimportacion == importacionId &&
-                           m.tipotransaccion == 2 &&
-                           m.escotilla != null)
-                    .GroupBy(m => m.escotilla)
-                    .Select(g => new
-                    {
-                        Escotilla = g.Key,
-                        DescargaReal = g.Sum(x => x.cantidadentregada)
-                    })
-                    .ToListAsync();
+                // Obtener los movimientos agrupados por escotilla
+                var movimientosPorEscotilla = await (from m in _context.Movimientos
+                                                     where m.idimportacion == importacionId
+                                                     && m.tipotransaccion == 2 // Solo movimientos de descarga
+                                                     && m.escotilla != null
+                                                     group m by m.escotilla into g
+                                                     select new
+                                                     {
+                                                         Escotilla = g.Key,
+                                                         DescargaReal = g.Sum(x => x.cantidadentregada)
+                                                     }).ToListAsync();
 
-                // Continue with the rest of the method...
-                var descargasPorEscotilla = movimientosPorEscotilla
-                    .ToDictionary(m => m.Escotilla!.Value, m => m.DescargaReal);
+                // Calcular el total de kilos requeridos para esta importación
+                var totalKilosRequeridos = await _context.Movimientos
+                    .Where(m => m.idimportacion == importacionId && m.tipotransaccion == 1)
+                    .SumAsync(m => (decimal?)(m.cantidadrequerida ?? 0)) ?? 0;
 
-                var capacidadesPorEscotilla = importacion.CapacidadesEscotillas;
-                var result = new List<object>(capacidadesPorEscotilla.Count);
-
-                decimal totalCapacidad = 0;
-                decimal totalDescarga = 0;
+                // Procesar las capacidades del barco y calcular diferencias
+                var result = new List<object>();
+                var capacidadesPorEscotilla = importacion.Barco.ObtenerCapacidadesEscotillas();
 
                 foreach (var capacidad in capacidadesPorEscotilla)
                 {
-                    decimal descarga = descargasPorEscotilla.TryGetValue(capacidad.Key, out var value) ? value : 0;
-                    decimal diferencia = capacidad.Value - descarga;
-                    decimal porcentaje = capacidad.Value > 0
+                    var descarga = movimientosPorEscotilla
+                        .FirstOrDefault(m => m.Escotilla == capacidad.Key)?.DescargaReal ?? 0;
+
+                    var diferencia = capacidad.Value - descarga;
+                    var porcentaje = capacidad.Value > 0
                         ? Math.Round((descarga * 100.0M / capacidad.Value), 2)
                         : 0;
-
-                    totalCapacidad += capacidad.Value;
-                    totalDescarga += descarga;
 
                     result.Add(new
                     {
@@ -683,12 +670,15 @@ namespace API.Controllers
                     });
                 }
 
+                // Calcular totales
+                var totalCapacidad = capacidadesPorEscotilla.Sum(x => x.Value);
+                var totalDescarga = movimientosPorEscotilla.Sum(x => x.DescargaReal);
                 var totalDiferencia = totalCapacidad - totalDescarga;
                 var porcentajeTotal = totalCapacidad > 0
                     ? Math.Round((totalDescarga * 100.0M / totalCapacidad), 2)
                     : 0;
 
-                var response = new
+                return Ok(new
                 {
                     escotillas = result,
                     totales = new
@@ -697,13 +687,10 @@ namespace API.Controllers
                         DescargaTotal = totalDescarga,
                         DiferenciaTotal = totalDiferencia,
                         PorcentajeTotal = porcentajeTotal > 100 ? porcentajeTotal - 100 : porcentajeTotal,
-                        EstadoGeneral = totalDiferencia > 0 ? "Faltante" : "Sobrante"
+                        EstadoGeneral = totalDiferencia > 0 ? "Faltante" : "Sobrante",
+                        TotalKilosRequeridos = totalKilosRequeridos
                     }
-                };
-
-                _memoryCache.Set(cacheKey, response, TimeSpan.FromMinutes(5));
-
-                return Ok(response);
+                });
             }
             catch (Exception ex)
             {

@@ -12,7 +12,7 @@
                     <h3 class="card-title mb-0">Nuevo Registro de Requerimiento</h3>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                    <form asp-action="Create" asp-route-returnUrl="/mvc/RegistroRequerimientos?selectedBarco=@ViewBag.IdImportacion" method="post" class="needs-validation" novalidate>
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
                         <div class="row mb-3">
@@ -25,6 +25,7 @@
                                 <label class="form-label">Importación</label>
                                 <input type="text" class="form-control" value="@ViewBag.NombreBarco" readonly />
                                 <input type="hidden" asp-for="IdImportacion" />
+                                <input type="hidden" name="selectedBarco" value="@ViewBag.IdImportacion" />
                             </div>
                         </div>
 

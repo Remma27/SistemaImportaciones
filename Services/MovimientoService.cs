@@ -645,7 +645,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 {
                     id = viewModel.IdMovimiento,
                     idimportacion = viewModel.IdImportacion ?? 0,
-                    idempresa = viewModel.IdEmpresa ?? 0,
+                    idempresa = viewModel.IdEmpresa,
                     tipotransaccion = viewModel.TipoTransaccion ?? 1,
                     cantidadrequerida = viewModel.CantidadRequerida,
                     cantidadcamiones = viewModel.CantidadCamiones,
@@ -827,6 +827,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     DescargaTotal = apiResponse?.Totales?.DescargaTotal ?? 0,
                     DiferenciaTotal = apiResponse?.Totales?.DiferenciaTotal ?? 0,
                     PorcentajeTotal = apiResponse?.Totales?.PorcentajeTotal ?? 0,
+                    TotalKilosRequeridos = apiResponse?.Totales?.TotalKilosRequeridos ?? 0,
                     EstadoGeneral = apiResponse?.Totales?.EstadoGeneral ?? "Sin información"
                 };
             }

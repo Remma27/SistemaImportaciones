@@ -16,14 +16,14 @@
                         @Html.AntiForgeryToken()
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label asp-for="nombrebarco" class="form-label"></label>
+                                <label class="form-label">Nombre del Barco</label>
                                 <input asp-for="nombrebarco" class="form-control"
                                     placeholder="Ingrese el nombre del barco" />
                                 <span asp-validation-for="nombrebarco" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="row">
-                            <h5 class="mb-3">Capacidad de Escotillas (Toneladas)</h5>
+                            <h5 class="mb-3">Capacidad de Escotillas</h5>
                             <div class="col-md-4 mb-3">
                                 <label asp-for="escotilla1" class="form-label">Escotilla 1</label>
                                 <input asp-for="escotilla1" class="form-control" type="number" />

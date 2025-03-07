@@ -1,0 +1,140 @@
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>
+@{
+    var capacidadTotal = ViewData["CapacidadTotal"] is decimal value ? value : 0;
+    var descargaTotal = ViewData["DescargaTotal"] is decimal value2 ? value2 : 0;
+    var diferenciaTotal = ViewData["DiferenciaTotal"] is decimal value3 ? value3 : 0;
+    var porcentajeTotal = ViewData["PorcentajeTotal"] is decimal value4 ? value4 : 0;
+    var estadoGeneral = ViewData["EstadoGeneral"] is string value5 ? value5 : "";
+
+    var escotillasDiccionario = Model?.ToDictionary(e => e.NumeroEscotilla, e => e) ?? new Dictionary<int,
+    Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>();
+    var todasLasEscotillas = Enumerable.Range(1, 7);
+}
+
+<div class="col-lg-12">
+    <div class="card mb-4 shadow-lg rounded-3 border-0">
+        <div class="card-header bg-gradient bg-primary text-white py-3">
+            <h5 class="mb-0">
+                <i class="fas fa-ship me-2 fa-fw"></i>
+                Estado de Escotillas
+            </h5>
+        </div>
+        <div class="card-body bg-light p-4">
+            <div class="table-responsive">
+                <table id="tablaEscotillas" class="table table-hover table-bordered border-secondary align-middle mb-0">
+                    <thead>
+                        <tr class="bg-dark text-white text-center">
+                            <th class="align-middle">Métrica</th>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                <th class="align-middle">
+                                    <i class="fas fa-door-open me-1"></i>
+                                    Escotilla @numeroEscotilla
+                                </th>
+                            }
+                            <th class="align-middle">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold">Capacidad (Kg)</td>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                EscotillaViewModel
+                                { CapacidadKg = 0 });
+                                <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
+                            }
+                            <td class="text-end table-success">@capacidadTotal.ToString("N0")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Descargado (Kg)</td>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                EscotillaViewModel
+                                { DescargaRealKg = 0 });
+                                <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
+                            }
+                            <td class="text-end table-success">@descargaTotal.ToString("N0")</td>
+                        </tr>
+                        <tr class="bg-light"> @* Cambiamos unit-toggle-columns por bg-light *@
+                            <td class="fw-bold">Descargado (Lbs/Qq)</td>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                EscotillaViewModel
+                                { DescargaRealKg = 0 });
+                                <td class="text-end">
+                                    <div>
+                                        <span class="d-block">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
+                                        <span class="d-block text-muted small">@((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq</span>
+                                    </div>
+                                </td>
+                            }
+                            <td class="text-end table-success">
+                                <div>
+                                    <span class="d-block">@((descargaTotal * 2.20462M).ToString("N0")) lbs</span>
+                                    <span class="d-block text-muted small">@((descargaTotal / 45.359237M).ToString("N2")) qq</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Diferencia (Kg)</td>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                EscotillaViewModel
+                                { DiferenciaKg = 0 });
+                                <td class="text-end @(escotilla.DiferenciaKg < 0 ? "text-danger" : "text-success")">
+                                    @escotilla.DiferenciaKg.ToString("N0")
+                                </td>
+                            }
+                            <td class="text-end table-success">@diferenciaTotal.ToString("N0")</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Porcentaje</td>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                EscotillaViewModel
+                                { Porcentaje = 0 });
+                                <td class="text-end">
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar @(escotilla.Porcentaje >= 100 ? "bg-success" : "bg-primary")"
+                                            role="progressbar" style="width: @(Math.Min(escotilla.Porcentaje, 100))%">
+                                            @escotilla.Porcentaje.ToString("N2")%
+                                        </div>
+                                    </div>
+                                </td>
+                            }
+                            <td class="text-end table-success">@porcentajeTotal.ToString("N2")%</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Estado</td>
+                            @foreach (var numeroEscotilla in todasLasEscotillas)
+                            {
+                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                EscotillaViewModel
+                                { Estado = "-" });
+                                <td class="text-center">
+                                    <span
+                                        class="badge @(escotilla.Estado == "Completado" ? "bg-success" : 
+                                                           escotilla.Estado == "En Proceso" ? "bg-primary" : "bg-secondary")">
+                                    @escotilla.Estado
+                                </span>
+                            </td>
+                                                        }
+                            <td class="text-center table-success">
+                                <span class="badge @(estadoGeneral == "Completado" ? "bg-success" : 
+                                                   estadoGeneral == "En Proceso" ? "bg-primary" : "bg-secondary")">
+                                    @estadoGeneral
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

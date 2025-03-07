@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using API.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class EmpresaController : ControllerBase
     {
         private readonly ApiContext _context;
@@ -16,7 +18,8 @@ namespace API.Controllers
 
         // Endpoint para crear una nueva Empresa
         [HttpPost]
-        public JsonResult Create(Empresa empresa)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Empresa empresa)
         {
             if (empresa.id_empresa != 0)
             {

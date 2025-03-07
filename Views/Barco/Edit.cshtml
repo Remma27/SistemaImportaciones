@@ -1,5 +1,5 @@
-@using Sistema_de_Gestion_de_Importaciones.Models
-@model Sistema_de_Gestion_de_Importaciones.Models.Barco
+@using API.Models
+@model API.Models.Barco
 
 @{
     ViewData["Title"] = "Editar Barco";
@@ -14,50 +14,50 @@
                 </div>
                 <div class="card-body">
                     <form asp-action="Edit">
-                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="id" />
                         <div class="row">
                             <div class="col-md-12 mb-3">
-                                <label asp-for="NombreBarco" class="form-label"></label>
-                                <input asp-for="NombreBarco" class="form-control"/>
-                                <span asp-validation-for="NombreBarco" class="text-danger"></span>
+                                <label asp-for="nombrebarco" class="form-label"></label>
+                                <input asp-for="nombrebarco" class="form-control"/>
+                                <span asp-validation-for="nombrebarco" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="row">
                             <h5 class="mb-3">Capacidad de Escotillas (Toneladas)</h5>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla1" class="form-label">Escotilla 1</label>
-                                <input asp-for="Escotilla1" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla1" class="text-danger"></span>
+                                <label asp-for="escotilla1" class="form-label">Escotilla 1</label>
+                                <input asp-for="escotilla1" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla1" class="text-danger"></span>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla2" class="form-label">Escotilla 2</label>
-                                <input asp-for="Escotilla2" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla2" class="text-danger"></span>
+                                <label asp-for="escotilla2" class="form-label">Escotilla 2</label>
+                                <input asp-for="escotilla2" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla2" class="text-danger"></span>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla3" class="form-label">Escotilla 3</label>
-                                <input asp-for="Escotilla3" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla3" class="text-danger"></span>
+                                <label asp-for="escotilla3" class="form-label">Escotilla 3</label>
+                                <input asp-for="escotilla3" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla3" class="text-danger"></span>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla4" class="form-label">Escotilla 4</label>
-                                <input asp-for="Escotilla4" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla4" class="text-danger"></span>
+                                <label asp-for="escotilla4" class="form-label">Escotilla 4</label>
+                                <input asp-for="escotilla4" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla4" class="text-danger"></span>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla5" class="form-label">Escotilla 5</label>
-                                <input asp-for="Escotilla5" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla5" class="text-danger"></span>
+                                <label asp-for="escotilla5" class="form-label">Escotilla 5</label>
+                                <input asp-for="escotilla5" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla5" class="text-danger"></span>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla6" class="form-label">Escotilla 6</label>
-                                <input asp-for="Escotilla6" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla6" class="text-danger"></span>
+                                <label asp-for="escotilla6" class="form-label">Escotilla 6</label>
+                                <input asp-for="escotilla6" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla6" class="text-danger"></span>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label asp-for="Escotilla7" class="form-label">Escotilla 7</label>
-                                <input asp-for="Escotilla7" class="form-control" type="number" />
-                                <span asp-validation-for="Escotilla7" class="text-danger"></span>
+                                <label asp-for="escotilla7" class="form-label">Escotilla 7</label>
+                                <input asp-for="escotilla7" class="form-control" type="number" />
+                                <span asp-validation-for="escotilla7" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="d-flex justify-content-between mt-4">

@@ -1,0 +1,127 @@
+@model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroPesajesIndividual>
+
+<div class="col-lg-12">
+    <div class="card mb-4 shadow">
+        <div class="card-header bg-gradient bg-primary text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Registros de Pesaje</h5>
+            <button id="btnExportarExcelIndividuales" class="btn btn-light btn-sm" title="Exportar a Excel" disabled>
+                <i class="fas fa-file-excel me-1"></i>Exportar Excel
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-scroll">
+                <table id="tabla1" class="table table-hover align-middle mb-0 table-fixed-header">
+                    <thead>
+                        <tr class="table-info-dark">
+                            <th>#</th>
+                            <th>Esc.</th>
+                            <th>Bodega</th>
+                            <th>Guía</th>
+                            <th>Placa</th>
+                            <th>Peso Requerido</th>
+                            <th>Peso Entregado</th>
+                            <th class="text-end unit-toggle-columns">
+                                <div>Entreg.</div>
+                                <div><small>Lbs / Qq</small></div>
+                            </th>
+                            <th>Peso Faltante</th>
+                            <th>Porcentaje</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-group-divider">
+                        @if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center">
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No hay registros disponibles</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int rowNumber = 0;
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">@rowNumber</td>
+                                    <td class="text-center">@(item.Escotilla > 0 ? item.Escotilla.ToString() : "-")</td>
+                                    <td>@(string.IsNullOrEmpty(item.Bodega) ? "-" : item.Bodega)</td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span>@(string.IsNullOrEmpty(item.Guia) ? "-" : item.Guia)</span>
+                                            <small class="text-muted">Alt: @(string.IsNullOrEmpty(item.GuiaAlterna) ? "-" : item.GuiaAlterna)</small>
+                                        </div>
+                                        <span class="d-none data-alt-guia">@item.GuiaAlterna</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span>@(string.IsNullOrEmpty(item.Placa) ? "-" : item.Placa)</span>
+                                            <small class="text-muted">Alt: @(string.IsNullOrEmpty(item.PlacaAlterna) ? "-" : item.PlacaAlterna)</small>
+                                        </div>
+                                        <span class="d-none data-alt-placa">@item.PlacaAlterna</span>
+                                    </td>
+                                    <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
+                                    <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
+                                    <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                        <span class="top-value">@((item.PesoEntregado * 2.20462M).ToString("N0")) lbs</span>
+                                        <span class="divider"></span>
+                                        <span class="bottom-value">@((item.PesoEntregado / 45.359237M).ToString("N2")) qq</span>
+                                    </td>
+                                    <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
+                                    <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            @if (item.PesoRequerido == 0)
+                                            {
+                                                <a href="/mvc/RegistroPesajes/Edit/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
+                                                   class="btn btn-warning btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <a href="/mvc/RegistroPesajes/Delete/@item.Id?selectedBarco=@ViewBag.SelectedBarco&empresaId=@ViewBag.EmpresaId" 
+                                                   class="btn btn-danger btn-sm" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                                rowNumber++;
+                            }
+                        }
+                    </tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        <tfoot class="table-group-divider">
+                            <tr class="table-info-dark">
+                                <td></td>
+                                <td></td>
+                                <td>Totales</td>
+                                <td colspan="2"></td>
+                                <td class="text-end">Cant: @Model.Count(x => x.PesoEntregado > 0)</td>
+                                <td class="text-end">@Model.Sum(x => x.PesoEntregado).ToString("N0")</td>
+                                <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
+                                    <span class="top-value">@((Model.Sum(x => x.PesoEntregado) * 2.20462M).ToString("N0")) lbs</span>
+                                    <span class="divider"></span>
+                                    <span class="bottom-value">@((Model.Sum(x => x.PesoEntregado) / 45.359237M).ToString("N2")) qq</span>
+                                </td>
+                                <td class="text-end">@(Model.LastOrDefault()?.PesoFaltante.ToString("N0") ?? "0")</td>
+                                <td class="text-end">@(Model.LastOrDefault()?.Porcentaje.ToString("N2") ?? "0")%</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>

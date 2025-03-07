@@ -1,11 +1,13 @@
 ﻿<!DOCTYPE html>
 <html lang="en" class="h-100">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Sistema de Gestión</title>
+    <title>@ViewData["Title"] - Sistema de Gestión de Importaciones</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/toast.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
@@ -15,35 +17,41 @@
             display: flex;
             flex-direction: column;
         }
+
         main {
             flex: 1;
         }
     </style>
+    @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body class="h-100">
     <div class="wrapper">
         <header class="bg-dark text-white py-3 mb-4">
             <div class="container">
-                <div class="row align-items-center">
+                <div class="row g-3">
                     @if (User.Identity?.IsAuthenticated ?? false)
                     {
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <a href="/" class="text-white text-decoration-none">
-                                <h4 class="mb-0">
+                                <h4 class="mb-0 text-center text-md-start">
                                     <i class="fas fa-seedling me-2"></i>Sistema de Importaciones
                                 </h4>
                             </a>
                         </div>
-                        <div class="col-md-6 text-end">
-                            <div class="d-flex align-items-center justify-content-end">
-                                <div class="me-4 ">
-                                    <span class="badge bg-light text-dark">
+                        <div class="col-12 col-md-6">
+                            <div
+                                class="d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-end gap-2">
+                                <div class="mb-2 mb-md-0">
+                                    <span class="badge bg-light text-dark d-inline-flex align-items-center"
+                                        style="height: 38px; padding: 0 0.75rem; font-size: 0.875rem;">
                                         <i class="fas fa-user me-1"></i>
                                         Bienvenido, @User.Identity.Name
                                     </span>
                                 </div>
                                 <form asp-controller="Auth" asp-action="CerrarSesion" method="post">
-                                    <button type="submit" class="btn btn-danger btn-sm">
+                                    <button type="submit" class="btn btn-danger btn-sm d-inline-flex align-items-center"
+                                        style="height: 38px;">
                                         <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
                                     </button>
                                 </form>
@@ -52,8 +60,8 @@
                     }
                     else
                     {
-                        <div class="col-12 text-center">
-                            <h4 class="mb-0">
+                        <div class="col-12">
+                            <h4 class="mb-0 text-center">
                                 <i class="fas fa-seedling me-2"></i>Sistema de Gestión de Importaciones
                             </h4>
                         </div>
@@ -62,19 +70,19 @@
             </div>
         </header>
 
-        <main role="main" class="container pb-3">
+        <main role="main" class="@(ViewData["FullWidth"] != null ? "container-fluid" : "container") pb-3">
             @RenderBody()
         </main>
 
         <footer class="footer py-3 bg-light border-top mt-auto">
             <div class="container">
-                <div class="row">
-                    <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-12 col-md-6 text-center text-md-start">
                         <span class="text-muted">
                             <i class="fas fa-copyright me-1"></i>2025 Sistema de Gestión de Importaciones
                         </span>
                     </div>
-                    <div class="col-md-6 text-end">
+                    <div class="col-12 col-md-6 text-center text-md-end">
                         <span class="text-muted">
                             <i class="fas fa-code me-1"></i>Desarrollado por Emmanuel Rodriguez
                         </span>
@@ -84,6 +92,8 @@
         </footer>
     </div>
 
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
@@ -91,6 +101,41 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/toast-service.js" asp-append-version="true"></script>
+
+    <script>
+        $(document).ready(function () {
+            @if (TempData["Success"] != null)
+                {
+                    <text>
+                        toastService.success('@TempData["Success"]');
+                    </text>
+            }
+
+                @if (TempData["Error"] != null)
+                {
+                    <text>
+                        toastService.error('@TempData["Error"]');
+                    </text>
+            }
+
+                @if (TempData["Warning"] != null)
+                {
+                    <text>
+                        toastService.warning('@TempData["Warning"]');
+                    </text>
+            }
+
+                @if (TempData["Info"] != null)
+                {
+                    <text>
+                        toastService.info('@TempData["Info"]');
+                    </text>
+            }
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

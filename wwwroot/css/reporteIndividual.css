@@ -1,0 +1,33 @@
+.table-full-width {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.table-scroll-container {
+    height: calc(100vh - 250px);
+    overflow-y: auto;
+    position: relative;
+}
+
+.table-fixed-header thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #212529;
+}
+
+.card-body-full-height {
+    padding: 0;
+}
+
+.container-fluid {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.table-fixed-header tfoot tr {
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
+    background-color: #212529;
+}

@@ -1,0 +1,50 @@
+.toast-container {
+    z-index: 1100;
+}
+
+.toast {
+    min-width: 300px;
+    opacity: 1 !important;
+}
+
+.toast .btn-close-white {
+    filter: brightness(0) invert(1);
+}
+
+.toast.bg-success {
+    border-left: 5px solid #155724;
+}
+
+.toast.bg-danger {
+    border-left: 5px solid #721c24;
+}
+
+.toast.bg-warning {
+    border-left: 5px solid #856404;
+    color: #212529 !important;
+}
+
+.toast.bg-info {
+    border-left: 5px solid #0c5460;
+}
+
+.toast-header.bg-warning {
+    color: #212529 !important;
+}
+
+.toast-enter-active {
+    animation: toast-in-right 0.5s;
+}
+
+.toast-leave-active {
+    animation: toast-in-right 0.5s reverse;
+}
+
+@keyframes toast-in-right {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}

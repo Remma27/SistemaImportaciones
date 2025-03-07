@@ -1,0 +1,100 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroPesajesIndividual
+
+<div class="container-fluid py-4">
+    <div class="card shadow">
+        <div class="card-header bg-gradient bg-primary text-white py-3">
+            <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Nuevo Registro de Pesaje</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="IdImportacion" />
+                <input type="hidden" asp-for="IdEmpresa" />
+                <input type="hidden" asp-for="TipoTransaccion" />
+                <input type="hidden" asp-for="FechaHora" />
+                <div class="row g-3">
+                    <!-- Guía -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="Guia" class="form-control" placeholder="Guía" required />
+                            <label><i class="fas fa-file-alt me-2"></i>Guía</label>
+                            <span asp-validation-for="Guia" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <!-- Guía Alterna -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="GuiaAlterna" class="form-control" placeholder="Guía Alterna" />
+                            <label><i class="fas fa-file-alt me-2"></i>Guía Alterna</label>
+                            <span asp-validation-for="GuiaAlterna" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <!-- Placa -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="Placa" class="form-control" placeholder="Placa" required />
+                            <label><i class="fas fa-truck me-2"></i>Placa</label>
+                            <span asp-validation-for="Placa" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <!-- Placa Alterna -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="PlacaAlterna" class="form-control" placeholder="Placa Alterna" />
+                            <label><i class="fas fa-truck me-2"></i>Placa Alterna</label>
+                            <span asp-validation-for="PlacaAlterna" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <!-- Kilos -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input asp-for="PesoEntregado" class="form-control" type="number" min="0" step="0.01"
+                                required />
+                            <label><i class="fas fa-weight me-2"></i>Kilos</label>
+                            <span asp-validation-for="PesoEntregado" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <!-- Escotilla -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select asp-for="Escotilla" class="form-select" required>
+                                <option value="">Seleccione una escotilla</option>
+                                @for (int i = 1; i <= 7; i++)
+                                {
+                                    <option value="@i">Escotilla @i</option>
+                                }
+                            </select>
+                            <label><i class="fas fa-door-open me-2"></i>Escotilla</label>
+                            <span asp-validation-for="Escotilla" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <!-- Bodega -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select asp-for="Bodega" class="form-select" asp-items="ViewBag.Bodegas">
+                                <option value="">Seleccione una bodega</option>
+                            </select>
+                            <label><i class="fas fa-warehouse me-2"></i>Bodega (Opcional)</label>
+                            <span asp-validation-for="Bodega" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Guardar
+                    </button>
+                    <a asp-action="Index" asp-route-selectedBarco="@ViewBag.SelectedBarco"
+                        asp-route-empresaId="@ViewBag.EmpresaId" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

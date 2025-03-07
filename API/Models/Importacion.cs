@@ -6,6 +6,7 @@ namespace API.Models
     public class Importacion
     {
         [Key]
+        [Required]
         public int id { get; set; }
         public DateTime? fechahorasystema { get; set; }
         public DateTime? fechahora { get; set; }
@@ -16,5 +17,8 @@ namespace API.Models
 
         public double? totalcargakilos { get; set; }
         public int? idusuario { get; set; }
+
+        [ForeignKey("idusuario")]
+        public virtual Usuario? Usuario { get; set; }
     }
 }

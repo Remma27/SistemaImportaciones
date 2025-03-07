@@ -2,11 +2,13 @@
 using API.Models;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class ImportacionesController : ControllerBase
     {
         private readonly ApiContext _context;
@@ -17,7 +19,8 @@ namespace API.Controllers
 
         // Endpoint para crear una nueva Importacion
         [HttpPost]
-        public JsonResult Create(Importacion importacion)
+        [Consumes("application/json")]
+        public JsonResult Create([FromBody] Importacion importacion)
         {
             if (importacion.id != 0)
             {

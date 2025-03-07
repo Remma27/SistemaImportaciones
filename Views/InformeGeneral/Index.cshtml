@@ -1,0 +1,113 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroPesajesViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
+@using Sistema_de_Gestion_de_Importaciones.ViewModels
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/registroPesajes.css" />
+}
+
+@{
+    var selectedBarco = Context.Request.Query["selectedBarco"].ToString();
+    var isBarcoSelected = !String.IsNullOrEmpty(selectedBarco);
+    var isEmpresaSelected = !String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString());
+    var isFormValid = isBarcoSelected && isEmpresaSelected;
+    var modelData = Model?.Tabla2Data;
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-success bg-gradient text-white py-3">
+            <div class="row g-2 align-items-center">
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <form method="get" asp-action="Index" class="mb-0">
+                        <div class="input-group">
+                            <label class="input-group-text bg-success text-white border-0">
+                                <i class="fas fa-ship me-1"></i>
+                            </label>
+                            <select name="selectedBarco" class="form-select" asp-items="ViewBag.Barcos"
+                                onchange="this.form.submit()">
+                                <option value="">Seleccione una Importación</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="col-12 col-md-8 d-flex justify-content-center justify-content-md-end">
+                    <div class="action-buttons-responsive">
+                        <button class="btn btn-light btn-action" id="toggleUnits" title="Alternar unidades"
+                            disabled="@(modelData?.Any() != true)">
+                            <i class="fas fa-weight me-1"></i><span class="button-text"
+                                id="unitsButtonText">Libras</span>
+                        </button>
+
+                        @{
+                            int barcoId = 0;
+                            int.TryParse(selectedBarco, out barcoId);
+                            var hasTableData = modelData?.Any() == true;
+                            var enableDetailButton = isBarcoSelected && hasTableData;
+                        }
+
+                        <a href="@(isBarcoSelected ? Url.Action("ReporteIndividual", "RegistroPesajes", new { 
+                            selectedBarco = selectedBarco,  
+                                                                                                                returnController = "InformeGeneral",
+                                                                                                                returnAction = "Index" }) : "#")" id="btnTablaDetallada"
+                            class="btn btn-dark btn-action @(!enableDetailButton ? "disabled" : "")"
+                            title="Vista detallada">
+                            <i class="fas fa-table-cells"></i>
+                        </a>
+                        <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = selectedBarco, returnController = "InformeGeneral", returnAction = "Index" }) : "#")"
+                            id="btnReporteEscotillas"
+                            class="btn btn-teal btn-action @(!isBarcoSelected ? "disabled" : "")"
+                            title="Reporte Escotillas por Empresa">
+                            <i class="fas fa-chart-column"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (string.IsNullOrEmpty(selectedBarco))
+                        {
+            <div class="alert alert-info m-4 text-center">
+                <i class="fas fa-info-circle fa-lg me-2"></i>
+                Seleccione una importación para ver el informe
+            </div>
+                        }
+                        else if (!(modelData?.Any() == true))
+            {
+                <div class="alert alert-warning m-4 text-center">
+                    <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
+                    No hay datos disponibles para la importación seleccionada
+                </div>
+            }
+            else
+            {
+                @if (Model?.Tabla2Data != null)
+                {
+                    @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-lg border-0 mt-4" id="cardEscotillas">
+        <div class="card-body p-0">
+            @await Component.InvokeAsync("ResumenGeneralEscotillas", new {
+            model = Model?.EscotillasData ?? Enumerable.Empty<EscotillaViewModel>(),
+                        capacidadTotal = Model?.CapacidadTotal ?? 0,
+                        descargaTotal = Model?.DescargaTotal ?? 0,
+                        diferenciaTotal = Model?.DiferenciaTotal ?? 0,
+                        porcentajeTotal = Model?.PorcentajeTotal ?? 0,
+                        estadoGeneral = Model?.EstadoGeneral ?? "Sin datos"
+                        })
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="~/js/informeGeneral.js"></script>
+    <script src="~/js/registroPesajes.js"></script>
+}

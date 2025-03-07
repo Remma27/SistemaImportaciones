@@ -1,0 +1,180 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.RegistroPesajesViewModel
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/registroPesajes.css" />
+}
+
+@{
+    var isBarcoSelected = !String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString());
+    var isEmpresaSelected = !String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString());
+    var isFormValid = isBarcoSelected && isEmpresaSelected;
+}
+
+<div class="container-fluid px-4">
+    <div class="table-responsive-custom">
+        <!-- Header Card -->
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-gradient bg-primary text-white py-3">
+                <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Registro de Pesajes</h4>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row gy-3">
+                    <div class="col-lg-8">
+                        <form id="selectionForm" method="get" class="needs-validation" novalidate>
+                            <div class="row gy-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select id="selectedBarco" name="selectedBarco" class="form-select"
+                                            asp-items="ViewBag.Barcos" onchange="handleBarcoChange(this)" required>
+                                            <option value="">Seleccione una Importación</option>
+                                        </select>
+                                        <label><i class="fas fa-ship me-2"></i>Importación</label>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una importación
+                                        </div>
+                                        <div id="barcoLoadingIndicator"
+                                            class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none"
+                                            style="margin-top: -10px;" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating">
+                                        <select id="empresaId" name="empresaId" class="form-select"
+                                            asp-items="ViewBag.Empresas" onchange="handleEmpresaChange(this)"
+                                            disabled="@(!isBarcoSelected)" required>
+                                            <option value="">Seleccione una Empresa</option>
+                                        </select>
+                                        <label><i class="fas fa-building me-2"></i>Empresa</label>
+                                        <div class="invalid-feedback">
+                                            Por favor seleccione una empresa
+                                        </div>
+                                        <div id="empresaLoadingIndicator"
+                                            class="spinner-border spinner-border-sm text-primary position-absolute end-0 top-50 me-3 d-none"
+                                            style="margin-top: -10px;" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-lg-4 d-flex align-items-center justify-content-lg-end mt-3 mt-lg-0">
+                        <div class="action-buttons">
+                            <button id="btnAgregar" class="btn btn-primary action-btn" disabled="@(!isFormValid)">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Agregar</span>
+                            </button>
+
+                            <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
+                                id="btnReporteEscotillas"
+                                class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")"
+                                title="Reporte Escotillas por Empresa">
+                                <i class="fas fa-chart-column"></i>
+                            </a>
+                            @{
+                                var hasTableData = Model.Tabla2Data != null && Model.Tabla2Data.Any();
+                                var enableDetailButton = isBarcoSelected && hasTableData;
+                            }
+                            <a href="@(isBarcoSelected ? Url.Action("ReporteIndividual", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
+                                id="btnTablaDetallada"
+                                class="btn btn-dark action-btn @(!enableDetailButton ? "disabled" : "")"
+                                title="Vista detallada">
+                                <i class="fas fa-table-cells"></i>
+                            </a>
+
+                            <button id="btnToggleUnidad" class="btn btn-warning action-btn" title="Mostrar en Libras">
+                                <i class="fas fa-weight-scale"></i>
+                                <span>Unidades</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Container -->
+    <div class="row g-4">
+        <!-- Resumen Agregado -->
+        @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
+
+        <!-- Resumen General y Escotillas -->
+        @await Component.InvokeAsync("ResumenGeneralEscotillas", new { model = Model.EscotillasData, capacidadTotal =
+        Model.CapacidadTotal, descargaTotal = Model.DescargaTotal, diferenciaTotal = Model.DiferenciaTotal,
+                porcentajeTotal = Model.PorcentajeTotal, estadoGeneral = Model.EstadoGeneral })
+
+        <!-- Tabla 1: Registros Individuales -->
+        @await Component.InvokeAsync("RegistrosIndividuales",
+                new
+                {
+                    registros = Model.Tabla1Data,
+                    selectedBarco = ViewContext.HttpContext.Request.Query["selectedBarco"].ToString(),
+                    empresaId = ViewContext.HttpContext.Request.Query["empresaId"].ToString()
+                })
+
+        <!-- Tabla 3: Totales por Bodega -->
+        @{
+            var empresaSeleccionadaId = Context.Request.Query["empresaId"].ToString();
+            var empresasList = (IEnumerable<SelectListItem>)ViewBag.Empresas;
+            var selectedEmpresa = empresasList?.FirstOrDefault(e => e.Value == empresaSeleccionadaId);
+            var empresaSeleccionadaNombre = selectedEmpresa?.Text;
+
+            var mostrarTablaBodegas = !string.IsNullOrEmpty(empresaSeleccionadaNombre) &&
+            empresaSeleccionadaNombre.IndexOf("INTERGLO", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            System.Diagnostics.Debug.WriteLine($"Mostrar tabla bodegas: {mostrarTablaBodegas}");
+            System.Diagnostics.Debug.WriteLine($"Tiene datos de bodegas: {Model.TotalesPorBodega?.Any()}");
+        }
+
+        @if (mostrarTablaBodegas && Model.TotalesPorBodega != null && Model.TotalesPorBodega.Any())
+        {
+            @await Component.InvokeAsync("TotalesPorBodega", new { model = Model.TotalesPorBodega })
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="~/js/registroPesajes.js"></script>
+    <script>
+        $(document).ready(function () {
+            console.log("Page ready. Checking ViewBag data:");
+
+            // Log data for debugging
+            var barcoOptions = @Json.Serialize(ViewBag.Barcos?.Items ?? new List<SelectListItem>());
+            var empresaOptions = @Json.Serialize(ViewBag.Empresas?.Items ?? new List<SelectListItem>());
+
+            console.log("Barcos options:", barcoOptions);
+            console.log("Empresas options:", empresaOptions);
+
+            initializeServerData(
+                '@Context.Request.Query["selectedBarco"]',
+                '@Context.Request.Query["empresaId"]'
+            );
+
+            // Check if we need to manually set dropdown values
+            const selectedBarco = '@Context.Request.Query["selectedBarco"]';
+            const empresaId = '@Context.Request.Query["empresaId"]';
+
+            if (selectedBarco) {
+                $('#selectedBarco').val(selectedBarco);
+                console.log('Set selectedBarco to:', selectedBarco);
+            }
+
+            if (empresaId) {
+                $('#empresaId').val(empresaId);
+                console.log('Set empresaId to:', empresaId);
+            }
+        });
+
+        // Update the event handler for the Resumen button
+        $('#btnExportarExcelResumen')
+            .off('click')
+            .on('click', function () {
+                console.log('Exportando resumen agregado');
+                exportResumenAgregadoToExcel('tabla2', 'Resumen_Agregado');
+            });
+    </script>
+}

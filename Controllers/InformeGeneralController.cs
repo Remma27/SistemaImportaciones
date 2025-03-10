@@ -56,6 +56,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
                     viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
                     viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                    viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
+
+                    // Establecer ViewData que será utilizado por la vista parcial
+                    ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
+                    ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
+
                 }
 
                 return View(viewModel);

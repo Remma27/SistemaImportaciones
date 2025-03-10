@@ -71,10 +71,31 @@ namespace API.Controllers
         [Consumes("application/json")]
         public JsonResult Create([FromBody] Movimiento movimiento)
         {
+            // First clear any model state errors related to fechahorasistema
+            if (ModelState.ContainsKey("fechahorasistema"))
+            {
+                ModelState.Remove("fechahorasistema");
+            }
+
             if (movimiento.id != 0)
             {
                 return new JsonResult(BadRequest("El id debe ser 0 para crear un nuevo movimiento."));
             }
+
+            // Always set the system timestamp for new records
+            movimiento.fechahorasistema = DateTime.Now;
+
+            // Ensure fechahora is set if not provided
+            if (movimiento.fechahora == default)
+            {
+                movimiento.fechahora = DateTime.Now;
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return new JsonResult(BadRequest(ModelState));
+            }
+
             _context.Movimientos.Add(movimiento);
             _context.SaveChanges();
             return new JsonResult(Ok(movimiento));
@@ -84,15 +105,31 @@ namespace API.Controllers
         [HttpPut]
         public JsonResult Edit(Movimiento movimiento)
         {
+            // First clear any model state errors related to fechahorasistema
+            if (ModelState.ContainsKey("fechahorasistema"))
+            {
+                ModelState.Remove("fechahorasistema");
+            }
+
             if (movimiento.id == 0)
             {
                 return new JsonResult(BadRequest("Debe proporcionar un id válido para editar un movimiento."));
             }
+
+            if (!ModelState.IsValid)
+            {
+                return new JsonResult(BadRequest(ModelState));
+            }
+
             var movimientoInDb = _context.Movimientos.Find(movimiento.id);
             if (movimientoInDb == null)
             {
                 return new JsonResult(NotFound());
             }
+
+            // Preserve the original fechahorasistema
+            movimiento.fechahorasistema = movimientoInDb.fechahorasistema;
+
             _context.Entry(movimientoInDb).CurrentValues.SetValues(movimiento);
             _context.SaveChanges();
             return new JsonResult(Ok(movimiento));
@@ -309,19 +346,10 @@ namespace API.Controllers
 
         // Endpoint para obtener el informe general, de la vista de informe general
         [HttpGet]
-        [ResponseCache(Duration = 60)]
         public async Task<IActionResult> InformeGeneral(int? importacionId)
         {
             try
             {
-                string cacheKey = $"InformeGeneral_{importacionId}";
-
-                if (_memoryCache.TryGetValue(cacheKey, out var cachedResult))
-                {
-                    _logger.LogInformation($"Retornando datos de InformeGeneral desde caché para importacionId: {importacionId}");
-                    return Ok(cachedResult);
-                }
-
                 _logger.LogInformation($"Generando InformeGeneral para importacionId: {importacionId}");
 
                 var factors = await GetConversionFactors();
@@ -404,8 +432,6 @@ namespace API.Controllers
                     data = informeData,
                     totalMovimientos = totalMovimientos
                 };
-
-                _memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
 
                 return Ok(result);
             }

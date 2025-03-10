@@ -488,8 +488,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     IdImportacion = movimiento.idimportacion,
                     IdEmpresa = movimiento.idempresa,
                     TipoTransaccion = movimiento.tipotransaccion,
-                    CantidadRequerida = movimiento.cantidadrequerida,
-                    CantidadCamiones = movimiento.cantidadcamiones,
+                    CantidadRequerida = movimiento.cantidadrequerida ?? 0m, // Handle nullable with default
+                    CantidadCamiones = movimiento.cantidadcamiones ?? 0,    // Handle nullable with default
                     Importacion = importacionNombre,
                     Empresa = empresaNombre
                 };
@@ -512,13 +512,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                string cacheKey = $"InformeGeneral_{barcoId}";
-
-                if (_memoryCache.TryGetValue(cacheKey, out List<InformeGeneralViewModel>? cachedResult) && cachedResult != null)
-                {
-                    return cachedResult;
-                }
-
                 var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes");
                 response.EnsureSuccessStatusCode();
 
@@ -533,7 +526,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
                 {
-
                     TotalMovimientos = totalMovimientosElement.GetInt32();
                 }
 
@@ -543,11 +535,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         dataElement.GetRawText(),
                         options
                     );
-
-                    if (informes != null)
-                    {
-                        _memoryCache.Set(cacheKey, informes, TimeSpan.FromMinutes(5));
-                    }
 
                     return informes ?? new List<InformeGeneralViewModel>();
                 }
@@ -640,10 +627,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             {
                 _logger.LogInformation($"Actualizando registro requerimiento {id}...");
 
-                // Convert the view model to a Movimiento object
                 var movimiento = new Movimiento
                 {
-                    id = viewModel.IdMovimiento,
+                    id = viewModel.IdMovimiento ?? throw new InvalidOperationException("IdMovimiento cannot be null"),
                     idimportacion = viewModel.IdImportacion ?? 0,
                     idempresa = viewModel.IdEmpresa,
                     tipotransaccion = viewModel.TipoTransaccion ?? 1,
@@ -653,7 +639,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     idusuario = int.TryParse(userId, out int parsedId) ? parsedId : null
                 };
 
-                // Use the Edit endpoint with PUT method, as defined in the API controller
                 var url = $"{_apiBaseUrl}/Edit";
                 _logger.LogInformation($"Calling API endpoint: {url}");
 
@@ -684,13 +669,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                string cacheKey = $"CalculoMovimientos_{importacionId}_{idempresa}";
-
-                if (_memoryCache.TryGetValue(cacheKey, out List<Movimiento>? cachedResult) && cachedResult != null)
-                {
-                    return cachedResult;
-                }
-
                 _logger.LogDebug($"Calculando movimientos: importación {importacionId}, empresa {idempresa}");
 
                 var url = $"{_apiBaseUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}";
@@ -727,8 +705,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     escotilla = dto.escotilla,
                 }).ToList();
 
-                _memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(3));
-
                 return result;
             }
             catch (Exception ex)
@@ -737,7 +713,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 return new List<Movimiento>();
             }
         }
-
 
         public async Task<EscotillaApiResponse> GetEscotillasApiDataAsync(int importacionId)
         {

@@ -97,28 +97,15 @@
 
     <!-- Tables Container -->
     <div class="row g-4">
-        <!-- Resumen Agregado -->
-        @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
-
-        <!-- Resumen General y Escotillas -->
-        @await Component.InvokeAsync("ResumenGeneralEscotillas", new {
-        model = Model.EscotillasData,
-                capacidadTotal = Model.CapacidadTotal,
-                descargaTotal = Model.DescargaTotal,
-                diferenciaTotal = Model.DiferenciaTotal,
-                porcentajeTotal = Model.PorcentajeTotal,
-                estadoGeneral = Model.EstadoGeneral,
-                kilosRequeridos = Model.TotalKilosRequeridos // Añade este parámetro
-                })
 
         <!-- Tabla 1: Registros Individuales -->
         @await Component.InvokeAsync("RegistrosIndividuales",
-                new
-                {
-                    registros = Model.Tabla1Data,
-                    selectedBarco = ViewContext.HttpContext.Request.Query["selectedBarco"].ToString(),
-                    empresaId = ViewContext.HttpContext.Request.Query["empresaId"].ToString()
-                })
+        new
+        {
+            registros = Model.Tabla1Data,
+            selectedBarco = ViewContext.HttpContext.Request.Query["selectedBarco"].ToString(),
+            empresaId = ViewContext.HttpContext.Request.Query["empresaId"].ToString()
+        })
 
         <!-- Tabla 3: Totales por Bodega -->
         @{
@@ -138,6 +125,20 @@
         {
             @await Component.InvokeAsync("TotalesPorBodega", new { model = Model.TotalesPorBodega })
         }
+
+        <!-- Resumen Agregado -->
+        @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
+
+        <!-- Resumen General y Escotillas -->
+        @await Component.InvokeAsync("ResumenGeneralEscotillas", new {
+        model = Model.EscotillasData,
+                capacidadTotal = Model.CapacidadTotal,
+                descargaTotal = Model.DescargaTotal,
+                diferenciaTotal = Model.DiferenciaTotal,
+                porcentajeTotal = Model.PorcentajeTotal,
+                estadoGeneral = Model.EstadoGeneral,
+                kilosRequeridos = Model.TotalKilosRequeridos
+                })
     </div>
 </div>
 
@@ -146,40 +147,30 @@
     <script src="~/js/registroPesajes.js"></script>
     <script>
         $(document).ready(function () {
-            console.log("Page ready. Checking ViewBag data:");
 
-            // Log data for debugging
             var barcoOptions = @Json.Serialize(ViewBag.Barcos?.Items ?? new List<SelectListItem>());
             var empresaOptions = @Json.Serialize(ViewBag.Empresas?.Items ?? new List<SelectListItem>());
-
-            console.log("Barcos options:", barcoOptions);
-            console.log("Empresas options:", empresaOptions);
 
             initializeServerData(
                 '@Context.Request.Query["selectedBarco"]',
                 '@Context.Request.Query["empresaId"]'
             );
 
-            // Check if we need to manually set dropdown values
             const selectedBarco = '@Context.Request.Query["selectedBarco"]';
             const empresaId = '@Context.Request.Query["empresaId"]';
 
             if (selectedBarco) {
                 $('#selectedBarco').val(selectedBarco);
-                console.log('Set selectedBarco to:', selectedBarco);
             }
 
             if (empresaId) {
                 $('#empresaId').val(empresaId);
-                console.log('Set empresaId to:', empresaId);
             }
         });
 
-        // Update the event handler for the Resumen button
         $('#btnExportarExcelResumen')
             .off('click')
             .on('click', function () {
-                console.log('Exportando resumen agregado');
                 exportResumenAgregadoToExcel('tabla2', 'Resumen_Agregado');
             });
     </script>

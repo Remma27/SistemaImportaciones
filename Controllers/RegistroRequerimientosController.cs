@@ -69,23 +69,48 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RegistroRequerimientosViewModel viewModel, int? selectedBarco)
         {
+            if (viewModel.IdImportacion == null && selectedBarco.HasValue)
+            {
+                viewModel.IdImportacion = selectedBarco.Value;
+            }
+
+            foreach (var key in ModelState.Keys.ToList())
+            {
+                var state = ModelState[key];
+                if (state != null && state.Errors.Count > 0)
+                {
+                    foreach (var error in state.Errors.ToList())
+                    {
+                        _logger.LogError($"Validation error for '{key}': {error.ErrorMessage}");
+                    }
+                }
+            }
+
+            _logger.LogInformation($"Received viewModel: FechaHora={viewModel.FechaHora}, " +
+                $"IdImportacion={viewModel.IdImportacion}, IdEmpresa={viewModel.IdEmpresa}, " +
+                $"CantidadRequerida={viewModel.CantidadRequerida}, CantidadCamiones={viewModel.CantidadCamiones}");
+
             if (!ModelState.IsValid)
             {
-                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");
-                ViewBag.IdImportacion = viewModel.IdImportacion;
+                this.Error("Error al crear el requerimiento. Revise los campos obligatorios.");
+
+                ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
+                ViewBag.IdImportacion = viewModel.IdImportacion ?? selectedBarco;
                 ViewBag.NombreBarco = (await _movimientoService.GetBarcosSelectListAsync())
-                    .FirstOrDefault(b => b.Value == viewModel.IdImportacion.ToString())?.Text ?? "Desconocido";
+                    .FirstOrDefault(b => b.Value == (viewModel.IdImportacion ?? selectedBarco).ToString())?.Text ?? "Desconocido";
+
                 return View(viewModel);
             }
 
             var movimiento = new Movimiento
             {
-                fechahora = viewModel.FechaHora ?? DateTime.Now,
+                id = viewModel.IdMovimiento ?? 0,
                 idimportacion = viewModel.IdImportacion ?? 0,
                 idempresa = viewModel.IdEmpresa,
                 tipotransaccion = viewModel.TipoTransaccion ?? 1,
                 cantidadrequerida = viewModel.CantidadRequerida,
                 cantidadcamiones = viewModel.CantidadCamiones,
+                fechahora = viewModel.FechaHora ?? DateTime.Now,
                 idusuario = HttpContext.User.GetUserId()
             };
 
@@ -97,6 +122,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
             catch (Exception ex)
             {
+                this.Error("Error al crear el movimiento: " + ex.Message);
                 _logger.LogError(ex, "Error al crear el movimiento");
                 ModelState.AddModelError("", "Ocurrió un error al crear el movimiento.");
                 ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text");

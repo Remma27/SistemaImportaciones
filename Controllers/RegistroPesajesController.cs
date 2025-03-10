@@ -17,6 +17,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         private readonly IBodegaService _bodegaService;
         private readonly ILogger<RegistroPesajesController> _logger;
         private readonly IImportacionService _importacionService;
+        private readonly IMemoryCache _memoryCache;
 
         public RegistroPesajesController(
             IMovimientoService movimientoService,
@@ -29,6 +30,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _bodegaService = bodegaService;
             _logger = logger;
             _importacionService = importacionService;
+            _memoryCache = memoryCache;
         }
 
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId, bool refreshData = false)
@@ -36,6 +38,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var watch = Stopwatch.StartNew();
             try
             {
+                // Disable caching for this response
+                Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                Response.Headers["Pragma"] = "no-cache";
+                Response.Headers["Expires"] = "0";
+
                 var viewModel = new RegistroPesajesViewModel
                 {
                     Tabla1Data = new List<RegistroPesajesIndividual>(),
@@ -55,7 +62,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 try
                 {
-                    await LoadEscotillasData(viewModel, importacionId);
+                    await LoadEscotillasData(viewModel, importacionId, true);
                 }
                 catch (Exception ex)
                 {
@@ -65,7 +72,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 try
                 {
-                    await LoadTabla2Data(viewModel, importacionId);
+                    await LoadTabla2Data(viewModel, importacionId, true);
                 }
                 catch (Exception ex)
                 {
@@ -77,7 +84,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     try
                     {
-                        await LoadTabla1Data(viewModel, importacionId, empresaId.Value);
+                        await LoadTabla1Data(viewModel, importacionId, empresaId.Value, true);
                     }
                     catch (Exception ex)
                     {
@@ -111,10 +118,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        private async Task LoadTabla1Data(RegistroPesajesViewModel viewModel, int importacionId, int empresaId)
+        private async Task LoadTabla1Data(RegistroPesajesViewModel viewModel, int importacionId, int empresaId, bool refreshData = false)
         {
             try
             {
+                // Always fetch fresh data from the database
+                _logger.LogInformation($"Cargando datos frescos para tabla 1, importación: {importacionId}, empresa: {empresaId}");
                 var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId);
 
                 if (calculo != null && calculo.Any())
@@ -152,10 +161,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        private async Task LoadTabla2Data(RegistroPesajesViewModel viewModel, int importacionId)
+        private async Task LoadTabla2Data(RegistroPesajesViewModel viewModel, int importacionId, bool refreshData)
         {
             try
             {
+                // Always fetch fresh data from the database
+                _logger.LogInformation($"Cargando datos frescos para tabla 2, importación: {importacionId}");
                 var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
 
                 if (informeGeneral != null)
@@ -181,11 +192,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
-        private async Task LoadEscotillasData(RegistroPesajesViewModel viewModel, int importacionId)
+        private async Task LoadEscotillasData(RegistroPesajesViewModel viewModel, int importacionId, bool refreshData)
         {
             try
             {
-                _logger.LogInformation($"Solicitando datos de escotillas para importación {importacionId}");
+                // Always fetch fresh data from the database
+                _logger.LogInformation($"Cargando datos frescos de escotillas para importación {importacionId}");
                 var escotillasData = await _movimientoService.GetEscotillasDataAsync(importacionId);
 
                 if (escotillasData == null)
@@ -317,8 +329,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var result = await _movimientoService.CreateAsync(movimiento);
                 TempData["Success"] = "Registro creado exitosamente.";
 
+                // Always force data reload after create
                 return RedirectToAction(nameof(Index),
-                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
+                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa, refreshData = true });
             }
             catch (Exception ex)
             {
@@ -369,8 +382,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.UpdateAsync(id, movimiento);
                 TempData["Success"] = "Registro actualizado exitosamente.";
 
+                // Always force data reload after edit
                 return RedirectToAction(nameof(Index),
-                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa });
+                    new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa, refreshData = true });
             }
             catch (Exception ex)
             {
@@ -445,7 +459,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.DeleteAsync(id);
                 TempData["Success"] = "Registro eliminado correctamente";
 
-                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+                // Always force data reload after delete
+                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId, refreshData = true });
             }
             catch (Exception ex)
             {
@@ -503,6 +518,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var watch = Stopwatch.StartNew();
             try
             {
+                // Disable caching for this response
+                Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                Response.Headers["Pragma"] = "no-cache";
+                Response.Headers["Expires"] = "0";
+
                 var barcosData = await _movimientoService.GetBarcosSelectListAsync();
                 var barcos = barcosData?.ToList() ?? new List<SelectListItem>();
                 ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
@@ -536,6 +556,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
+                // Disable caching for this response
+                Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+                Response.Headers["Pragma"] = "no-cache";
+                Response.Headers["Expires"] = "0";
+
                 int? importacionId = null;
 
                 if (!string.IsNullOrEmpty(selectedBarco) && int.TryParse(selectedBarco, out int barcoIdFromString))

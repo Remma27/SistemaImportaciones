@@ -224,11 +224,11 @@ namespace API.Controllers
 
                 var empresas = empresasEntities
                     .Where(e => empresaIds.Contains(e.id_empresa))
-                    .ToDictionary(e => e.id_empresa, e => e.nombreempresa ?? "Sin Empresa");
+                    .ToDictionary(e => e.id_empresa, e => e.nombreempresa ?? " - ");
 
                 var bodegas = bodegasEntities
                     .Where(b => bodegaIds.Contains(b.id))
-                    .ToDictionary(b => b.id, b => b.bodega ?? "Sin Bodega");
+                    .ToDictionary(b => b.id, b => b.bodega ?? " - ");
 
                 var factors = await GetConversionFactors();
 
@@ -257,8 +257,8 @@ namespace API.Controllers
                         Id = m.id,
                         Escotilla = m.escotilla,
                         IdEmpresa = m.idempresa,
-                        Empresa = empresas.ContainsKey(m.idempresa) ? empresas[m.idempresa] : "Sin Empresa",
-                        EmpresaNombre = empresas.ContainsKey(m.idempresa) ? empresas[m.idempresa] : "Sin Empresa",
+                        Empresa = empresas.ContainsKey(m.idempresa) ? empresas[m.idempresa] : " - ",
+                        EmpresaNombre = empresas.ContainsKey(m.idempresa) ? empresas[m.idempresa] : " - ",
                         Bodega = m.bodega.HasValue && bodegas.ContainsKey(m.bodega.Value) ? bodegas[m.bodega.Value] : "Sin Bodega",
                         Guia = m.guia,
                         GuiaAlterna = m.guia_alterna,

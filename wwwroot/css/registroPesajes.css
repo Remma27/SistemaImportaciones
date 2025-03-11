@@ -348,18 +348,16 @@ tr.totals td {
 
 /* Unit toggle columns */
 .unit-toggle-columns {
-    display: none;
     opacity: 0;
-    width: 0;
-    padding: 0;
+    width: auto !important;
+    min-width: 100px;
+    max-width: 120px;
+    display: none;
     transition: all 0.3s ease;
-    background-color: transparent !important;
 }
 
 .unit-toggle-columns.visible {
     opacity: 1;
-    width: auto;
-    padding: 0.75rem;
     display: table-cell;
     animation: fadeIn 0.3s ease;
     background-color: transparent !important;
@@ -397,10 +395,9 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 /* Dual value cells (for unit conversion) */
 .dual-value-cell {
     position: relative;
-    min-height: 48px;
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
-    background-color: transparent !important;
+    padding: 0.75rem;
+    min-height: 38px;
+    white-space: nowrap;
 }
 
 .dual-value-cell .top-value {
@@ -417,7 +414,8 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 
 .dual-value-cell .bottom-value {
     display: block;
-    font-size: 0.9em;
+    font-size: inherit; /* Heredar del elemento padre */
+    line-height: 1.4;
     color: #555;
 }
 
@@ -847,4 +845,95 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 .table tfoot .conversion-cell .divider {
     border-top: 1px solid #dee2e6;
     margin: 0.25rem 0;
+}
+
+/* Estilos para compactar filas de unidades alternativas */
+.unit-toggle-row td {
+    padding: 0.75rem;
+}
+
+/* Reducir el ancho de las columnas de conversión */
+.unit-toggle-columns {
+    width: 90px !important; /* Reducido de 120px a 90px */
+    max-width: 90px !important;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+}
+
+/* Optimizar el formato dentro de las celdas */
+.dual-value-cell {
+    white-space: nowrap;
+    padding: 0.5rem !important;
+}
+
+.dual-value-cell .top-value,
+.dual-value-cell .bottom-value {
+    font-size: 0.8rem;
+    display: block;
+    line-height: 1.1;
+}
+
+.dual-value-cell .divider {
+    display: none; /* Eliminar el divisor si existe */
+}
+
+/* Asegurar que el encabezado también sea compacto */
+th.unit-toggle-columns {
+    padding: 0.25rem !important;
+}
+
+th.unit-toggle-columns div {
+    font-size: 0.875rem;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+}
+
+th.unit-toggle-columns small {
+    font-size: 0.75rem;
+}
+
+/* Asegurar que la tabla ajuste su layout */
+.table-fixed-header {
+    table-layout: fixed;
+}
+
+/* Asegurar que el encabezado también sea compacto */
+th.unit-toggle-columns div {
+    font-size: 0.875rem;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+}
+
+th.unit-toggle-columns div small {
+    font-size: 0.75rem;
+}
+
+/* Estilos para mejorar la presentación de la fila de totales */
+.table-fixed-header tfoot tr.table-secondary {
+    background-color: #f3f3f3 !important;
+    border-top: 1px solid #dee2e6 !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+.table-fixed-header tfoot tr.table-secondary td {
+    padding: 0.65rem 0.75rem !important;
+    vertical-align: middle !important;
+    line-height: 1.5 !important;
+}
+
+/* Arreglar el colspan para alineación correcta */
+.table-fixed-header tfoot tr.table-secondary td:first-child {
+    text-align: right !important;
+}
+
+/* Mejorar los bordes */
+.table-fixed-header tfoot .border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+/* Eliminar bordes innecesarios en la tabla */
+.table-fixed-header tfoot .border-top {
+    border-top: 1px solid #dee2e6 !important;
 }

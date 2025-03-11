@@ -13,7 +13,7 @@
             @if (Model == null || !Model.Any())
             {
                 <div class="py-4 px-3">
-                    <div class="alert alert-info text-center p-4 mb-0 mx-auto" style="max-width: 1200px;">
+                    <div class="alert alert-info text-center p-4 mb-0 mx-auto" style="max-width: 1580px;">
                         <i class="fas fa-info-circle fa-2x mb-3"></i>
                         <h5 class="alert-heading mb-2">No hay registros disponibles</h5>
                         <p class="mb-0">Seleccione una importación para ver el resumen agregado.</p>
@@ -23,7 +23,7 @@
             else
             {
                 <div class="table-scroll">
-                    <table id="tabla2" class="table table-hover align-middle table-fixed-header mb-0">
+                    <table id="tabla2" class="table table-striped table-hover align-middle table-fixed-header mb-0">
                         <thead>
                             <tr>
                                 <th class="bg-white text-black">Empresa</th>
@@ -109,10 +109,9 @@
                                 <td class="text-end">@porcentajeTotal.ToString("N2")%</td>
                             </tr>
 
-                            <tr class="table-secondary border-top">
-                                <td colspan="7" class="border-end"></td>
-                                <td class="text-end border-end fw-bold">Total de entregas registradas:</td>
-                                <td class="text-center fw-bold">@ViewBag.TotalMovimientos</td>
+                            <tr class="table-secondary">
+                                <td colspan="6" class="text-end fw-bold border-end">Total de entregas registradas:</td>
+                                <td class="text-center fw-bold" colspan="3">@ViewBag.TotalMovimientos</td>
                             </tr>
                         </tfoot>
                     </table>

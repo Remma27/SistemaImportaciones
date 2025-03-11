@@ -524,9 +524,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
+                // Add debug logging to check value
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
                 {
                     TotalMovimientos = totalMovimientosElement.GetInt32();
+                    _logger.LogInformation($"Total movimientos from API: {TotalMovimientos}");
                 }
 
                 if (root.TryGetProperty("data", out var dataElement))
@@ -863,7 +865,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                                     GuiaAlterna = GetStringValue(element, "guiaAlterna"),
                                     Placa = GetStringValue(element, "placa"),
                                     PlacaAlterna = GetStringValue(element, "placaAlterna"),
-                                    PesoEntregado = GetDecimalValue(element, "pesoEntregadoKg"),
+                                    PesoEntregado = GetDecimalValue(element, "pesoEntregado"),
                                     PesoRequerido = GetDecimalValue(element, "cantidadRetirarKg"),
                                     CantidadRetiradaKg = GetDecimalValue(element, "cantidadRetiradaKg"),
                                     PesoFaltante = GetDecimalValue(element, "pesoFaltante"),

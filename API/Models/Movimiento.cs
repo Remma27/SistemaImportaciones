@@ -14,7 +14,7 @@ namespace API.Models
         public DateTime fechahora { get; set; }
 
         //[Required]
-        public DateTime fechahorasistema { get; set; }
+        public DateTime? fechahorasistema { get; set; }
 
         [ForeignKey("Importacion")]
         [Required]

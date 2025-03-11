@@ -169,6 +169,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 _logger.LogInformation($"Cargando datos frescos para tabla 2, importación: {importacionId}");
                 var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
 
+                // Log the TotalMovimientos value after API call
+                _logger.LogInformation($"TotalMovimientos retrieved from API: {_movimientoService.TotalMovimientos}");
+
                 if (informeGeneral != null)
                 {
                     viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
@@ -183,6 +186,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         ConteoPlacas = ig.ConteoPlacas,
                         PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
                     }).ToList();
+
+                    // Also store the value in ViewBag for debugging purposes
+                    ViewBag.TotalMovimientos = _movimientoService.TotalMovimientos;
+                    _logger.LogInformation($"ViewBag.TotalMovimientos set to: {_movimientoService.TotalMovimientos}");
                 }
             }
             catch (Exception ex)

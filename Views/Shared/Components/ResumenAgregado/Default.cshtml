@@ -32,13 +32,13 @@
                                 <th class="bg-white text-black text-end column-md">Desc. (Kg)</th>
                                 <th class="text-end column-md unit-toggle-columns">
                                     <div>Desc.</div>
-                                    <div><small>Lbs / Qq</small></div>
+                                    <div><small>Qq / Lbs</small></div>
                                 </th>
                                 <th class="bg-white text-black text-end column-md">Falt. (Kg)</th>
                                 <th class="bg-white text-black text-end column-sm">Falt. (Ton)</th>
                                 <th class="text-end column-md unit-toggle-columns">
                                     <div>Falt.</div>
-                                    <div><small>Lbs / Qq</small></div>
+                                    <div><small>Qq / Lbs</small></div>
                                 </th>
                                 <th class="bg-white text-black text-end column-sm">Cam. Falt.</th>
                                 <th class="bg-white text-black text-center column-sm">Placas</th>
@@ -54,16 +54,16 @@
                                     <td class="text-end">@item.ToneladasRequeridas.ToString("N2")</td>
                                     <td class="text-end">@item.DescargaKilos.ToString("N0")</td>
                                     <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                        <span class="top-value">@((item.DescargaKilos * 2.20462M).ToString("N0")) lbs</span>
+                                        <span class="top-value">@((item.DescargaKilos / 45.359237M).ToString("N2")) qq</span>
                                         <span class="divider"></span>
-                                        <span class="bottom-value">@((item.DescargaKilos / 45.359237M).ToString("N2")) qq</span>
+                                        <span class="bottom-value">@Math.Round(item.DescargaKilos * 2.20462M).ToString("N0") lbs</span>
                                     </td>
                                     <td class="text-end">@item.FaltanteKilos.ToString("N0")</td>
                                     <td class="text-end">@item.ToneladasFaltantes.ToString("N2")</td>
                                     <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                        <span class="top-value">@((item.FaltanteKilos * 2.20462M).ToString("N0")) lbs</span>
+                                        <span class="top-value">@((item.FaltanteKilos / 45.359237M).ToString("N2")) qq</span>
                                         <span class="divider"></span>
-                                        <span class="bottom-value">@((item.FaltanteKilos / 45.359237M).ToString("N2")) qq</span>
+                                        <span class="bottom-value">@Math.Round(item.FaltanteKilos * 2.20462M).ToString("N0") lbs</span>
                                     </td>
                                     <td class="text-end">@item.CamionesFaltantes.ToString("N2")</td>
                                     <td class="text-center">@item.ConteoPlacas</td>
@@ -78,16 +78,16 @@
                                 <td class="text-end">@Model.Sum(x => x.ToneladasRequeridas).ToString("N2")</td>
                                 <td class="text-end">@Model.Sum(x => x.DescargaKilos).ToString("N0")</td>
                                 <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                    <span class="top-value">@((Model.Sum(x => x.DescargaKilos) * 2.20462M).ToString("N0")) lbs</span>
+                                    <span class="top-value">@((Model.Sum(x => x.DescargaKilos) / 45.359237M).ToString("N2")) qq</span>
                                     <span class="divider"></span>
-                                    <span class="bottom-value">@((Model.Sum(x => x.DescargaKilos) / 45.359237M).ToString("N2")) qq</span>
+                                    <span class="bottom-value">@Math.Round(Model.Sum(x => x.DescargaKilos) * 2.20462M).ToString("N0") lbs</span>
                                 </td>
                                 <td class="text-end">@Model.Sum(x => x.FaltanteKilos).ToString("N0")</td>
                                 <td class="text-end">@Model.Sum(x => x.ToneladasFaltantes).ToString("N2")</td>
                                 <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                    <span class="top-value">@((Model.Sum(x => x.FaltanteKilos) * 2.20462M).ToString("N0")) lbs</span>
+                                    <span class="top-value">@((Model.Sum(x => x.FaltanteKilos) / 45.359237M).ToString("N2")) qq</span>
                                     <span class="divider"></span>
-                                    <span class="bottom-value">@((Model.Sum(x => x.FaltanteKilos) / 45.359237M).ToString("N2")) qq</span>
+                                    <span class="bottom-value">@Math.Round(Model.Sum(x => x.FaltanteKilos) * 2.20462M).ToString("N0") lbs</span>
                                 </td>
                                 <td class="text-end">@Model.Sum(x => x.CamionesFaltantes).ToString("N2")</td>
                                 <td class="text-center">@Model.Sum(x => x.ConteoPlacas)</td>
@@ -99,6 +99,31 @@
                                                     : 0;
                                     }
                                     @porcentaje.ToString("N2")%
+                                </td>
+                            </tr>
+                            <tr class="table-secondary">
+                                <td colspan="10" class="text-end">Total de entregas registradas:</td>
+                                <td class="text-center fw-bold">
+                                    @{
+                                        var totalCount = 0;
+                                        if (ViewBag.TotalMovimientos != null)
+                                        {
+                                            totalCount = ViewBag.TotalMovimientos;
+                                        }
+                                        else if (ViewBag.totalMovimientos != null)
+                                        {
+                                            totalCount = ViewBag.totalMovimientos;
+                                        }
+                                        else if (ViewBag.Total != null)
+                                        {
+                                            totalCount = ViewBag.Total;
+                                        }
+                                        else if (ViewBag.Conteo != null)
+                                        {
+                                            totalCount = ViewBag.Conteo;
+                                        }
+                                    }
+                                    @totalCount
                                 </td>
                             </tr>
                         </tfoot>

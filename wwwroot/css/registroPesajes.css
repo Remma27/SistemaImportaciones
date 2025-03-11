@@ -31,10 +31,19 @@
   BASE STYLES
 ==============================================*/
 .container-fluid {
-    max-width: 100%;
-    padding-right: 1rem;
-    padding-left: 1rem;
+    max-width: 100%; /* Increased from 99.5% to 100% */
+    padding-right: 0.25rem !important; /* Reduced from 0.5rem to 0.25rem */
+    padding-left: 0.25rem !important;
     overflow: visible;
+    margin: 0 auto;
+}
+
+@media (min-width: 1200px) {
+    .container-fluid {
+        padding-left: 0.5rem !important; /* Reduced from 1rem to 0.5rem */
+        padding-right: 0.5rem !important;
+        max-width: 99.75%; /* Increased from 99% to 99.75% */
+    }
 }
 
 /*==============================================
@@ -140,6 +149,50 @@
     position: sticky;
     bottom: 0;
     z-index: 2;
+}
+
+.table tfoot {
+    border-top: 2px solid var(--border-color);
+}
+
+.table tfoot tr.table-purple {
+    background-color: var(--purple-color) !important;
+    color: var(--text-white) !important;
+}
+
+.table tfoot tr.table-purple td {
+    background-color: var(--purple-color) !important;
+    color: var(--text-white) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.table tfoot tr.table-secondary {
+    background-color: var(--light-bg) !important;
+    border-top: 2px solid var(--border-color) !important;
+}
+
+/* Fix for the conversion cells in footer */
+.table tfoot .conversion-cell {
+    background-color: transparent !important;
+}
+
+.table tfoot tr.table-purple .conversion-cell {
+    color: var(--text-white) !important;
+}
+
+.table tfoot tr.table-purple .conversion-cell .top-value,
+.table tfoot tr.table-purple .conversion-cell .bottom-value {
+    color: var(--text-white) !important;
+}
+
+/* Ensure proper spacing */
+.table tfoot tr td {
+    padding: 0.75rem !important;
+}
+
+/* Fix borders */
+.table tfoot tr td.border-end {
+    border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Table hover effect */
@@ -766,4 +819,32 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 .table thead th.unit-toggle-columns.visible {
     background-color: white !important;
     color: var(--text-dark) !important;
+}
+
+/* Table footer styling */
+.table tfoot {
+    border-top: 2px solid #dee2e6;
+}
+
+.table tfoot tr.table-light {
+    background-color: #f8f9fa !important;
+}
+
+.table tfoot tr td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table tfoot .border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+/* Conversion cell styling in footer */
+.table tfoot .conversion-cell {
+    padding: 0.5rem 0.75rem;
+}
+
+.table tfoot .conversion-cell .divider {
+    border-top: 1px solid #dee2e6;
+    margin: 0.25rem 0;
 }

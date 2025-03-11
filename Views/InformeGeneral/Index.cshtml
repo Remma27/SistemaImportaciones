@@ -16,7 +16,7 @@
 }
 
 <div class="container-fluid py-4">
-    <div class="card shadow-lg border-0">
+    <div class="card">
         <div class="card-header bg-success bg-gradient text-white py-3">
             <div class="row g-2 align-items-center">
                 <div class="col-12 col-md-4 mb-2 mb-md-0">
@@ -68,13 +68,13 @@
 
         <div class="card-body p-0">
             @if (string.IsNullOrEmpty(selectedBarco))
-                        {
-            <div class="alert alert-info m-4 text-center">
-                <i class="fas fa-info-circle fa-lg me-2"></i>
-                Seleccione una importación para ver el informe
-            </div>
-                        }
-                        else if (!(modelData?.Any() == true))
+            {
+                <div class="alert alert-info m-4 text-center">
+                    <i class="fas fa-info-circle fa-lg me-2"></i>
+                    Seleccione una importación para ver el informe
+                </div>
+            }
+            else if (!(modelData?.Any() == true))
             {
                 <div class="alert alert-warning m-4 text-center">
                     <i class="fas fa-exclamation-triangle fa-lg me-2"></i>
@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    <div class="card shadow-lg border-0 mt-4" id="cardEscotillas">
+    <div class="card mt-4" id="cardEscotillas">
         <div class="card-body p-0">
             @if (Model != null)
             {

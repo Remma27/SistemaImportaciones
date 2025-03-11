@@ -35,6 +35,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId, bool refreshData = false)
         {
+            ViewData["FullWidth"] = true;
             var watch = Stopwatch.StartNew();
             try
             {

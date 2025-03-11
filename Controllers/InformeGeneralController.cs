@@ -20,6 +20,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         public async Task<IActionResult> Index(int? selectedBarco)
         {
+            ViewData["FullWidth"] = true;
             var viewModel = new RegistroPesajesViewModel();
             ViewBag.Barcos = new SelectList(await _movimientoService.GetBarcosSelectListAsync(), "Value", "Text", selectedBarco);
 

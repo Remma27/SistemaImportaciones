@@ -72,6 +72,9 @@
     .card-body {
         padding: var(--card-spacing-md);
     }
+    .row.gy-3 {
+        --bs-gutter-y: 1.5rem;
+    }
 }
 
 .bg-gradient.bg-primary {
@@ -183,11 +186,6 @@
 .table tfoot tr.table-purple .conversion-cell .top-value,
 .table tfoot tr.table-purple .conversion-cell .bottom-value {
     color: var(--text-white) !important;
-}
-
-/* Ensure proper spacing */
-.table tfoot tr td {
-    padding: 0.75rem !important;
 }
 
 /* Fix borders */
@@ -354,6 +352,8 @@ tr.totals td {
     max-width: 120px;
     display: none;
     transition: all 0.3s ease;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
 }
 
 .unit-toggle-columns.visible {
@@ -395,7 +395,7 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 /* Dual value cells (for unit conversion) */
 .dual-value-cell {
     position: relative;
-    padding: 0.75rem;
+    padding: 0.5rem !important;
     min-height: 38px;
     white-space: nowrap;
 }
@@ -404,18 +404,18 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
     display: block;
     font-weight: 500;
     color: #0056b3;
+    font-size: 0.8rem;
+    line-height: 1.1;
 }
 
 .dual-value-cell .divider {
-    display: block;
-    border-top: 1px dashed rgba(0, 0, 0, 0.2);
-    margin: 3px 0;
+    display: none; /* Eliminar el divisor si existe */
 }
 
 .dual-value-cell .bottom-value {
     display: block;
-    font-size: inherit; /* Heredar del elemento padre */
-    line-height: 1.4;
+    font-size: 0.8rem;
+    line-height: 1.1;
     color: #555;
 }
 
@@ -433,7 +433,7 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
     background-color: rgba(240, 245, 255, 0.7) !important;
 }
 
-/* Column widths */
+/* Column widths - estos serán sobrescritos en pantallas pequeñas */
 .column-sm {
     width: 8%;
 }
@@ -635,6 +635,7 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
     justify-content: center;
     margin-left: 5px;
     transition: all 0.2s ease;
+    min-width: 42px;
 }
 
 /* Handle the toggle units button differently since it has text */
@@ -648,233 +649,13 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 .action-buttons-responsive {
     display: flex;
     flex-wrap: nowrap;
-    gap: 5px;
-}
-
-@media (max-width: 576px) {
-    .action-buttons-responsive {
-        justify-content: center;
-        width: 100%;
-        margin-top: 5px;
-    }
-}
-
-/* Uniform action buttons styling */
-.action-buttons-responsive {
-    display: flex;
-    flex-wrap: nowrap;
     gap: 8px;
-}
-
-/* Base styles for all action buttons */
-.btn-action {
-    min-width: 42px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Icon-only buttons (fixed square size) */
-.btn-action:not(#toggleUnits) {
-    width: 42px;
-    padding: 0;
 }
 
 /* Toggle units button (with text) gets horizontal padding */
 #toggleUnits {
     padding-left: 12px;
     padding-right: 12px;
-}
-
-@media (max-width: 576px) {
-    .action-buttons-responsive {
-        justify-content: center;
-        width: 100%;
-    }
-}
-
-/*==============================================
-  RESPONSIVE LAYOUT
-==============================================*/
-/* Consolidated media queries */
-@media (min-width: 768px) {
-    .card-body {
-        padding: var(--card-spacing-md);
-    }
-    .row.gy-3 {
-        --bs-gutter-y: 1.5rem;
-    }
-}
-
-@media (min-width: 1200px) {
-    #tabla1,
-    #tabla2,
-    #tabla3,
-    .table-responsive-custom .table {
-        min-width: auto;
-        width: 100%;
-    }
-}
-
-@media (max-width: 1199.98px) {
-    #tabla1 {
-        min-width: 1200px;
-    }
-    #tabla2,
-    .table-responsive-custom .table {
-        min-width: 1000px;
-    }
-    #tabla3 {
-        min-width: 800px;
-    }
-    .table-scroll .p-3.bg-light.border-top.text-center {
-        width: max-content;
-        min-width: 100%;
-    }
-    .container-fluid {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .form-floating {
-        margin-bottom: 1rem;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .action-buttons {
-        justify-content: center;
-    }
-    .action-buttons .btn span {
-        display: none;
-    }
-    .action-buttons .action-btn {
-        min-width: auto;
-        width: 38px;
-        height: 38px;
-    }
-    .action-buttons .action-btn i {
-        margin-right: 0;
-    }
-}
-
-@media (max-width: 575.98px) {
-    .table th,
-    .table td {
-        font-size: 0.8rem;
-        padding: 0.5rem;
-    }
-    .card-header h4,
-    .card-header h5 {
-        font-size: 1rem;
-    }
-    .btn {
-        padding: 0.3rem 0.5rem;
-        font-size: 0.8rem;
-        height: 34px;
-    }
-    .btn i {
-        font-size: 0.8rem;
-    }
-    .action-buttons .action-btn,
-    .action-buttons .view-controls .btn {
-        width: 34px;
-        height: 34px;
-    }
-    .table tbody tr td[colspan] {
-        white-space: normal;
-        min-width: 200px;
-    }
-}
-
-/* Fix for transparent header columns - ensure they have white background */
-.table > thead > tr > th.unit-toggle-columns,
-.table > thead > tr > th.unit-toggle-columns.visible {
-    background-color: white !important;
-    color: var(--text-dark) !important;
-}
-
-/* Ensure column headers with specific unit conversion classes have white background */
-.table > thead > tr > th.conversion-header,
-.table > thead > tr > th[data-unit-column='true'],
-.table > thead > tr > th.unit-toggle-header {
-    background-color: white !important;
-    color: var(--text-dark) !important;
-}
-
-/* Make header row consistent */
-.table > thead > tr {
-    background-color: white;
-}
-
-/* Override any other transparent backgrounds in table headers */
-.table-purple thead th.unit-toggle-columns,
-.bg-purple thead th.unit-toggle-columns,
-.table thead th.unit-toggle-columns,
-.table thead th.unit-toggle-columns.visible {
-    background-color: white !important;
-    color: var(--text-dark) !important;
-}
-
-/* Table footer styling */
-.table tfoot {
-    border-top: 2px solid #dee2e6;
-}
-
-.table tfoot tr.table-light {
-    background-color: #f8f9fa !important;
-}
-
-.table tfoot tr td {
-    padding: 0.75rem;
-    vertical-align: middle;
-}
-
-.table tfoot .border-end {
-    border-right: 1px solid #dee2e6 !important;
-}
-
-/* Conversion cell styling in footer */
-.table tfoot .conversion-cell {
-    padding: 0.5rem 0.75rem;
-}
-
-.table tfoot .conversion-cell .divider {
-    border-top: 1px solid #dee2e6;
-    margin: 0.25rem 0;
-}
-
-/* Estilos para compactar filas de unidades alternativas */
-.unit-toggle-row td {
-    padding: 0.75rem;
-}
-
-/* Reducir el ancho de las columnas de conversión */
-.unit-toggle-columns {
-    width: 90px !important; /* Reducido de 120px a 90px */
-    max-width: 90px !important;
-    padding-left: 0.25rem !important;
-    padding-right: 0.25rem !important;
-}
-
-/* Optimizar el formato dentro de las celdas */
-.dual-value-cell {
-    white-space: nowrap;
-    padding: 0.5rem !important;
-}
-
-.dual-value-cell .top-value,
-.dual-value-cell .bottom-value {
-    font-size: 0.8rem;
-    display: block;
-    line-height: 1.1;
-}
-
-.dual-value-cell .divider {
-    display: none; /* Eliminar el divisor si existe */
 }
 
 /* Asegurar que el encabezado también sea compacto */
@@ -898,16 +679,18 @@ th.unit-toggle-columns small {
     table-layout: fixed;
 }
 
-/* Asegurar que el encabezado también sea compacto */
-th.unit-toggle-columns div {
-    font-size: 0.875rem;
-    line-height: 1.2;
-    margin: 0;
-    padding: 0;
+/* Table footer styling */
+.table tfoot tr.table-light {
+    background-color: #f8f9fa !important;
 }
 
-th.unit-toggle-columns div small {
-    font-size: 0.75rem;
+.table tfoot .border-end {
+    border-right: 1px solid #dee2e6 !important;
+}
+
+/* Conversion cell styling in footer */
+.table tfoot .conversion-cell {
+    padding: 0.5rem 0.75rem;
 }
 
 /* Estilos para mejorar la presentación de la fila de totales */
@@ -928,12 +711,219 @@ th.unit-toggle-columns div small {
     text-align: right !important;
 }
 
-/* Mejorar los bordes */
-.table-fixed-header tfoot .border-end {
-    border-right: 1px solid #dee2e6 !important;
+/* Fix for transparent header columns - ensure they have white background */
+.table > thead > tr > th.unit-toggle-columns,
+.table > thead > tr > th.unit-toggle-columns.visible,
+.table > thead > tr > th.conversion-header,
+.table > thead > tr > th[data-unit-column='true'],
+.table > thead > tr > th.unit-toggle-header,
+.table-purple thead th.unit-toggle-columns,
+.bg-purple thead th.unit-toggle-columns,
+.table thead th.unit-toggle-columns,
+.table thead th.unit-toggle-columns.visible {
+    background-color: white !important;
+    color: var(--text-dark) !important;
 }
 
-/* Eliminar bordes innecesarios en la tabla */
-.table-fixed-header tfoot .border-top {
-    border-top: 1px solid #dee2e6 !important;
+/* Make header row consistent */
+.table > thead > tr {
+    background-color: white;
+}
+
+/*==============================================
+  RESPONSIVE LAYOUT
+==============================================*/
+/* Min-width breakpoints */
+@media (min-width: 1200px) {
+    #tabla1,
+    #tabla2,
+    #tabla3,
+    .table-responsive-custom .table {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+/* Make tables more responsive on small screens */
+@media (max-width: 1199.98px) {
+    /* Override fixed-width layouts for better responsiveness */
+    .table-scroll table,
+    .table-fixed-header,
+    #tabla1,
+    #tabla2,
+    #tabla3 {
+        table-layout: auto !important;
+        width: 100% !important;
+    }
+
+    /* Allow columns to adapt to their content */
+    .column-sm,
+    .column-md,
+    .column-lg,
+    .table th,
+    .table td {
+        width: auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+    }
+
+    /* Keep numeric columns compact */
+    td.text-end:not(.unit-toggle-columns),
+    th.text-end:not(.unit-toggle-columns) {
+        white-space: nowrap;
+        min-width: 10px !important;
+    }
+
+    /* First column should be prioritized */
+    .table tr td:first-child,
+    .table tr th:first-child {
+        min-width: 120px !important;
+    }
+
+    /* Empresa/Name column should be prioritized */
+    td[data-field='Empresa'],
+    td[data-field='Agroindustria'],
+    td[data-field='Nombre'],
+    td[data-field='Name'] {
+        min-width: 120px !important;
+    }
+
+    /* Handle text overflow for better mobile viewing */
+    .table td:not(.text-end):not(:first-child) {
+        max-width: 80px !important;
+        white-space: normal !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Stop forcing minimum widths on tables */
+    .table-scroll .table,
+    .table-responsive-custom .table {
+        min-width: auto !important;
+        width: 100% !important;
+    }
+
+    /* Make unit toggle columns more compact */
+    .unit-toggle-columns.visible {
+        width: 80px !important;
+        min-width: 80px !important;
+        max-width: 80px !important;
+        padding: 0.25rem !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+
+    .table td:not(.text-end):not(:first-child) {
+        max-width: 70px !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .action-buttons {
+        justify-content: center;
+    }
+
+    .action-buttons .btn span {
+        display: none;
+    }
+
+    .action-buttons .action-btn {
+        min-width: auto;
+        width: 38px;
+        height: 38px;
+    }
+
+    .action-buttons .action-btn i {
+        margin-right: 0;
+    }
+
+    /* Further reduce padding */
+    .table > :not(caption) > * > * {
+        padding: 0.5rem 0.35rem;
+    }
+
+    /* Make all text smaller */
+    .table td,
+    .table th {
+        font-size: 0.85rem;
+        line-height: 1.2;
+    }
+
+    /* Make column headers more compact */
+    th.unit-toggle-columns div {
+        font-size: 0.8rem;
+    }
+
+    th.unit-toggle-columns small {
+        font-size: 0.7rem;
+    }
+
+    /* Optimize dual-value cells */
+    .dual-value-cell .top-value,
+    .dual-value-cell .bottom-value {
+        font-size: 0.75rem;
+    }
+
+    /* Full width tables with auto-layout */
+    .table {
+        width: 100% !important;
+        table-layout: auto !important;
+    }
+
+    /* Adjust cell sizes */
+    .table td:not(.text-end):not(:first-child) {
+        max-width: 60px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .action-buttons-responsive {
+        justify-content: center;
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    .table th,
+    .table td {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.3rem;
+    }
+
+    .card-header h4,
+    .card-header h5 {
+        font-size: 1rem;
+    }
+
+    .btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.8rem;
+        height: 34px;
+    }
+
+    .btn i {
+        font-size: 0.8rem;
+    }
+
+    .action-buttons .action-btn,
+    .action-buttons .view-controls .btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .table tbody tr td[colspan] {
+        white-space: normal;
+        min-width: 200px;
+    }
+
+    /* Make unit toggle columns even more compact */
+    .unit-toggle-columns.visible {
+        width: 70px !important;
+        min-width: 70px !important;
+        max-width: 70px !important;
+        padding: 0.2rem !important;
+    }
 }

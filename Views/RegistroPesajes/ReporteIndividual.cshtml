@@ -101,19 +101,28 @@
     <div class="table-responsive-custom">
         <!-- Header Card -->
         <div class="card mb-3 shadow">
-            <div class="card-header bg-gradient bg-dark py-3 d-flex justify-content-between align-items-center">
-                <h4 class="mb-0 text-white"><i class="fas fa-clipboard-list me-2"></i>Reporte Individual Detallado</h4>
-                <div class="d-flex gap-2">
-                    <button id="btnToggleConversiones" class="btn btn-info btn-sm" title="Mostrar/Ocultar Conversiones">
-                        <i class="fas fa-calculator me-1"></i>Mostrar Conversiones
-                    </button>
-                    <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })"
-                        class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Volver
-                    </a>
-                    <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel">
-                        <i class="fas fa-file-excel me-1"></i>Exportar
-                    </button>
+            <div class="card-header bg-gradient bg-dark py-3">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <h4 class="mb-2 mb-md-0 text-white">
+                        <i class="fas fa-clipboard-list me-2"></i>Reporte Individual Detallado
+                    </h4>
+                    <div class="d-flex flex-wrap gap-2 ms-0 ms-md-auto">
+                        <button id="btnToggleConversiones" class="btn btn-info btn-sm" title="Mostrar/Ocultar Conversiones">
+                            <i class="fas fa-calculator me-1"></i>
+                            <span>Mostrar Conversiones</span>
+                        </button>
+                        
+                        <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })"
+                            class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            <span>Volver</span>
+                        </a>
+                        
+                        <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel">
+                            <i class="fas fa-file-excel me-1"></i>
+                            <span>Exportar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,7 +142,7 @@
                             <thead>
                                 <tr class="table-dark">
                                     <th style="width: 70px;">Escotilla</th>
-                                    <th style="width: 250px;">Empresa</th>  <!-- Aumentado de 200px a 250px -->
+                                    <th style="width: 250px;">Empresa</th> <!-- Aumentado de 200px a 250px -->
                                     <th style="width: 100px;">Bodega</th>
                                     <th style="width: 120px;">Guía</th>
                                     <th style="width: 120px;">Guía Alterna</th>
@@ -142,8 +151,10 @@
                                     <th class="text-end" style="width: 120px;">Peso Entregado</th>
                                     <th class="text-end" style="width: 150px;">Cantidad por Retirar</th>
                                     <th class="text-end" style="width: 130px;">Cantidad Retirada</th>
-                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Req. Quintales</th>
-                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Ent. Quintales</th>
+                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Req. Quintales
+                                    </th>
+                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Ent. Quintales
+                                    </th>
                                     <th class="text-end columna-conversion" style="width: 140px;">Cant. Req. Libras</th>
                                     <th class="text-end columna-conversion" style="width: 140px;">Cant. Ent. Libras</th>
                                 </tr>

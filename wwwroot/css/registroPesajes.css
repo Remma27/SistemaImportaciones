@@ -31,18 +31,18 @@
   BASE STYLES
 ==============================================*/
 .container-fluid {
-    max-width: 100%; /* Increased from 99.5% to 100% */
-    padding-right: 0.25rem !important; /* Reduced from 0.5rem to 0.25rem */
-    padding-left: 0.25rem !important;
+    max-width: 95%;
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
     overflow: visible;
     margin: 0 auto;
 }
 
 @media (min-width: 1200px) {
     .container-fluid {
-        padding-left: 0.5rem !important; /* Reduced from 1rem to 0.5rem */
-        padding-right: 0.5rem !important;
-        max-width: 99.75%; /* Increased from 99% to 99.75% */
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+        max-width: 94%;
     }
 }
 

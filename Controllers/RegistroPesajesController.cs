@@ -259,7 +259,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 if (selectedBarco.HasValue)
                 {
-                    var empresasData = await _movimientoService.GetEmpresasSelectListAsync();
+                    // Pass the importation ID to get only companies with movements
+                    var empresasData = await _movimientoService.GetEmpresasWithMovimientosAsync(selectedBarco.Value);
                     var empresas = empresasData?.ToList() ?? new List<SelectListItem>();
                     ViewBag.Empresas = new SelectList(empresas, "Value", "Text", empresaId);
                 }

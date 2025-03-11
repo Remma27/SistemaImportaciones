@@ -192,6 +192,10 @@ function createExcelDataFromTable(table) {
     const footerRows = table.querySelectorAll('tfoot tr')
     if (footerRows.length > 0) {
         for (let i = 0; i < footerRows.length; i++) {
+            // Skip rows with 'table-purple' class (totals row) and 'no-export' class
+            if (footerRows[i].classList.contains('table-purple') || footerRows[i].classList.contains('no-export')) {
+                continue
+            }
             const row = processTableRow(footerRows[i], headerInfo)
             data.push(row)
         }
@@ -500,59 +504,96 @@ function addConversionColumns() {
     $('.unit-toggle-columns').hide()
 }
 
-let showingMetric = true
+// Función unificada que maneja tanto filas como columnas
 function setupUnitToggle() {
-    $('#btnToggleUnidad').off('click')
+    // Variable global para rastrear el estado
+    window.showingMetric = true // Por defecto, mostrar en Kg
 
-    const selectedBarco = $('select[name="selectedBarco"]').val() || $('#selectImportacion').val()
-    const hasData = hasTableData('tabla2')
-    $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
+    $('#btnToggleUnidad')
+        .off('click')
+        .on('click', function () {
+            if ($(this).prop('disabled')) return
 
-    $('#btnToggleUnidad').on('click', function () {
-        if ($(this).prop('disabled')) return
+            // Cambiar estado
+            window.showingMetric = !window.showingMetric
+            console.log('Toggle unidades - nuevo estado:', window.showingMetric ? 'Métrico' : 'Imperial')
 
-        showingMetric = !showingMetric
+            // Actualizar botón
+            const buttonText = $(this).find('span')
+            buttonText.text(window.showingMetric ? 'Libras' : 'Kilogramos')
+            $(this).attr('title', window.showingMetric ? 'Ver en Libras' : 'Ver en Kilogramos')
+            $(this).find('i').toggleClass('fa-weight fa-balance-scale')
 
-        const buttonText = $(this).find('span')
-        buttonText.text(showingMetric ? 'Unidades' : 'Métrico')
-        $(this).attr('title', showingMetric ? 'Mostrar en Libras' : 'Mostrar en Kilogramos')
-        $(this).find('i').toggleClass('fa-weight-scale fa-balance-scale')
+            // 1. FILAS (tabla escotillas)
+            const toggleRows = document.querySelectorAll('.unit-toggle-row')
+            console.log('Filas toggle encontradas:', toggleRows.length)
 
-        const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
-
-        toggleColumns.forEach(col => {
-            if (!showingMetric) {
-                col.style.display = 'table-cell'
-            }
-        })
-
-        setTimeout(() => {
-            toggleColumns.forEach(col => {
-                if (showingMetric) {
-                    $(col).removeClass('visible')
+            toggleRows.forEach(row => {
+                if (!window.showingMetric) {
+                    $(row).slideDown(300)
                 } else {
-                    $(col).addClass('visible')
+                    $(row).slideUp(300)
                 }
             })
 
-            if (showingMetric) {
-                setTimeout(() => {
-                    toggleColumns.forEach(col => {
+            // 2. COLUMNAS (otras tablas)
+            const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
+            console.log('Columnas toggle encontradas:', toggleColumns.length)
+
+            // Para columnas necesitamos un tratamiento especial
+            toggleColumns.forEach(col => {
+                if (!window.showingMetric) {
+                    col.style.display = 'table-cell'
+                    $(col).css('opacity', 0).animate({ opacity: 1 }, 300)
+                } else {
+                    $(col).animate({ opacity: 0 }, 300, function () {
                         col.style.display = 'none'
                     })
-                }, 300)
-            }
+                }
+            })
+        })
 
-            adjustTableLayout()
-        }, 50)
+    // Asegurar que el estado inicial es correcto
+    const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
+    toggleColumns.forEach(col => {
+        col.style.display = window.showingMetric ? 'none' : 'table-cell'
     })
 
-    document.addEventListener('dataLoaded', function () {
-        const selectedBarco = $('select[name="selectedBarco"]').val() || $('#selectImportacion').val()
-        const hasData = hasTableData('tabla2')
-        $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
-    })
+    // Actualizar estado del botón
+    const selectedBarco = $('select[name="selectedBarco"]').val()
+    const hasData = hasTableData('tabla2')
+    $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
+
+    // Añadir estilos para compactar las filas de unidades alternativas
+    const styleElement = document.getElementById('unit-toggle-styles') || document.createElement('style')
+    styleElement.id = 'unit-toggle-styles'
+    styleElement.innerHTML = `
+        .unit-toggle-row td {
+            padding-top: 0.25rem !important;
+            padding-bottom: 0.25rem !important;
+        }
+        .unit-toggle-row .d-block {
+            line-height: 1.1;
+        }
+        .unit-toggle-row .d-block.small {
+            font-size: 0.75rem;
+        }
+        .unit-toggle-row div {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+    `
+
+    if (!document.getElementById('unit-toggle-styles')) {
+        document.head.appendChild(styleElement)
+    }
 }
+
+// Asegurarse que la función se ejecute cuando el DOM esté listo
+$(document).ready(function () {
+    setupUnitToggle()
+})
 
 function adjustTableLayout() {
     $('.table-scroll').css('display', 'none').height()
@@ -623,159 +664,206 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         console.log('Exportando tabla de resumen agregado')
         const wb = XLSX.utils.book_new()
 
-        // Preparar encabezados
-        const headerCells = table.querySelectorAll('thead th')
-        const headerRow = []
-        const unitToggleIndexes = [] // Almacena los índices originales de columnas duales
+        // Extraer los datos de la tabla asegurando consistencia de columnas
+        const data = []
 
-        headerCells.forEach((cell, i) => {
+        // Procesar encabezados
+        const headerRow = []
+        const headerCells = table.querySelectorAll('thead th')
+        const unitToggleColumns = [] // Índices de columnas con unidades duales
+
+        headerCells.forEach((cell, index) => {
             if (cell.classList.contains('unit-toggle-columns')) {
-                // Para columnas con unidades duales, crear dos encabezados separados
-                const headerBase =
-                    cell.querySelector('div:first-child')?.textContent.trim() || cell.innerText.split('\n')[0].trim()
-                headerRow.push(`${headerBase} (Libras)`)
-                headerRow.push(`${headerBase} (Quintales)`)
-                unitToggleIndexes.push(i)
+                const headerName =
+                    cell.querySelector('div:first-child')?.textContent.trim() || cell.textContent.split('\n')[0].trim()
+                headerRow.push(`${headerName} (Quintales)`)
+                headerRow.push(`${headerName} (Libras)`)
+                unitToggleColumns.push(index)
+            } else if (cell.textContent.includes('Acciones')) {
+                // Ignorar columna de acciones
+                return
             } else {
-                headerRow.push(cell.innerText.trim())
+                headerRow.push(cell.textContent.trim())
             }
         })
 
-        const data = [headerRow]
+        data.push(headerRow)
+
+        // Función para preservar el texto original del número pero extraer un valor numérico para Excel
+        function processNumericText(text) {
+            // Guarda el texto original
+            const originalText = text.trim()
+
+            // Si el texto está vacío o no es un número, devolverlo tal cual
+            if (!originalText || originalText === '-' || isNaN(originalText.replace(/[^\d,.-]/g, ''))) {
+                return { text: originalText, value: originalText }
+            }
+
+            // Detecta si es un número con formato europeo (1.234,56)
+            const isEuropeanFormat = /\d{1,3}(?:\.\d{3})+(?:,\d+)?/.test(originalText)
+
+            let numericValue
+            if (isEuropeanFormat) {
+                // Convierte formato europeo a número: elimina puntos y reemplaza coma por punto
+                numericValue = originalText.replace(/\./g, '').replace(',', '.')
+            } else {
+                // Asume formato estadounidense o simplemente número con coma decimal
+                numericValue = originalText.replace(',', '.')
+            }
+
+            // Elimina cualquier carácter no numérico excepto punto decimal y signo negativo
+            numericValue = numericValue.replace(/[^\d.-]/g, '')
+
+            return {
+                text: originalText,
+                value: parseFloat(numericValue),
+            }
+        }
 
         // Procesar filas del cuerpo
-        const bodyRows = table.querySelectorAll('tbody tr')
-        bodyRows.forEach(row => {
-            const cells = row.querySelectorAll('td')
+        const rows = table.querySelectorAll('tbody tr')
+        rows.forEach(row => {
             const rowData = []
+            const cellValues = [] // Para almacenar los valores numéricos
+            const cells = row.querySelectorAll('td')
 
-            cells.forEach((cell, i) => {
-                if (cell.classList.contains('unit-toggle-columns')) {
-                    // Extraer valores separados para libras y quintales
-                    const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
-                    const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+            cells.forEach((cell, index) => {
+                if (unitToggleColumns.includes(index)) {
+                    // Para columnas con valores duales (quintales/libras)
+                    const qqText = cell.querySelector('.top-value')?.textContent.trim() || ''
+                    const lbsText = cell.querySelector('.bottom-value')?.textContent.trim() || ''
 
-                    // Añadir cada valor en su propia columna
-                    rowData.push(lbsValue)
-                    rowData.push(qqValue)
+                    // Procesar quintales
+                    const qqProcessed = processNumericText(qqText.replace('qq', '').trim())
+                    rowData.push(qqProcessed.text)
+                    cellValues.push(qqProcessed.value)
+
+                    // Procesar libras
+                    const lbsProcessed = processNumericText(lbsText.replace('lbs', '').trim())
+                    rowData.push(lbsProcessed.text)
+                    cellValues.push(lbsProcessed.value)
                 } else {
-                    rowData.push(cell.innerText.trim())
+                    // Para celdas normales
+                    const processed = processNumericText(cell.textContent)
+                    rowData.push(processed.text)
+                    cellValues.push(processed.value)
                 }
             })
 
             data.push(rowData)
+            // También guardamos los valores numéricos para usarlos más tarde
+            row.processedValues = cellValues
         })
 
-        // Procesar filas de pie de tabla
-        const footerRows = table.querySelectorAll('tfoot tr')
-        footerRows.forEach(row => {
-            if (!row.classList.contains('no-export')) {
-                const cells = row.querySelectorAll('td')
-                const rowData = []
-
-                cells.forEach((cell, i) => {
-                    if (cell.classList.contains('unit-toggle-columns')) {
-                        // Extraer valores separados para libras y quintales en el footer
-                        const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
-                        const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
-
-                        rowData.push(lbsValue)
-                        rowData.push(qqValue)
-                    } else {
-                        rowData.push(cell.innerText.trim())
-                    }
-                })
-
-                data.push(rowData)
-            }
-        })
-
-        // Crear hoja de cálculo y aplicar formato
+        // Crear la hoja de cálculo
         const ws = XLSX.utils.aoa_to_sheet(data)
 
-        // Configurar anchos de columna
-        const colWidths = []
-        for (let i = 0; i < headerRow.length; i++) {
-            // Determinar ancho máximo para esta columna
-            let maxChars = headerRow[i].length
+        // Aplicar formato a números
+        for (let r = 1; r < data.length; r++) {
+            let cellIndex = 0
 
-            // Verificar todas las filas para el ancho máximo
-            for (let j = 1; j < data.length; j++) {
-                if (data[j][i]) {
-                    maxChars = Math.max(maxChars, String(data[j][i]).length)
-                }
-            }
-
-            // Establecer ancho apropiado
-            let width
-            if (i === 0) {
-                // Columna Empresa
-                width = Math.max(30, maxChars)
-            } else if (headerRow[i].includes('Desc.') || headerRow[i].includes('Falt.')) {
-                width = Math.max(20, maxChars)
-            } else if (headerRow[i].includes('Libras')) {
-                width = Math.max(18, maxChars)
-            } else if (headerRow[i].includes('Quintales')) {
-                width = Math.max(18, maxChars)
-            } else if (headerRow[i].includes('%')) {
-                width = Math.max(12, maxChars)
-            } else {
-                width = Math.max(15, maxChars)
-            }
-
-            colWidths.push({ wch: width })
-        }
-
-        ws['!cols'] = colWidths
-
-        // Aplicar formato de números y alineación a todas las celdas
-        for (let r = 0; r < data.length; r++) {
             for (let c = 0; c < data[r].length; c++) {
                 const cellRef = XLSX.utils.encode_cell({ r, c })
                 if (!ws[cellRef]) continue
 
-                const cellValue = data[r][c]
+                const originalText = data[r][c]
+                const headerText = data[0][c] || ''
 
-                // Configurar estilo si no existe
+                // Intentar convertir a número
+                const numberMatch = originalText.match(/[-+]?[\d.,]+/)
+                if (numberMatch) {
+                    const numStr = numberMatch[0]
+                    // Convertir a número para Excel
+                    let numValue
+
+                    // Si tiene puntos como separadores de miles y coma como decimal
+                    if (/\d{1,3}(?:\.\d{3})+(?:,\d+)?/.test(numStr)) {
+                        numValue = parseFloat(numStr.replace(/\./g, '').replace(',', '.'))
+                    } else {
+                        // Si no, asumimos que es un formato simple (puede tener coma como decimal)
+                        numValue = parseFloat(numStr.replace(',', '.'))
+                    }
+
+                    if (!isNaN(numValue)) {
+                        ws[cellRef].v = numValue
+                        ws[cellRef].t = 'n'
+
+                        // Aplicar formato según tipo de columna
+                        if (headerText.includes('%')) {
+                            ws[cellRef].z = '0.00%'
+                            // Si es porcentaje y ya tiene el símbolo %
+                            if (originalText.includes('%')) {
+                                ws[cellRef].v = numValue / 100
+                            }
+                        } else if (headerText.includes('Ton')) {
+                            ws[cellRef].z = '#,##0.00'
+                        } else if (headerText.includes('Quintales')) {
+                            ws[cellRef].z = '#,##0.00'
+                        } else if (headerText.includes('Libras')) {
+                            ws[cellRef].z = '#,##0'
+                        } else if (headerText.includes('Kg')) {
+                            ws[cellRef].z = '#,##0'
+                        } else if (headerText.includes('Cam. Falt.')) {
+                            ws[cellRef].z = '#,##0.00'
+                        } else if (headerText.includes('Placas')) {
+                            ws[cellRef].z = '0'
+                        } else {
+                            ws[cellRef].z = '#,##0.00'
+                        }
+                    }
+                }
+
+                // Alinear celdas
                 if (!ws[cellRef].s) ws[cellRef].s = {}
 
-                // Configurar alineación basada en el tipo de columna
                 if (c === 0) {
-                    // Columna Empresa - alineación izquierda
+                    // Primera columna (Empresa) - alineación izquierda
                     ws[cellRef].s.alignment = { horizontal: 'left' }
                 } else {
                     // Otras columnas - alineación derecha
                     ws[cellRef].s.alignment = { horizontal: 'right' }
                 }
 
-                // Negritas para encabezados
+                // Encabezados en negrita
                 if (r === 0) {
                     ws[cellRef].s.font = { bold: true }
                 }
 
-                // Formatear números - solo para filas de datos (no encabezados)
-                if (r > 0 && typeof cellValue === 'string' && /^[\d., ]+$/.test(cellValue.replace(/[^\d., ]/g, ''))) {
-                    const headerText = headerRow[c]
-                    const numValue = extraerNumero(cellValue)
-
-                    ws[cellRef].v = numValue
-                    ws[cellRef].t = 'n'
-
-                    // Aplicar formato basado en el tipo de columna
-                    if (headerText.includes('Libras') || headerText.includes('Quintales')) {
-                        ws[cellRef].z = '#,##0.00'
-                    } else if (headerText.includes('%')) {
-                        ws[cellRef].v = numValue / 100
-                        ws[cellRef].z = '0.00%'
-                    } else if (headerText.includes('Desc.') || headerText.includes('Falt.')) {
-                        ws[cellRef].z = '#,##0.00'
-                    }
-                }
+                cellIndex++
             }
         }
 
+        // Configurar anchos de columna
+        ws['!cols'] = headerRow.map((header, index) => {
+            // Determinar el ancho máximo para cada columna
+            let maxChars = header.length
+
+            for (let r = 1; r < data.length; r++) {
+                if (data[r][index]) {
+                    maxChars = Math.max(maxChars, String(data[r][index]).length)
+                }
+            }
+
+            // Ajustar ancho según el tipo de columna
+            if (index === 0) {
+                // Columna Empresa
+                return { wch: Math.max(30, maxChars) }
+            } else if (header.includes('Quintales') || header.includes('Libras')) {
+                return { wch: Math.max(18, maxChars) }
+            } else if (header.includes('%')) {
+                return { wch: Math.max(12, maxChars) }
+            } else {
+                return { wch: Math.max(15, maxChars) }
+            }
+        })
+
+        // Añadir la hoja al libro
         XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
-        XLSX.writeFile(wb, filename + '_' + new Date().toISOString().slice(0, 10) + '.xlsx')
+
+        // Guardar el archivo
+        const dateStr = new Date().toISOString().slice(0, 10)
+        XLSX.writeFile(wb, `${filename}_${dateStr}.xlsx`)
+
         console.log('Excel export successful')
     } catch (error) {
         console.error('Error exporting to Excel:', error)

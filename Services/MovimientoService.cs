@@ -330,6 +330,67 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
+        public async Task<IEnumerable<SelectListItem>> GetEmpresasWithMovimientosAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={importacionId}";
+                _logger.LogInformation($"Obteniendo empresas con InformeGeneral: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error: {response.StatusCode}");
+                    return Enumerable.Empty<SelectListItem>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta obtenida, longitud: {content.Length}");
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var empresasIds = new HashSet<int>();
+                    var empresasNombres = new Dictionary<int, string>();
+
+                    foreach (var item in dataElement.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("empresaId", out var idElement) ||
+                            item.TryGetProperty("id_empresa", out idElement))
+                        {
+                            int empresaId = idElement.GetInt32();
+                            empresasIds.Add(empresaId);
+
+                            if (item.TryGetProperty("empresa", out var nombreElement))
+                            {
+                                empresasNombres[empresaId] = nombreElement.GetString() ?? "Sin nombre";
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation($"Encontradas {empresasIds.Count} empresas con movimientos");
+
+                    var todasLasEmpresas = await GetEmpresasSelectListAsync();
+
+                    return todasLasEmpresas
+                        .Where(e => int.TryParse(e.Value, out var id) && empresasIds.Contains(id))
+                        .ToList();
+                }
+
+                _logger.LogWarning("No se encontró propiedad 'data' en la respuesta");
+                return Enumerable.Empty<SelectListItem>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener empresas con movimientos");
+                return Enumerable.Empty<SelectListItem>();
+            }
+        }
         async Task<List<RegistroRequerimientosViewModel>> IMovimientoService.GetRegistroRequerimientosAsync(int barcoId)
         {
             try
@@ -524,9 +585,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
+                // Add debug logging to check value
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
                 {
                     TotalMovimientos = totalMovimientosElement.GetInt32();
+                    _logger.LogInformation($"Total movimientos from API: {TotalMovimientos}");
                 }
 
                 if (root.TryGetProperty("data", out var dataElement))
@@ -863,7 +926,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                                     GuiaAlterna = GetStringValue(element, "guiaAlterna"),
                                     Placa = GetStringValue(element, "placa"),
                                     PlacaAlterna = GetStringValue(element, "placaAlterna"),
-                                    PesoEntregado = GetDecimalValue(element, "pesoEntregadoKg"),
+                                    PesoEntregado = GetDecimalValue(element, "pesoEntregado"),
                                     PesoRequerido = GetDecimalValue(element, "cantidadRetirarKg"),
                                     CantidadRetiradaKg = GetDecimalValue(element, "cantidadRetiradaKg"),
                                     PesoFaltante = GetDecimalValue(element, "pesoFaltante"),

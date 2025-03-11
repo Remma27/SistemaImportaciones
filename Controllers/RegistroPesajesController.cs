@@ -35,6 +35,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId, bool refreshData = false)
         {
+            ViewData["FullWidth"] = true;
             var watch = Stopwatch.StartNew();
             try
             {
@@ -169,6 +170,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 _logger.LogInformation($"Cargando datos frescos para tabla 2, importación: {importacionId}");
                 var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
 
+                // Log the TotalMovimientos value after API call
+                _logger.LogInformation($"TotalMovimientos retrieved from API: {_movimientoService.TotalMovimientos}");
+
                 if (informeGeneral != null)
                 {
                     viewModel.Tabla2Data = informeGeneral.Select(ig => new RegistroPesajesAgregado
@@ -183,6 +187,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         ConteoPlacas = ig.ConteoPlacas,
                         PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
                     }).ToList();
+
+                    // Also store the value in ViewBag for debugging purposes
+                    ViewBag.TotalMovimientos = _movimientoService.TotalMovimientos;
+                    _logger.LogInformation($"ViewBag.TotalMovimientos set to: {_movimientoService.TotalMovimientos}");
                 }
             }
             catch (Exception ex)
@@ -251,7 +259,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 if (selectedBarco.HasValue)
                 {
-                    var empresasData = await _movimientoService.GetEmpresasSelectListAsync();
+                    // Pass the importation ID to get only companies with movements
+                    var empresasData = await _movimientoService.GetEmpresasWithMovimientosAsync(selectedBarco.Value);
                     var empresas = empresasData?.ToList() ?? new List<SelectListItem>();
                     ViewBag.Empresas = new SelectList(empresas, "Value", "Text", empresaId);
                 }

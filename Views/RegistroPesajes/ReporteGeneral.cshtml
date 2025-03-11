@@ -6,6 +6,38 @@
     var returnController = Context.Request.Query["returnController"].ToString();
     var backController = !string.IsNullOrEmpty(returnController) ? returnController : "RegistroPesajes";
     var todasLasEscotillas = new int[] { 1, 2, 3, 4, 5, 6, 7 };
+    var unidades = new[] { "Kilogramos", "Quintales", "Libras", "Toneladas" };
+    
+    // Pre-calcular los totales por escotilla para cada unidad de medida
+    var totalesKgPorEscotilla = new Dictionary<int, decimal>();
+    var totalesQQPorEscotilla = new Dictionary<int, decimal>();
+    var totalesLbPorEscotilla = new Dictionary<int, decimal>();
+    var totalesTonPorEscotilla = new Dictionary<int, decimal>();
+    
+    foreach (var numeroEscotilla in todasLasEscotillas)
+    {
+        totalesKgPorEscotilla[numeroEscotilla] = Model.Empresas
+            .SelectMany(e => e.Escotillas.Where(esc => esc.NumeroEscotilla == numeroEscotilla))
+            .Sum(e => e.DescargaKg);
+            
+        totalesQQPorEscotilla[numeroEscotilla] = Model.Empresas
+            .SelectMany(e => e.Escotillas.Where(esc => esc.NumeroEscotilla == numeroEscotilla))
+            .Sum(e => e.DescargaQuintales);
+            
+        totalesLbPorEscotilla[numeroEscotilla] = Model.Empresas
+            .SelectMany(e => e.Escotillas.Where(esc => esc.NumeroEscotilla == numeroEscotilla))
+            .Sum(e => e.DescargaLb);
+            
+        totalesTonPorEscotilla[numeroEscotilla] = Model.Empresas
+            .SelectMany(e => e.Escotillas.Where(esc => esc.NumeroEscotilla == numeroEscotilla))
+            .Sum(e => e.DescargaTon);
+    }
+    
+    // Calcular el gran total para cada unidad
+    var totalKg = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaKg);
+    var totalQQ = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaQuintales);
+    var totalLb = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaLb);
+    var totalTon = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaTon);
 }
 
 <div class="container-fluid py-3">
@@ -49,9 +81,6 @@
                            class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Volver
                         </a>
-                        <button id="btnExportarExcel" class="btn btn-success">
-                            <i class="fas fa-file-excel me-1"></i>Exportar Excel
-                        </button>
                     </div>
                 </div>
                 
@@ -60,74 +89,120 @@
                         <thead class="table-primary">
                             <tr>
                                 <th rowspan="2" class="align-middle">Empresa</th>
-                                <th rowspan="2" class="align-middle">Escotilla</th>
-                                <th colspan="4" class="text-center">Descarga</th>
+                                <th rowspan="2" class="align-middle">Unidad</th>
+                                <th colspan="7" class="text-center">Escotillas</th>
+                                <th rowspan="2" class="align-middle text-center">Subtotal</th>
                             </tr>
                             <tr>
-                                <th class="text-end">Kilogramos</th>
-                                <th class="text-end">Libras</th>
-                                <th class="text-end">Toneladas</th>
-                                <th class="text-end">Quintales</th>
+                                @foreach (var escotilla in todasLasEscotillas)
+                                {
+                                    <th class="text-center">@escotilla</th>
+                                }
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var empresa in Model.Empresas)
                             {
-                                // Asegurarse de que tenemos las 7 escotillas
-                                var escotillasExistentes = empresa.Escotillas.Select(e => e.NumeroEscotilla).ToList();
-                                
-                                @for (int i = 0; i < todasLasEscotillas.Length; i++)
-                                {
-                                    var numeroEscotilla = todasLasEscotillas[i];
-                                    var escotilla = empresa.Escotillas.FirstOrDefault(e => e.NumeroEscotilla == numeroEscotilla);
-                                    
-                                    <tr>
-                                        @if (i == 0)
-                                        {
-                                            <td rowspan="7" class="align-middle fw-bold">@empresa.NombreEmpresa</td>
-                                        }
-                                        <td>Escotilla @numeroEscotilla</td>
-                                        
-                                        @if (escotilla != null)
-                                        {
-                                            <td class="text-end">@escotilla.DescargaKg.ToString("N2")</td>
-                                            <td class="text-end">@escotilla.DescargaLb.ToString("N2")</td>
-                                            <td class="text-end">@escotilla.DescargaTon.ToString("N2")</td>
-                                            <td class="text-end">@escotilla.DescargaQuintales.ToString("N2")</td>
-                                        }
-                                        else
-                                        {
-                                            <td class="text-end">0</td>
-                                            <td class="text-end">0</td>
-                                            <td class="text-end">0.00</td>
-                                            <td class="text-end">0.00</td>
-                                        }
-                                    </tr>
-                                }
-                                
-                                <tr class="table-secondary">
-                                    <td colspan="2" class="text-end fw-bold">Subtotal @empresa.NombreEmpresa:</td>
+                                // Primera fila para Kilogramos
+                                <tr>
+                                    <td rowspan="4" class="align-middle fw-bold">@empresa.NombreEmpresa</td>
+                                    <td>Kilogramos</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                        var escotilla = empresa.Escotillas.FirstOrDefault(e => e.NumeroEscotilla == numeroEscotilla);
+                                        <td class="text-end">@(escotilla?.DescargaKg.ToString("N2") ?? "0.00")</td>
+                                    }
                                     <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaKg).ToString("N2")</td>
-                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaLb).ToString("N2")</td>
-                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaTon).ToString("N2")</td>
-                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaQuintales).ToString("N2")</td>
+                                </tr>
+                                
+                                <!-- Fila para Quintales -->
+                                <tr>
+                                    <td>Quintales</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                        var escotilla = empresa.Escotillas.FirstOrDefault(e => e.NumeroEscotilla == numeroEscotilla);
+                                        <td class="text-end">@(escotilla?.DescargaQuintales.ToString("N4") ?? "0.0000")</td>
+                                    }
+                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaQuintales).ToString("N4")</td>
+                                </tr>
+                                
+                                <!-- Fila para Libras -->
+                                <tr>
+                                    <td>Libras</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                        var escotilla = empresa.Escotillas.FirstOrDefault(e => e.NumeroEscotilla == numeroEscotilla);
+                                        <td class="text-end">@(escotilla?.DescargaLb.ToString("N0") ?? "0")</td>
+                                    }
+                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaLb).ToString("N0")</td>
+                                </tr>
+                                
+                                <!-- Fila para Toneladas -->
+                                <tr>
+                                    <td>Toneladas</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                        var escotilla = empresa.Escotillas.FirstOrDefault(e => e.NumeroEscotilla == numeroEscotilla);
+                                        <td class="text-end">@(escotilla?.DescargaTon.ToString("N6") ?? "0.000000")</td>
+                                    }
+                                    <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaTon).ToString("N6")</td>
                                 </tr>
                             }
                         </tbody>
                         <tfoot class="table-primary">
+                            <!-- Totales por Kilogramos -->
                             <tr>
-                                <td colspan="2" class="text-end fw-bold">TOTAL GENERAL:</td>
+                                <td colspan="2" class="text-end fw-bold">TOTAL Kilogramos:</td>
+                                @foreach (var numeroEscotilla in todasLasEscotillas)
+                                {
+                                    <td class="text-end fw-bold">
+                                        @totalesKgPorEscotilla[numeroEscotilla].ToString("N2")
+                                    </td>
+                                }
                                 <td class="text-end fw-bold">
-                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaKg).ToString("N2")
+                                    @totalKg.ToString("N2")
                                 </td>
+                            </tr>
+                            
+                            <!-- Totales por Quintales -->
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">TOTAL Quintales:</td>
+                                @foreach (var numeroEscotilla in todasLasEscotillas)
+                                {
+                                    <td class="text-end fw-bold">
+                                        @totalesQQPorEscotilla[numeroEscotilla].ToString("N4")
+                                    </td>
+                                }
                                 <td class="text-end fw-bold">
-                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaLb).ToString("N2")
+                                    @totalQQ.ToString("N4")
                                 </td>
+                            </tr>
+                            
+                            <!-- Totales por Libras -->
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">TOTAL Libras:</td>
+                                @foreach (var numeroEscotilla in todasLasEscotillas)
+                                {
+                                    <td class="text-end fw-bold">
+                                        @totalesLbPorEscotilla[numeroEscotilla].ToString("N0")
+                                    </td>
+                                }
                                 <td class="text-end fw-bold">
-                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaTon).ToString("N2")
+                                    @totalLb.ToString("N0")
                                 </td>
+                            </tr>
+                            
+                            <!-- Totales por Toneladas -->
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">TOTAL Toneladas:</td>
+                                @foreach (var numeroEscotilla in todasLasEscotillas)
+                                {
+                                    <td class="text-end fw-bold">
+                                        @totalesTonPorEscotilla[numeroEscotilla].ToString("N6")
+                                    </td>
+                                }
                                 <td class="text-end fw-bold">
-                                    @Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaQuintales).ToString("N2")
+                                    @totalTon.ToString("N6")
                                 </td>
                             </tr>
                         </tfoot>
@@ -137,8 +212,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <script src="~/js/reporteGeneral.js"></script>
-}

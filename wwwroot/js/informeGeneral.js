@@ -1,8 +1,6 @@
 $(document).ready(function () {
     $('#btnToggleEscotillas').on('click', function () {
-        console.log('Toggle escotillas clicked')
         const cardEscotillas = $('#cardEscotillas')
-        console.log('Escotillas element:', cardEscotillas.length)
 
         const icon = $(this).find('i')
 
@@ -22,7 +20,6 @@ $(document).ready(function () {
     function exportTableToExcel(tableId, filename = '') {
         const table = document.querySelector('table')
         if (!table) {
-            console.error(`Table not found`)
             return
         }
 

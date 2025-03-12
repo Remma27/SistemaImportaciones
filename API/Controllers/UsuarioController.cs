@@ -13,6 +13,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class UsuarioController : ControllerBase
     {
         private readonly ApiContext _context;
@@ -26,7 +27,6 @@ namespace API.Controllers
 
         // Endpoint para crear un nuevo Usuario
         [HttpPost]
-        [Authorize]
         public JsonResult Create(Usuario usuario)
         {
             if (usuario.id != 0)
@@ -56,7 +56,6 @@ namespace API.Controllers
 
         // Endpoint para editar un Usuario existente
         [HttpPut]
-        [Authorize]
         public JsonResult Edit(Usuario usuario)
         {
             if (usuario.id == 0)
@@ -76,7 +75,6 @@ namespace API.Controllers
 
         // Get
         [HttpGet]
-        [Authorize]
         public JsonResult Get(int id)
         {
             var result = _context.Usuarios.Find(id);
@@ -89,7 +87,6 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
-        [Authorize]
         public JsonResult Delete(int id)
         {
             var result = _context.Usuarios.Find(id);
@@ -104,7 +101,6 @@ namespace API.Controllers
 
         // GetAll
         [HttpGet]
-        [Authorize]
         public JsonResult GetAll()
         {
             var result = _context.Usuarios.ToList();
@@ -113,6 +109,7 @@ namespace API.Controllers
 
         // Registrar
         [HttpPost]
+        [AllowAnonymous]
         public JsonResult Registrar(Usuario model)
         {
             var usuario = _context.Usuarios.FirstOrDefault(u => u.email == model.email);
@@ -200,7 +197,6 @@ namespace API.Controllers
 
         // Add a logout endpoint
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> CerrarSesion()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

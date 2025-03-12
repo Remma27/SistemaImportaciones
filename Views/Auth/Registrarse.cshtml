@@ -18,8 +18,6 @@
 
                         <form method="post" asp-action="Registrarse" asp-controller="Auth">
                             @Html.AntiForgeryToken()
-                            @Html.ValidationSummary(true, "", new { @class = "text-danger small" })
-
                             <div class="form-floating mb-3">
                                 <input asp-for="Nombre" class="form-control" placeholder="Nombre" required />
                                 <label asp-for="Nombre">Nombre completo</label>

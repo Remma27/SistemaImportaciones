@@ -9,7 +9,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal DescargaRealKg { get; set; }
         public decimal DiferenciaKg { get; set; }
         public decimal Porcentaje { get; set; }
-        public string Estado { get; set; } = string.Empty;
+        public string Estado { get; set; } = "Sin Iniciar";
 
         public int Numero
         {

@@ -312,26 +312,41 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Configuración mejorada de archivos estáticos
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Corregir MIME types para archivos JavaScript
+        if (ctx.File.Name.EndsWith(".js"))
+        {
+            ctx.Context.Response.Headers["Content-Type"] = "application/javascript";
+        }
+    }
+});
 
 app.UseRouting();
 
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("X-Frame-Options", "DENY");
-    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
-    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
-    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    await next();
-});
-
 app.UseCors("ApiPolicy");
 
+// Configurar el middleware de seguridad con una política más permisiva
+var securityHeadersPolicy = new SecurityHeadersPolicy
+{
+    FrameOptions = "DENY",
+    XssProtection = "1; mode=block",
+    ReferrerPolicy = "strict-origin-when-cross-origin",
+    PermissionsPolicy = "camera=(), microphone=(), geolocation=()"
+    // No establecer ContentTypeOptions para permitir el funcionamiento correcto
+    // No establecer ContentSecurityPolicy para usar la versión permisiva del middleware
+};
+
+// Orden de middleware - primero estáticos, después seguridad 
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<SecurityLoggingMiddleware>();
 app.UseMiddleware<ApiLoggingMiddleware>();
 app.UseMiddleware<RequestSanitizationMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();

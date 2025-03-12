@@ -12,9 +12,7 @@ function cargarImportaciones() {
                 select.append($('<option>', { value: importacion.Value, text: importacion.Text }))
             })
         },
-        error: function (xhr, status, error) {
-            console.error('Error cargando importaciones: ' + error)
-        },
+        error: function (xhr, status, error) {},
     })
 }
 
@@ -34,9 +32,7 @@ function cargarEmpresas(importacionId) {
             })
             select.prop('disabled', false)
         },
-        error: function (xhr, status, error) {
-            console.error('Error cargando empresas: ' + error)
-        },
+        error: function (xhr, status, error) {},
     })
 }
 
@@ -142,13 +138,8 @@ function initializeServerData(selectedBarco, empresaId) {
         btnAgregar.dataset.selectedBarco = selectedBarco
         btnAgregar.dataset.empresaId = empresaId
     }
-    console.log('Initializing with barco:', selectedBarco, 'empresa:', empresaId)
-
     window.selectedBarcoId = selectedBarco
     window.selectedEmpresaId = empresaId
-
-    console.log('Barcos dropdown options:', $('#selectedBarco option').length)
-    console.log('Empresas dropdown options:', $('#empresaId option').length)
 
     $('#btnAgregar').on('click', function () {
         if (selectedBarco && empresaId) {
@@ -516,7 +507,6 @@ function setupUnitToggle() {
 
             // Cambiar estado
             window.showingMetric = !window.showingMetric
-            console.log('Toggle unidades - nuevo estado:', window.showingMetric ? 'Métrico' : 'Imperial')
 
             // Actualizar botón
             const buttonText = $(this).find('span')
@@ -526,7 +516,6 @@ function setupUnitToggle() {
 
             // 1. FILAS (tabla escotillas)
             const toggleRows = document.querySelectorAll('.unit-toggle-row')
-            console.log('Filas toggle encontradas:', toggleRows.length)
 
             toggleRows.forEach(row => {
                 if (!window.showingMetric) {
@@ -538,7 +527,6 @@ function setupUnitToggle() {
 
             // 2. COLUMNAS (otras tablas)
             const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
-            console.log('Columnas toggle encontradas:', toggleColumns.length)
 
             // Para columnas necesitamos un tratamiento especial
             toggleColumns.forEach(col => {
@@ -625,8 +613,6 @@ function initializeReporteIndividualLink() {
 }
 
 function handleBarcoChange(selectElement) {
-    console.log('Barco changed to:', selectElement.value)
-
     $('#barcoLoadingIndicator').removeClass('d-none')
 
     const empresaSelect = $('#empresaId')
@@ -643,8 +629,6 @@ function handleBarcoChange(selectElement) {
 }
 
 function handleEmpresaChange(selectElement) {
-    console.log('Empresa changed to:', selectElement.value)
-
     $('#empresaLoadingIndicator').removeClass('d-none')
 
     setTimeout(() => {
@@ -656,12 +640,10 @@ function handleEmpresaChange(selectElement) {
 function exportResumenAgregadoToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
-        console.error('Table not found: ' + tableId)
         return
     }
 
     try {
-        console.log('Exportando tabla de resumen agregado')
         const wb = XLSX.utils.book_new()
 
         // Extraer los datos de la tabla asegurando consistencia de columnas
@@ -863,10 +845,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         // Guardar el archivo
         const dateStr = new Date().toISOString().slice(0, 10)
         XLSX.writeFile(wb, `${filename}_${dateStr}.xlsx`)
-
-        console.log('Excel export successful')
     } catch (error) {
-        console.error('Error exporting to Excel:', error)
         alert('Error al exportar a Excel: ' + error.message)
     }
 }
@@ -875,7 +854,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
 function exportTableToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
-        console.error('Table not found: ' + tableId)
         return
     }
 
@@ -892,10 +870,7 @@ function exportTableToExcel(tableId, filename) {
 
         XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
         XLSX.writeFile(wb, filename + '_' + new Date().toISOString().slice(0, 10) + '.xlsx')
-
-        console.log('Excel export successful')
     } catch (error) {
-        console.error('Error exporting to Excel:', error)
         alert('Error al exportar a Excel: ' + error.message)
     }
 }
@@ -996,17 +971,13 @@ $(document).ready(function () {
     $('#btnExportarExcelIndividuales')
         .off('click')
         .on('click', function () {
-            console.log('Exportando registros individuales')
-
             if (typeof XLSX === 'undefined') {
-                console.error('La librería XLSX no está cargada correctamente')
                 alert('La librería XLSX no está cargada correctamente')
                 return
             }
 
             const tabla = document.getElementById('tabla1')
             if (!tabla) {
-                console.error('No se encontró la tabla de registros individuales')
                 alert('No se encontró la tabla de registros individuales')
                 return
             }
@@ -1034,7 +1005,6 @@ $(document).ready(function () {
                 const data = [headers]
 
                 const bodyRows = tabla.querySelectorAll('tbody tr')
-                console.log(`Procesando ${bodyRows.length} filas`)
 
                 Array.from(bodyRows).forEach((row, idx) => {
                     try {
@@ -1096,9 +1066,7 @@ $(document).ready(function () {
                         ]
 
                         data.push(rowData)
-                    } catch (rowError) {
-                        console.error(`Error procesando fila ${idx}:`, rowError)
-                    }
+                    } catch (rowError) {}
                 })
 
                 // Procesar fila de totales
@@ -1155,10 +1123,7 @@ $(document).ready(function () {
 
                 XLSX.utils.book_append_sheet(wb, ws, 'Registros Individuales')
                 XLSX.writeFile(wb, 'Registros_Individuales_' + new Date().toISOString().slice(0, 10) + '.xlsx')
-
-                console.log('Exportación completada con éxito')
             } catch (error) {
-                console.error('Error durante la exportación:', error)
                 alert('Error durante la exportación: ' + error.message)
             }
         })
@@ -1167,7 +1132,6 @@ $(document).ready(function () {
     $('#btnExportarExcelResumen')
         .off('click')
         .on('click', function () {
-            console.log('Exportando resumen agregado')
             exportResumenAgregadoToExcel('tabla2', 'Resumen_Agregado')
         })
 

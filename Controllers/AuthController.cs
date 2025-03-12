@@ -8,6 +8,7 @@ using API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Antiforgery;
 using Sistema_de_Gestion_de_Importaciones.Extensions;
+using System.Net;
 
 namespace SistemaDeGestionDeImportaciones.Controllers
 {
@@ -63,15 +64,33 @@ namespace SistemaDeGestionDeImportaciones.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("Intento de registro con modelo inválido");
+                    var mensajesError = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+
+                    string mensajeError = mensajesError.Any()
+                        ? mensajesError.First()
+                        : "Por favor, revisa los datos ingresados";
+
+                    _logger.LogWarning($"Intento de registro con modelo inválido: {mensajeError}");
+                    this.Error(mensajeError);
                     return View(model);
                 }
 
+                _logger.LogInformation($"Intentando registrar usuario: {model.Email}");
+
                 var resultado = await _usuarioService.RegistrarUsuarioAsync(model);
+
+                _logger.LogInformation($"Resultado del registro: Success={resultado.Success}, Error={resultado.ErrorMessage ?? "ninguno"}");
+
                 if (!resultado.Success)
                 {
                     _logger.LogWarning($"Error en registro: {resultado.ErrorMessage}");
-                    ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? "Ocurrió un error durante el registro");
+
+                    string mensajeError = FormatearMensajeError(resultado.ErrorMessage);
+                    this.Error(mensajeError);
+                    ModelState.AddModelError(string.Empty, mensajeError);
                     return View(model);
                 }
 
@@ -79,12 +98,63 @@ namespace SistemaDeGestionDeImportaciones.Controllers
                 this.Success("Usuario registrado correctamente. Ahora puedes iniciar sesión.");
                 return RedirectToAction(nameof(IniciarSesion));
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                _logger.LogError(ex, "Error inesperado durante el registro");
-                ModelState.AddModelError(string.Empty, "Ocurrió un error durante el registro");
+                _logger.LogError(ex, "Error HTTP durante el registro: {Message}", ex.Message);
+                string mensajeError = FormatearErrorHttp(ex);
+                this.Error(mensajeError);
+                ModelState.AddModelError(string.Empty, mensajeError);
                 return View(model);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inesperado durante el registro: {Message}", ex.Message);
+                this.Error($"Error en el registro: {ObtenerMensajeAmigable(ex.Message)}");
+                ModelState.AddModelError(string.Empty, $"Error inesperado: {ex.Message}");
+                return View(model);
+            }
+        }
+
+        private string FormatearMensajeError(string? errorMessage)
+        {
+            if (string.IsNullOrEmpty(errorMessage))
+                return "Ocurrió un error durante el registro";
+
+            if (errorMessage.Contains("email ya está registrado", StringComparison.OrdinalIgnoreCase))
+                return "Este correo electrónico ya está en uso. Por favor utiliza otro.";
+
+            if (errorMessage.Contains("Unauthorized", StringComparison.OrdinalIgnoreCase) ||
+                errorMessage.Contains("401", StringComparison.OrdinalIgnoreCase))
+                return "Error de autenticación al conectar con el servicio. Por favor intenta más tarde.";
+
+            if (errorMessage.Contains("contraseña", StringComparison.OrdinalIgnoreCase))
+                return "La contraseña no cumple con los requisitos de seguridad.";
+
+            return errorMessage;
+        }
+
+        private string FormatearErrorHttp(HttpRequestException ex)
+        {
+            return ex.StatusCode switch
+            {
+                HttpStatusCode.Unauthorized => "Error de autenticación. Por favor intenta más tarde.",
+                HttpStatusCode.BadRequest => "Los datos enviados no son válidos. Revisa la información ingresada.",
+                HttpStatusCode.Conflict => "El correo electrónico ya está registrado. Por favor utiliza otro.",
+                HttpStatusCode.InternalServerError => "Error en el servidor. Por favor intenta más tarde.",
+                _ => $"Error en la conexión: {ObtenerMensajeAmigable(ex.Message)}"
+            };
+        }
+
+        private string ObtenerMensajeAmigable(string mensaje)
+        {
+            if (mensaje.Contains("Response status code does not indicate success:"))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(mensaje, @"(\d{3}) \(([^)]+)\)");
+                if (match.Success)
+                    return $"Error {match.Groups[1].Value}: {match.Groups[2].Value}";
+            }
+
+            return mensaje;
         }
 
         [HttpPost]
@@ -103,6 +173,7 @@ namespace SistemaDeGestionDeImportaciones.Controllers
                 if (!resultado.Success)
                 {
                     _logger.LogWarning($"Error de inicio de sesión: {resultado.ErrorMessage}");
+                    this.Error("Credenciales inválidas");
                     ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? "Credenciales inválidas");
                     return View(model);
                 }
@@ -111,6 +182,7 @@ namespace SistemaDeGestionDeImportaciones.Controllers
                 if (usuario == null)
                 {
                     _logger.LogWarning("Respuesta de usuario nula o inválida");
+                    this.Error("Error de autenticación");
                     ModelState.AddModelError(string.Empty, "Error de autenticación");
                     return View(model);
                 }

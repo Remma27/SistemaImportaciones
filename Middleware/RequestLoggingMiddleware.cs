@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 
 namespace Sistema_de_Gestion_de_Importaciones.Middleware
 {
@@ -19,6 +21,26 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
             try
             {
                 _logger.LogInformation($"Iniciando solicitud: {context.Request.Method} {context.Request.Path}");
+
+                // For debugging JSON body issues
+                if (context.Request.ContentType?.Contains("application/json") == true &&
+                    context.Request.Method != "GET")
+                {
+                    context.Request.EnableBuffering();
+                    using (var reader = new StreamReader(
+                        context.Request.Body,
+                        encoding: Encoding.UTF8,
+                        detectEncodingFromByteOrderMarks: false,
+                        leaveOpen: true))
+                    {
+                        var body = await reader.ReadToEndAsync();
+                        _logger.LogInformation("Request JSON Body: {Body}", body);
+
+                        // Very important - reset position to start
+                        context.Request.Body.Position = 0;
+                    }
+                }
+
                 await _next(context);
                 sw.Stop();
                 _logger.LogInformation($"Solicitud completada: {context.Response.StatusCode} en {sw.ElapsedMilliseconds}ms");

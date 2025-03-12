@@ -12,8 +12,39 @@
                     <h3 class="card-title mb-0">Nuevo Registro de Requerimiento</h3>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <h5>Se encontraron los siguientes errores:</h5>
+                            <ul>
+                                @{
+                                    // Use HashSet to prevent duplicate errors
+                                    var displayedErrors = new HashSet<string>();
+                                }
+                                @foreach (var modelState in ViewData.ModelState.Values)
+                                {
+                                    foreach (var error in modelState.Errors)
+                                    {
+                                        if (!displayedErrors.Contains(error.ErrorMessage))
+                                        {
+                                            displayedErrors.Add(error.ErrorMessage);
+                                            <li>@error.ErrorMessage</li>
+                                        }
+                                    }
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <form asp-action="Create"
+                        asp-route-returnUrl="/mvc/RegistroRequerimientos?selectedBarco=@ViewBag.IdImportacion"
+                        method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                        <!-- Hidden fields for critical values -->
+                        <input type="hidden" asp-for="IdImportacion" value="@ViewBag.IdImportacion" />
+                        <input type="hidden" name="selectedBarco" value="@ViewBag.IdImportacion" />
+                        <input type="hidden" asp-for="TipoTransaccion" value="1" />
 
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -24,13 +55,12 @@
                             <div class="col-md-6">
                                 <label class="form-label">Importación</label>
                                 <input type="text" class="form-control" value="@ViewBag.NombreBarco" readonly />
-                                <input type="hidden" asp-for="IdImportacion" />
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label asp-for="IdEmpresa" class="form-label">Empresa</label>
+                                <label asp-for="IdEmpresa" class="form-label">Empresa *</label>
                                 <select asp-for="IdEmpresa" class="form-select" asp-items="ViewBag.Empresas" required>
                                     <option value="">Seleccione una empresa</option>
                                 </select>
@@ -39,8 +69,6 @@
                             <div class="col-md-6">
                                 <label class="form-label">Tipo de Transacción</label>
                                 <input type="text" class="form-control" value="Requerimiento" readonly />
-                                <input type="hidden" asp-for="TipoTransaccion" value="1" />
-                                <span asp-validation-for="TipoTransaccion" class="text-danger"></span>
                             </div>
                         </div>
 
@@ -68,8 +96,20 @@
                             </button>
                         </div>
                     </form>
-                </div>
+                </div>  
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Highlight fields with validation errors
+        document.addEventListener('DOMContentLoaded', function() {
+            const invalidFields = document.querySelectorAll('.input-validation-error');
+            invalidFields.forEach(field => {
+                field.parentElement.classList.add('was-validated');
+            });
+        });
+    </script>
+}

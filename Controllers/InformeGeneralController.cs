@@ -20,6 +20,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         public async Task<IActionResult> Index(int? selectedBarco)
         {
+            ViewData["FullWidth"] = true;
             var viewModel = new RegistroPesajesViewModel();
             ViewBag.Barcos = new SelectList(await _movimientoService.GetBarcosSelectListAsync(), "Value", "Text", selectedBarco);
 
@@ -56,6 +57,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
                     viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
                     viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                    viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
+
+                    // Establecer ViewData que será utilizado por la vista parcial
+                    ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
+                    ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
+
                 }
 
                 return View(viewModel);

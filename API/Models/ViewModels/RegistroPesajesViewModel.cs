@@ -7,10 +7,10 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 {
     public class RegistroPesajesViewModel
     {
-        public List<RegistroPesajesIndividual> Tabla1Data { get; set; } = new();
-        public List<RegistroPesajesAgregado> Tabla2Data { get; set; } = new();
-        public List<TotalesPorBodegaViewModel> TotalesPorBodega { get; set; } = new();
-        public List<EscotillaViewModel> EscotillasData { get; set; } = new();
+        public List<RegistroPesajesIndividual> Tabla1Data { get; set; } = new List<RegistroPesajesIndividual>();
+        public List<RegistroPesajesAgregado> Tabla2Data { get; set; } = new List<RegistroPesajesAgregado>();
+        public List<TotalesPorBodegaViewModel> TotalesPorBodega { get; set; } = new List<TotalesPorBodegaViewModel>();
+        public List<EscotillaViewModel> EscotillasData { get; set; } = new List<EscotillaViewModel>();
         public decimal CapacidadTotal { get; set; }
         public decimal DescargaTotal { get; set; }
         public decimal DiferenciaTotal { get; set; }

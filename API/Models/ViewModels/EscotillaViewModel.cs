@@ -9,7 +9,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal DescargaRealKg { get; set; }
         public decimal DiferenciaKg { get; set; }
         public decimal Porcentaje { get; set; }
-        public string Estado { get; set; } = string.Empty;
+        public string Estado { get; set; } = "Sin Iniciar";
 
         public int Numero
         {
@@ -40,15 +40,5 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
             get => DiferenciaKg;
             set => DiferenciaKg = value;
         }
-    }
-
-    public class EscotillasResumenViewModel
-    {
-        public List<EscotillaViewModel> Escotillas { get; set; } = new();
-        public decimal CapacidadTotal { get; set; }
-        public decimal DescargaTotal { get; set; }
-        public decimal DiferenciaTotal { get; set; }
-        public decimal PorcentajeTotal { get; set; }
-        public string EstadoGeneral { get; set; } = string.Empty;
     }
 }

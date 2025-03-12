@@ -13,6 +13,9 @@ namespace API.Models
         [Required]
         public DateTime fechahora { get; set; }
 
+        //[Required]
+        public DateTime? fechahorasistema { get; set; }
+
         [ForeignKey("Importacion")]
         [Required]
         public int idimportacion { get; set; }

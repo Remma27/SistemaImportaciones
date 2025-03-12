@@ -18,6 +18,8 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 
     public class TotalesEscotillas
     {
+        public decimal TotalKilosRequeridos { get; set; } = 0;
+
         public decimal CapacidadTotal { get; set; }
         public decimal DescargaTotal { get; set; }
         public decimal DiferenciaTotal { get; set; }

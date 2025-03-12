@@ -10,6 +10,83 @@
 @section Styles {
     <link rel="stylesheet" href="~/css/registroPesajes.css" />
     <link rel="stylesheet" href="~/css/reporteIndividual.css" />
+    <style>
+        .columna-conversion {
+            display: none;
+        }
+
+        /* Estilos para definir el ancho de las columnas */
+        #tablaDetallada th:nth-child(1) {
+            width: 70px;
+        }
+
+        /* Escotilla */
+        #tablaDetallada th:nth-child(2) {
+            width: 250px;
+            /* Aumentado de 200px a 250px para dar más espacio */
+        }
+
+        /* Empresa - más ancho para evitar sobreposición */
+        #tablaDetallada th:nth-child(3) {
+            width: 100px;
+        }
+
+        /* Bodega */
+        #tablaDetallada th:nth-child(4) {
+            width: 120px;
+        }
+
+        /* Guía */
+        #tablaDetallada th:nth-child(5) {
+            width: 120px;
+        }
+
+        /* Guía Alterna */
+        #tablaDetallada th:nth-child(6) {
+            width: 120px;
+        }
+
+        /* Placa */
+        #tablaDetallada th:nth-child(7) {
+            width: 120px;
+        }
+
+        /* Placa Alterna */
+        #tablaDetallada th:nth-child(8) {
+            width: 120px;
+        }
+
+        /* Peso Entregado */
+        #tablaDetallada th:nth-child(9) {
+            width: 150px;
+        }
+
+        /* Cantidad por Retirar */
+        #tablaDetallada th:nth-child(10) {
+            width: 130px;
+        }
+
+        /* Cantidad Retirada */
+
+        /* Para las columnas de conversión */
+        #tablaDetallada th.columna-conversion {
+            width: 140px;
+        }
+
+        /* Asegurar que el contenido no se desborde */
+        #tablaDetallada td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 0;
+        }
+
+        /* Asegurar que la tabla tenga scroll horizontal cuando sea necesario */
+        .table-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+    </style>
 }
 
 <div class="container-fluid px-4">
@@ -24,16 +101,28 @@
     <div class="table-responsive-custom">
         <!-- Header Card -->
         <div class="card mb-3 shadow">
-            <div class="card-header bg-gradient bg-dark py-3 d-flex justify-content-between align-items-center">
-                <h4 class="mb-0 text-white"><i class="fas fa-clipboard-list me-2"></i>Reporte Individual Detallado</h4>
-                <div class="d-flex gap-2">
-                    <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })"
-                        class="btn btn-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Volver
-                    </a>
-                    <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel">
-                        <i class="fas fa-file-excel me-1"></i>Exportar
-                    </button>
+            <div class="card-header bg-gradient bg-dark py-3">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                    <h4 class="mb-2 mb-md-0 text-white">
+                        <i class="fas fa-clipboard-list me-2"></i>Reporte Individual Detallado
+                    </h4>
+                    <div class="d-flex flex-wrap gap-2 ms-0 ms-md-auto">
+                        <button id="btnToggleConversiones" class="btn btn-info btn-sm" title="Mostrar/Ocultar Conversiones">
+                            <i class="fas fa-calculator me-1"></i>
+                            <span>Mostrar Conversiones</span>
+                        </button>
+                        
+                        <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })"
+                            class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            <span>Volver</span>
+                        </a>
+                        
+                        <button id="btnExportarExcel" class="btn btn-success btn-sm" title="Exportar a Excel">
+                            <i class="fas fa-file-excel me-1"></i>
+                            <span>Exportar</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -52,20 +141,22 @@
                             class="table table-hover align-middle table-full-width table-fixed-header">
                             <thead>
                                 <tr class="table-dark">
-                                    <th>Escotilla</th>
-                                    <th>Empresa</th>
-                                    <th>Bodega</th>
-                                    <th>Guía</th>
-                                    <th>Guía Alterna</th>
-                                    <th>Placa</th>
-                                    <th>Placa Alterna</th>
-                                    <th class="text-end">Peso Entregado</th>
-                                    <th class="text-end">Cantidad por Retirar</th>
-                                    <th class="text-end">Cantidad Retirada</th>
-                                    <th class="text-end">Cant. Req. Quintales</th>
-                                    <th class="text-end">Cant. Ent. Quintales</th>
-                                    <th class="text-end">Cant. Req. Libras</th>
-                                    <th class="text-end">Cant. Ent. Libras</th>
+                                    <th style="width: 70px;">Escotilla</th>
+                                    <th style="width: 250px;">Empresa</th> <!-- Aumentado de 200px a 250px -->
+                                    <th style="width: 100px;">Bodega</th>
+                                    <th style="width: 120px;">Guía</th>
+                                    <th style="width: 120px;">Guía Alterna</th>
+                                    <th style="width: 120px;">Placa</th>
+                                    <th style="width: 120px;">Placa Alterna</th>
+                                    <th class="text-end" style="width: 120px;">Peso Entregado</th>
+                                    <th class="text-end" style="width: 150px;">Cantidad por Retirar</th>
+                                    <th class="text-end" style="width: 130px;">Cantidad Retirada</th>
+                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Req. Quintales
+                                    </th>
+                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Ent. Quintales
+                                    </th>
+                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Req. Libras</th>
+                                    <th class="text-end columna-conversion" style="width: 140px;">Cant. Ent. Libras</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -104,11 +195,14 @@
                                             <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
                                             <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
                                             <td class="text-end">@item.CantidadRetiradaKg.ToString("N0")</td>
-                                            
-                                            <td class="text-end">@item.CantidadRequeridaQuintales?.ToString("N2")</td>
-                                            <td class="text-end">@item.CantidadEntregadaQuintales?.ToString("N2")</td>
-                                            <td class="text-end">@item.CantidadRequeridaLibras?.ToString("N2")</td>
-                                            <td class="text-end">@item.CantidadEntregadaLibras?.ToString("N2")</td>
+                                            <td class="text-end columna-conversion">
+                                                @item.CantidadRequeridaQuintales?.ToString("N2")</td>
+                                            <td class="text-end columna-conversion">
+                                                @item.CantidadEntregadaQuintales?.ToString("N2")</td>
+                                            <td class="text-end columna-conversion">
+                                                @item.CantidadRequeridaLibras?.ToString("N2")</td>
+                                            <td class="text-end columna-conversion">
+                                                @item.CantidadEntregadaLibras?.ToString("N2")</td>
                                         </tr>
                                     }
                                 }
@@ -128,6 +222,27 @@
     <script>
         $(document).ready(function () {
             $('#btnExportarExcel').prop('disabled', false).removeClass('disabled');
+
+            // Función para mostrar/ocultar columnas de conversión
+            $('#btnToggleConversiones').on('click', function () {
+                $('.columna-conversion').toggle();
+
+                // Cambiar texto del botón según el estado
+                const isVisible = $('.columna-conversion').is(':visible');
+                $(this).html(isVisible ?
+                    '<i class="fas fa-calculator me-1"></i>Ocultar Conversiones' :
+                    '<i class="fas fa-calculator me-1"></i>Mostrar Conversiones');
+
+                // Cambiar el título del botón
+                $(this).attr('title', isVisible ? 'Ocultar Conversiones' : 'Mostrar Conversiones');
+
+                // Cambiar el color del botón según el estado
+                if (isVisible) {
+                    $(this).removeClass('btn-info').addClass('btn-warning');
+                } else {
+                    $(this).removeClass('btn-warning').addClass('btn-info');
+                }
+            });
 
             setTimeout(function () {
                 if ($('#btnExportarExcel').prop('disabled')) {

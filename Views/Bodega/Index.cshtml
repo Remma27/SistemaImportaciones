@@ -20,7 +20,7 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-striped table-hover align-middle">
                     <thead class="table-light">
                         <tr>
                             <th><i class="fas fa-warehouse me-1"></i>Nombre</th>
@@ -28,35 +28,35 @@
                         </tr>
                     </thead>
                     <tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        @foreach (var item in Model)
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@(string.IsNullOrEmpty(item.bodega) ? "SIN NOMBRE" : item.bodega)</td>
+                                    <td class="text-end">
+                                        <div class="btn-group">
+                                            <a asp-controller="Bodega" asp-action="Edit" asp-route-id="@item.id"
+                                                class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-controller="Bodega" asp-action="Delete" asp-route-id="@item.id"
+                                                class="btn btn-sm btn-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td>@(string.IsNullOrEmpty(item.bodega) ? "SIN NOMBRE" : item.bodega)</td>
-                                <td class="text-end">
-                                    <div class="btn-group">
-                                        <a asp-controller="Bodega" asp-action="Edit" asp-route-id="@item.id" 
-                                        class="btn btn-sm btn-warning" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a asp-controller="Bodega" asp-action="Delete" asp-route-id="@item.id" 
-                                        class="btn btn-sm btn-danger" title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </div>
+                                <td colspan="2" class="text-center text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>No hay bodegas registradas
                                 </td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="2" class="text-center text-muted">
-                                <i class="fas fa-info-circle me-1"></i>No hay bodegas registradas
-                            </td>
-                        </tr>
-                    }
                     </tbody>
                 </table>
             </div>

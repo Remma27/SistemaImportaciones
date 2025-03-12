@@ -330,6 +330,67 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
+        public async Task<IEnumerable<SelectListItem>> GetEmpresasWithMovimientosAsync(int importacionId)
+        {
+            try
+            {
+                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={importacionId}";
+                _logger.LogInformation($"Obteniendo empresas con InformeGeneral: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error: {response.StatusCode}");
+                    return Enumerable.Empty<SelectListItem>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta obtenida, longitud: {content.Length}");
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    var empresasIds = new HashSet<int>();
+                    var empresasNombres = new Dictionary<int, string>();
+
+                    foreach (var item in dataElement.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("empresaId", out var idElement) ||
+                            item.TryGetProperty("id_empresa", out idElement))
+                        {
+                            int empresaId = idElement.GetInt32();
+                            empresasIds.Add(empresaId);
+
+                            if (item.TryGetProperty("empresa", out var nombreElement))
+                            {
+                                empresasNombres[empresaId] = nombreElement.GetString() ?? "Sin nombre";
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation($"Encontradas {empresasIds.Count} empresas con movimientos");
+
+                    var todasLasEmpresas = await GetEmpresasSelectListAsync();
+
+                    return todasLasEmpresas
+                        .Where(e => int.TryParse(e.Value, out var id) && empresasIds.Contains(id))
+                        .ToList();
+                }
+
+                _logger.LogWarning("No se encontró propiedad 'data' en la respuesta");
+                return Enumerable.Empty<SelectListItem>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener empresas con movimientos");
+                return Enumerable.Empty<SelectListItem>();
+            }
+        }
         async Task<List<RegistroRequerimientosViewModel>> IMovimientoService.GetRegistroRequerimientosAsync(int barcoId)
         {
             try
@@ -488,8 +549,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     IdImportacion = movimiento.idimportacion,
                     IdEmpresa = movimiento.idempresa,
                     TipoTransaccion = movimiento.tipotransaccion,
-                    CantidadRequerida = movimiento.cantidadrequerida,
-                    CantidadCamiones = movimiento.cantidadcamiones,
+                    CantidadRequerida = movimiento.cantidadrequerida ?? 0m, // Handle nullable with default
+                    CantidadCamiones = movimiento.cantidadcamiones ?? 0,    // Handle nullable with default
                     Importacion = importacionNombre,
                     Empresa = empresaNombre
                 };
@@ -512,13 +573,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                string cacheKey = $"InformeGeneral_{barcoId}";
-
-                if (_memoryCache.TryGetValue(cacheKey, out List<InformeGeneralViewModel>? cachedResult) && cachedResult != null)
-                {
-                    return cachedResult;
-                }
-
                 var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes");
                 response.EnsureSuccessStatusCode();
 
@@ -531,10 +585,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
 
+                // Add debug logging to check value
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
                 {
-
                     TotalMovimientos = totalMovimientosElement.GetInt32();
+                    _logger.LogInformation($"Total movimientos from API: {TotalMovimientos}");
                 }
 
                 if (root.TryGetProperty("data", out var dataElement))
@@ -543,11 +598,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         dataElement.GetRawText(),
                         options
                     );
-
-                    if (informes != null)
-                    {
-                        _memoryCache.Set(cacheKey, informes, TimeSpan.FromMinutes(5));
-                    }
 
                     return informes ?? new List<InformeGeneralViewModel>();
                 }
@@ -640,12 +690,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             {
                 _logger.LogInformation($"Actualizando registro requerimiento {id}...");
 
-                // Convert the view model to a Movimiento object
                 var movimiento = new Movimiento
                 {
-                    id = viewModel.IdMovimiento,
+                    id = viewModel.IdMovimiento ?? throw new InvalidOperationException("IdMovimiento cannot be null"),
                     idimportacion = viewModel.IdImportacion ?? 0,
-                    idempresa = viewModel.IdEmpresa ?? 0,
+                    idempresa = viewModel.IdEmpresa,
                     tipotransaccion = viewModel.TipoTransaccion ?? 1,
                     cantidadrequerida = viewModel.CantidadRequerida,
                     cantidadcamiones = viewModel.CantidadCamiones,
@@ -653,7 +702,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     idusuario = int.TryParse(userId, out int parsedId) ? parsedId : null
                 };
 
-                // Use the Edit endpoint with PUT method, as defined in the API controller
                 var url = $"{_apiBaseUrl}/Edit";
                 _logger.LogInformation($"Calling API endpoint: {url}");
 
@@ -684,13 +732,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                string cacheKey = $"CalculoMovimientos_{importacionId}_{idempresa}";
-
-                if (_memoryCache.TryGetValue(cacheKey, out List<Movimiento>? cachedResult) && cachedResult != null)
-                {
-                    return cachedResult;
-                }
-
                 _logger.LogDebug($"Calculando movimientos: importación {importacionId}, empresa {idempresa}");
 
                 var url = $"{_apiBaseUrl}/CalculoMovimientos?importacionId={importacionId}&idempresa={idempresa}";
@@ -727,8 +768,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     escotilla = dto.escotilla,
                 }).ToList();
 
-                _memoryCache.Set(cacheKey, result, TimeSpan.FromMinutes(3));
-
                 return result;
             }
             catch (Exception ex)
@@ -737,7 +776,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 return new List<Movimiento>();
             }
         }
-
 
         public async Task<EscotillaApiResponse> GetEscotillasApiDataAsync(int importacionId)
         {
@@ -827,6 +865,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     DescargaTotal = apiResponse?.Totales?.DescargaTotal ?? 0,
                     DiferenciaTotal = apiResponse?.Totales?.DiferenciaTotal ?? 0,
                     PorcentajeTotal = apiResponse?.Totales?.PorcentajeTotal ?? 0,
+                    TotalKilosRequeridos = apiResponse?.Totales?.TotalKilosRequeridos ?? 0,
                     EstadoGeneral = apiResponse?.Totales?.EstadoGeneral ?? "Sin información"
                 };
             }
@@ -887,7 +926,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                                     GuiaAlterna = GetStringValue(element, "guiaAlterna"),
                                     Placa = GetStringValue(element, "placa"),
                                     PlacaAlterna = GetStringValue(element, "placaAlterna"),
-                                    PesoEntregado = GetDecimalValue(element, "pesoEntregadoKg"),
+                                    PesoEntregado = GetDecimalValue(element, "pesoEntregado"),
                                     PesoRequerido = GetDecimalValue(element, "cantidadRetirarKg"),
                                     CantidadRetiradaKg = GetDecimalValue(element, "cantidadRetiradaKg"),
                                     PesoFaltante = GetDecimalValue(element, "pesoFaltante"),

@@ -12,13 +12,15 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewComponents
             decimal descargaTotal,
             decimal diferenciaTotal,
             decimal porcentajeTotal,
-            string estadoGeneral)
+            string estadoGeneral,
+            decimal kilosRequeridos = 0)
         {
             ViewData["CapacidadTotal"] = capacidadTotal;
             ViewData["DescargaTotal"] = descargaTotal;
             ViewData["DiferenciaTotal"] = diferenciaTotal;
             ViewData["PorcentajeTotal"] = porcentajeTotal;
             ViewData["EstadoGeneral"] = estadoGeneral;
+            ViewData["KilosRequeridos"] = kilosRequeridos;
 
             return View(model);
         }

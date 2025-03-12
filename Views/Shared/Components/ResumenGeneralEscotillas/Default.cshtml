@@ -1,9 +1,7 @@
 @model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>
 @{
-    // Obtener los kilos requeridos del ViewData
     var totalKilosRequeridos = ViewData["KilosRequeridos"] is decimal kilosReq ? kilosReq : 0M;
     
-    // Solo mantenemos el estado general
     var estadoGeneral = ViewData["EstadoGeneral"] is string value5 ? value5 : "";
 
     var escotillasDiccionario = Model?.ToDictionary(e => e.NumeroEscotilla, e => e) ?? new Dictionary<int,
@@ -11,14 +9,13 @@
     var todasLasEscotillas = Enumerable.Range(1, 5).Reverse();
     var hayDatos = Model != null && Model.Any();
     
-    // Calculamos la descarga total y diferencia
     decimal descargaTotal = 0;
     
     foreach (var numeroEscotilla in todasLasEscotillas)
     {
-        var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new EscotillaViewModel 
-        { 
-            CapacidadKg = 0, 
+        var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new EscotillaViewModel
+        {
+            CapacidadKg = 0,
             DescargaRealKg = 0,
             DiferenciaKg = 0
         });
@@ -26,56 +23,51 @@
         descargaTotal += escotilla.DescargaRealKg;
     }
     
-    // Calculamos la diferencia: valor positivo = faltante, valor negativo = sobrante
     decimal diferenciaTotal = totalKilosRequeridos - descargaTotal;
     
-    // Calculamos el porcentaje total
     var porcentajeTotal = totalKilosRequeridos > 0 ? (descargaTotal / totalKilosRequeridos) * 100 : 0;
     var porcentajeFaltanteSobrante = totalKilosRequeridos > 0 ? Math.Abs(diferenciaTotal) / totalKilosRequeridos * 100 : 0;
-    var esSobrante = diferenciaTotal < 0; // Si diferenciaTotal es negativa, hay sobrante
-    var esFaltante = diferenciaTotal > 0; // Si diferenciaTotal es positiva, hay faltante
+    var esSobrante = diferenciaTotal < 0;
+    var esFaltante = diferenciaTotal > 0;
     
-    // Sistema de colores estandarizado
-    var ColorScheme = new {
-        Verde = "#28a745",      // Completado
-        Azul = "#0d6efd",       // En proceso
-        Gris = "#6c757d",       // Sin iniciar
-        Rojo = "#dc3545",       // Alertas/Faltante
-        Amarillo = "#ffc107",   // Advertencias
-        Celeste = "#17a2b8",    // Casi completo
-        Fondo = "#f8f9fa",      // Fondo de gráficas
-        Blanco = "#ffffff",     // Texto claro
-        Naranja = "#fd7e14"     // Nueva adición  
+    var ColorScheme = new
+    {
+        Verde = "#28a745",      
+        Naranja = "#fd7e14",    
+        Gris = "#6c757d",       
+        Rojo = "#dc3545",       
+        Amarillo = "#ffc107",   
+        Fondo = "#f8f9fa",     
+        Blanco = "#ffffff"      
     };
 
-    // Función unificada para determinar colores basada en estado y porcentaje
-    Func<string, decimal, string> determinarColorUnificado = (estado, porcentaje) => {
+    Func<string, decimal, string> determinarColorUnificado = (estado, porcentaje) =>
+    {
         var estadoLower = (estado ?? "").ToLower().Trim();
         
-        // Prioridad 1: Estado explícito
         if (estadoLower.Contains("complet")) return ColorScheme.Verde;
-        if (estadoLower.Contains("proces") || estadoLower.Contains("descarg")) return ColorScheme.Azul;
+        if (estadoLower.Contains("proces") || estadoLower.Contains("descarg")) return ColorScheme.Naranja; 
         if (estadoLower.Contains("sin") || estadoLower.Contains("inici")) return ColorScheme.Gris;
         
-        // Prioridad 2: Porcentaje de avance
         if (porcentaje >= 100) return ColorScheme.Verde;
-        if (porcentaje >= 90) return ColorScheme.Celeste;
-        if (porcentaje >= 70) return ColorScheme.Azul;
+        if (porcentaje >= 70) return ColorScheme.Naranja;
         if (porcentaje >= 30) return ColorScheme.Amarillo;
         
-        return ColorScheme.Gris;
+        return ColorScheme.Rojo;
+    };
+    
+    Func<decimal, string> determinarColorDiferencia = (diferencia) =>
+    {
+        if (diferencia < 0) return ColorScheme.Naranja;
+        if (diferencia > 0) return ColorScheme.Rojo;
+        return "inherit";
     };
 
-    // Datos para gráficas
     var porcentajeCompletado = Math.Min(porcentajeTotal, 100);
-    var colorEstado = porcentajeTotal >= 100 ? ColorScheme.Verde : 
-                     porcentajeTotal >= 90 ? ColorScheme.Celeste : 
-                     porcentajeTotal >= 70 ? ColorScheme.Amarillo : 
-                     ColorScheme.Rojo;
+    var colorEstado = determinarColorUnificado(estadoGeneral, porcentajeTotal);
     
-    // Estado del progreso para texto
-    string estadoProgreso = porcentajeTotal >= 100 ? "Completado" : 
-                          porcentajeTotal >= 90 ? "Casi completo" : 
+    string estadoProgreso = porcentajeTotal >= 100 ? "Completado" :
+                          porcentajeTotal >= 90 ? "Casi completo" :
                           porcentajeTotal >= 70 ? "En progreso" : "Iniciando";
 }
 
@@ -90,465 +82,478 @@
         <div class="card-body bg-light p-4">
             @if (!hayDatos)
             {
-                <div class="alert alert-info mb-0 text-center py-4">
-                    <i class="fas fa-info-circle me-2 fa-2x mb-3 d-block mx-auto"></i>
-                    <h6>No hay datos disponibles para mostrar en este momento.</h6>
-                </div>
+                    <div class="alert alert-info mb-0 text-center py-4">
+                        <i class="fas fa-info-circle me-2 fa-2x mb-3 d-block mx-auto"></i>
+                        <h6>No hay datos disponibles para mostrar en este momento.</h6>
+                    </div>
             }
             else
             {
-                <!-- Tabla de escotillas -->
-                <div class="table-responsive mb-4 shadow-sm rounded">
-                    <table id="tablaEscotillas" class="table table-striped table-hover align-middle mb-0">
-                        <thead>
-                            <tr class="bg-dark text-white text-center">
-                                <th class="align-middle py-3" style="width: 22%">Métrica</th>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    <th class="align-middle py-3">
-                                        <div class="d-flex align-items-center justify-content-center">
-                                            <i class="fas fa-door-open me-2 text-warning"></i>
-                                            <span>Escotilla @numeroEscotilla</span>
-                                        </div>
-                                    </th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="fw-bold">Capacidad (Kg)</td>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                    EscotillaViewModel
-                                    { CapacidadKg = 0 });
-                                    <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
-                                }
-                            </tr>
-                            <tr>
-                                <td class="fw-bold">Descargado (Kg)</td>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                    EscotillaViewModel
-                                    { DescargaRealKg = 0 });
-                                    <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
-                                }
-                            </tr>
-                            <tr class="bg-light unit-toggle-row" style="display:none;">
-                                <td class="fw-bold">Descargado (Lbs/Qq)</td>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                    EscotillaViewModel
-                                    { DescargaRealKg = 0 });
-                                    <td class="text-end">
-                                        <div>
-                                            <span class="d-block">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
-                                            <span class="d-block text-muted small">@((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq</span>
-                                        </div>
-                                    </td>
-                                }
-                            </tr>
-                            <tr>
-                                <td class="fw-bold">Diferencia (Kg)</td>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                    EscotillaViewModel
-                                    { DiferenciaKg = 0 });
-                                    <td class="text-end @(escotilla.DiferenciaKg < 0 ? "text-success fw-bold" : (escotilla.DiferenciaKg > 0 ? "text-danger fw-bold" : ""))">
-                                        @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
-                                    </td>
-                                }
-                            </tr>
-                            <tr>
-                                <td class="fw-bold">Estado</td>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                    EscotillaViewModel { Estado = "Sin Iniciar" });
-                                    
-                                    var porcentajeEscotilla = escotilla.CapacidadKg > 0 ? 
-                                                             (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
-                                    
-                                    string badgeColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
-                                    
-                                    <td class="text-center">
-                                        <span class="badge rounded-pill px-3 py-2 estado-badge"
-                                              style="background-color: @badgeColor !important; color: @ColorScheme.Blanco;
-                                                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                            <i class="fas @(escotilla.Estado.ToLower().Contains("complet") ? "fa-check-circle" : 
-                                                          escotilla.Estado.ToLower().Contains("proces") ? "fa-sync-alt" : "fa-clock") me-1"></i>
-                                            @escotilla.Estado
-                                        </span>
-                                    </td>
-                                }
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Dashboard con información clave -->
-                <div class="row g-4">
-                    <!-- Progreso general -->
-                    <div class="col-lg-5">
-                        <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
-                            <div class="card-header bg-white border-0 pt-4 pb-0">
-                                <h6 class="text-primary fw-bold mb-0">
-                                    <i class="fas fa-tachometer-alt me-2"></i>Progreso General
-                                </h6>
-                            </div>
-                            <div class="card-body p-4">
-                                <!-- NUEVO PROGRESS BAR HARDCODED -->
-                                <div class="position-relative mb-4">
-                                    <!-- BARRA DE PROGRESO SIN JAVASCRIPT -->
-                                    <div style="height: 34px; background-color: #f0f0f0; border-radius: 8px; overflow: hidden; position: relative;">
-                                        <!-- BARRA COLORIDA CON ANCHO FIJO SEGÚN PORCENTAJE -->
-                                        <div style="position: absolute; left: 0; top: 0; height: 100%; background-color: #28a745; width: @porcentajeCompletado.ToString("0.##")%;">
-                                        </div>
-                                        <!-- TEXTO CENTRADO -->
-                                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 2;">
-                                            <span class="fw-bold fs-5" style="text-shadow: 0 0 3px rgba(255,255,255,0.9);">@porcentajeTotal.ToString("N2")%</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-between px-2 mb-3">
-                                    <span class="small text-muted">0%</span>
-                                    <span class="small text-muted">50%</span>
-                                    <span class="small text-muted">100%</span>
-                                </div>
-
-                                <div class="text-center mt-3">
-                                    <span class="badge p-2 px-4 fs-6" style="background-color: @colorEstado; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-                                        <i class="fas fa-chart-line me-2"></i>
-                                        @estadoProgreso @(esSobrante ? " (Con Sobrante)" : "")
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Métricas clave -->
-                    <div class="col-lg-7">
-                        <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
-                            <div class="card-header bg-white border-0 pt-4 pb-0">
-                                <h6 class="text-primary fw-bold mb-0">
-                                    <i class="fas fa-chart-pie me-2"></i>Resumen de Carga
-                                </h6>
-                            </div>
-                            <div class="card-body p-4">
-                                <div class="row g-3 text-center">
-                                    <div class="col-md-4">
-                                        <div class="metric-box p-3 border rounded-4 bg-light h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden">
-                                            <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: #e0e0e0;">
-                                                <i class="fas fa-weight"></i>
-                                            </div>
-                                            <div class="position-relative">
-                                                <div class="small text-muted mb-1">Requerido</div>
-                                                <div class="fw-bold fs-4 mb-1">@totalKilosRequeridos.ToString("N0") Kg</div>
-                                                <div class="small text-primary">
-                                                    @((totalKilosRequeridos * 2.20462M).ToString("N0")) lbs | 
-                                                    @((totalKilosRequeridos / 45.359237M).ToString("N2")) qq
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="metric-box p-3 border rounded-4 bg-light h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden">
-                                            <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: #e0e0e0;">
-                                                <i class="fas fa-dolly"></i>
-                                            </div>
-                                            <div class="position-relative">
-                                                <div class="small text-muted mb-1">Descargado</div>
-                                                <div class="fw-bold fs-4 mb-1">@descargaTotal.ToString("N0") Kg</div>
-                                                <div class="small text-primary">
-                                                    @((descargaTotal * 2.20462M).ToString("N0")) lbs | 
-                                                    @((descargaTotal / 45.359237M).ToString("N2")) qq
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="metric-box p-3 border rounded-4 h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden 
-                                                    @(esSobrante ? "bg-success bg-opacity-75" : esFaltante ? "bg-danger bg-opacity-10" : "bg-light")">
-                                            <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: @(esSobrante ? "rgba(255,255,255,0.2)" : "#e0e0e0");">
-                                                <i class="fas @(esSobrante ? "fa-plus-circle" : esFaltante ? "fa-minus-circle" : "fa-equals")"></i>
-                                            </div>
-                                            <div class="position-relative">
-                                                <div class="small @(esSobrante ? "text-white" : "text-muted") mb-1">@(esSobrante ? "Sobrante" : esFaltante ? "Faltante" : "Diferencia")</div>
-                                                <div class="fw-bold fs-4 mb-1 @(esSobrante ? "text-white" : esFaltante ? "text-danger" : "")">
-                                                    @(esSobrante ? "+" : esFaltante ? "-" : "")@Math.Abs(diferenciaTotal).ToString("N0") Kg
-                                                </div>
-                                                <div class="mt-1 small @(esSobrante ? "text-white" : esFaltante ? "text-danger" : "")">
-                                                    (@Math.Abs(porcentajeFaltanteSobrante).ToString("N2")%)
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráficas de escotillas tipo dona -->
-                    <div class="col-12">
-                        <div class="card bg-white shadow-sm border-0 rounded-4 overflow-hidden">
-                            <div class="card-header bg-white border-0 pt-4 pb-0">
-                                <h6 class="text-primary fw-bold mb-0">
-                                    <i class="fas fa-chart-pie me-2"></i>Estado de Descarga por Escotilla
-                                </h6>
-                            </div>
-                            <div class="card-body p-4">
-                                <div class="row g-4 justify-content-center">
+                    <div class="table-responsive mb-4 shadow-sm rounded">
+                        <table id="tablaEscotillas" class="table table-striped table-hover align-middle mb-0">
+                            <thead>
+                                <tr class="bg-dark text-white text-center">
+                                    <th class="align-middle py-3" style="width: 22%">Métrica</th>
                                     @foreach (var numeroEscotilla in todasLasEscotillas)
                                     {
-                                        var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                        EscotillaViewModel { CapacidadKg = 0, DescargaRealKg = 0, Estado = "Sin Iniciar" });
-                                        
-                                        var porcentajeEscotilla = escotilla.CapacidadKg > 0 ? 
-                                                                 (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
-                                        var porcentajeMostrar = Math.Min(porcentajeEscotilla, 100);
-                                        
-                                        // CAMBIO CRÍTICO: Asignar colores directamente basados en el estado
-                                        string estadoBajo = escotilla.Estado.ToLower();
-                                        string donutColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
-
-                                        <div class="col-md-6 col-lg-2 text-center">
-                                            <div class="escotilla-card p-3 border rounded-4 shadow-sm hover-lift">
-                                                <div class="escotilla-number fw-bold text-primary mb-2">ESCOTILLA @numeroEscotilla</div>
-                                                <div class="donut-chart-container position-relative mx-auto" style="width: 160px; height: 160px;">
-                                                    <canvas id="donutChart@(numeroEscotilla)" width="160" height="160" 
-                                                          data-porcentaje="@porcentajeMostrar" 
-                                                          data-color="@donutColor"
-                                                          data-estado="@escotilla.Estado"></canvas>
-                                                    <div class="position-absolute top-50 start-50 translate-middle text-center" style="width: 100%;">
-                                                        <span class="fw-bold d-block" style="font-size: 2rem;">@porcentajeEscotilla.ToString("0")%</span>
-                                                        <span class="badge rounded-pill px-2" style="background-color: @donutColor !important; font-size: 0.7rem;">
-                                                            <i class="fas @(estadoBajo.Contains("complet") ? "fa-check-circle" : 
-                                                                          estadoBajo.Contains("proces") ? "fa-sync-alt" : "fa-clock") me-1"></i>
-                                                            @escotilla.Estado
-                                                        </span>
-                                                    </div>
+                                            <th class="align-middle py-3">
+                                                <div class="d-flex align-items-center justify-content-center">
+                                                    <i class="fas fa-door-open me-2 text-warning"></i>
+                                                    <span>Escotilla @numeroEscotilla</span>
                                                 </div>
-                                                <div class="mt-3 small text-muted">
-                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                                                        <span>Capacidad:</span>
-                                                        <span class="fw-bold">@escotilla.CapacidadKg.ToString("N0") Kg</span>
-                                                    </div>
-                                                    <div class="d-flex justify-content-between">
-                                                        <span>Descargado:</span>
-                                                        <span class="fw-bold" style="color: @donutColor">
-                                                            @escotilla.DescargaRealKg.ToString("N0") Kg
-                                                        </span>
+                                            </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="fw-bold">Capacidad (Kg)</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                            EscotillaViewModel
+                                            { CapacidadKg = 0 });
+                                            <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
+                                    }
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Descargado (Kg)</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                            EscotillaViewModel
+                                            { DescargaRealKg = 0 });
+                                            <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
+                                    }
+                                </tr>
+                                <tr class="bg-light unit-toggle-row" style="display:none;">
+                                    <td class="fw-bold">Descargado (Lbs/Qq)</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                            EscotillaViewModel
+                                            { DescargaRealKg = 0 });
+                                            <td class="text-end">
+                                                <div>
+                                                    <span class="d-block">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
+                                                    <span class="d-block text-muted small">@((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq</span>
+                                                </div>
+                                            </td>
+                                    }
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Diferencia (Kg)</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                            EscotillaViewModel
+                                            { DiferenciaKg = 0 });
+                                            <td class="text-end @(escotilla.DiferenciaKg < 0 ? "text-success fw-bold" : (escotilla.DiferenciaKg > 0 ? "text-danger fw-bold" : ""))">
+                                                @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
+                                            </td>
+                                    }
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">Estado</td>
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
+                                    {
+                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                            EscotillaViewModel
+                                            { Estado = "Sin Iniciar" });
+                                    
+                                            var porcentajeEscotilla = escotilla.CapacidadKg > 0 ?
+                                                                                              (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
+                                    
+                                            string badgeColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
+                                    
+                                            <td class="text-center">
+                                                <span class="badge rounded-pill px-3 py-2 estado-badge"
+                                                      style="background-color: @badgeColor !important; color: @ColorScheme.Blanco;
+                                                             box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                    <i class="fas @(escotilla.Estado.ToLower().Contains("complet") ? "fa-check-circle" : 
+                                                                  escotilla.Estado.ToLower().Contains("proces") ? "fa-sync-alt" : "fa-clock") me-1"></i>
+                                                @escotilla.Estado
+                                            </span>
+                                        </td>
+                                }
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-5">
+                            <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
+                                <div class="card-header bg-white border-0 pt-4 pb-0">
+                                    <h6 class="text-primary fw-bold mb-0">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Progreso General
+                                    </h6>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="position-relative mb-4">
+                                        <div class="custom-progress-container">
+                                            <div id="progressBarMain" 
+                                                 class="custom-progress-bar" 
+                                                 data-porcentaje="@porcentajeCompletado.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" 
+                                                 style="width: 0%; background-color: @colorEstado;">
+                                            </div>
+                                            <div class="progress-text">
+                                                <span class="fw-bold fs-5">@porcentajeTotal.ToString("N2")%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            setTimeout(function() {
+                                                const progressBar = document.getElementById('progressBarMain');
+                                                if (progressBar) {
+                                                    const porcentaje = parseFloat(progressBar.getAttribute('data-porcentaje'));
+                                                    progressBar.style.width = porcentaje + '%';
+                                                    console.log('Barra de progreso actualizada:', porcentaje + '%');
+                                                }
+                                            }, 100);
+                                        });
+                                    </script>
+
+                                    <div class="d-flex justify-content-between px-2 mb-3">
+                                        <span class="small text-muted">0%</span>
+                                        <span class="small text-muted">50%</span>
+                                        <span class="small text-muted">100%</span>
+                                    </div>
+
+                                    <div class="text-center mt-3">
+                                        <span class="badge p-2 px-4 fs-6" style="background-color: @colorEstado; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                                            <i class="fas fa-chart-line me-2"></i>
+                                            @estadoProgreso @(esSobrante ? " (Con Sobrante)" : "")
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div class="col-lg-7">
+                            <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
+                                <div class="card-header bg-white border-0 pt-4 pb-0">
+                                    <h6 class="text-primary fw-bold mb-0">
+                                        <i class="fas fa-chart-pie me-2"></i>Resumen de Carga
+                                    </h6>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row g-3 text-center">
+                                        <div class="col-md-4">
+                                            <div class="metric-box p-3 border rounded-4 bg-light h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden">
+                                                <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: #e0e0e0;">
+                                                    <i class="fas fa-weight"></i>
+                                                </div>
+                                                <div class="position-relative">
+                                                    <div class="small text-muted mb-1">Requerido</div>
+                                                    <div class="fw-bold fs-4 mb-1">@totalKilosRequeridos.ToString("N0") Kg</div>
+                                                    <div class="small text-primary">
+                                                        @((totalKilosRequeridos * 2.20462M).ToString("N0")) lbs | 
+                                                        @((totalKilosRequeridos / 45.359237M).ToString("N2")) qq
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    }
+                                    
+                                        <div class="col-md-4">
+                                            <div class="metric-box p-3 border rounded-4 bg-light h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden">
+                                                <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: #e0e0e0;">
+                                                    <i class="fas fa-dolly"></i>
+                                                </div>
+                                                <div class="position-relative">
+                                                    <div class="small text-muted mb-1">Descargado</div>
+                                                    <div class="fw-bold fs-4 mb-1">@descargaTotal.ToString("N0") Kg</div>
+                                                    <div class="small text-primary">
+                                                        @((descargaTotal * 2.20462M).ToString("N0")) lbs | 
+                                                        @((descargaTotal / 45.359237M).ToString("N2")) qq
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    
+                                        <div class="col-md-4">
+                                            <div class="metric-box p-3 border rounded-4 h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden" 
+                                                 style="background-color: @(esSobrante ? ColorScheme.Naranja : esFaltante ? ColorScheme.Rojo : "#f8f9fa"); 
+                                                        opacity: @(esSobrante || esFaltante ? "0.85" : "1")">
+                                                
+                                                <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: @(esSobrante || esFaltante ? "rgba(255,255,255,0.2)" : "#e0e0e0");">
+                                                    <i class="fas @(esSobrante ? "fa-plus-circle" : esFaltante ? "fa-minus-circle" : "fa-equals")"></i>
+                                                </div>
+                                                <div class="position-relative">
+                                                    <div class="small @(esSobrante || esFaltante ? "text-white" : "text-muted") mb-1">
+                                                        @(esSobrante ? "Sobrante" : esFaltante ? "Faltante" : "Diferencia")
+                                                    </div>
+                                                    <div class="fw-bold fs-4 mb-1 @(esSobrante || esFaltante ? "text-white" : "")">
+                                                        @(esSobrante ? "+" : esFaltante ? "-" : "")@Math.Abs(diferenciaTotal).ToString("N0") Kg
+                                                    </div>
+                                                    <div class="mt-1 small @(esSobrante || esFaltante ? "text-white" : "")">
+                                                        (@Math.Abs(porcentajeFaltanteSobrante).ToString("N2")%)
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="text-end mt-4">
-                    <button id="btnToggleUnidad" class="btn btn-sm btn-outline-secondary">
-                        <i class="fas fa-exchange-alt me-1"></i> Cambiar Unidades
-                    </button>
-                </div>
-                
-                <!-- Scripts para gráficos -->
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Configuración de colores constantes con colores más vibrantes
-    const COLORS = {
-        COMPLETE: '@ColorScheme.Verde',
-        IN_PROGRESS: '@ColorScheme.Azul',
-        PENDING: '@ColorScheme.Gris',
-        BACKGROUND: '@ColorScheme.Fondo',
-        WARNING: '@ColorScheme.Amarillo',
-        DANGER: '@ColorScheme.Rojo',
-        INFO: '@ColorScheme.Celeste'
-    };
+                    
+                        <div class="col-12">
+                            <div class="card bg-white shadow-sm border-0 rounded-4 overflow-hidden">
+                                <div class="card-header bg-white border-0 pt-4 pb-0">
+                                    <h6 class="text-primary fw-bold mb-0">
+                                        <i class="fas fa-chart-pie me-2"></i>Estado de Descarga por Escotilla
+                                    </h6>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div class="row g-4 justify-content-center">
+                                        @foreach (var numeroEscotilla in todasLasEscotillas)
+                                        {
+                                                var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
+                                                EscotillaViewModel
+                                                { CapacidadKg = 0, DescargaRealKg = 0, Estado = "Sin Iniciar" });
+                                        
+                                                var porcentajeEscotilla = escotilla.CapacidadKg > 0 ?
+                                                                                                  (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
+                                                var porcentajeMostrar = Math.Min(porcentajeEscotilla, 100);
+                                        
+                                                string estadoBajo = escotilla.Estado.ToLower();
+                                                string donutColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
 
-    function determinarColor(estado, porcentaje) {
-        estado = (estado || '').toLowerCase().trim();
-        
-        // Primero verificamos por estado
-        if (estado.includes('complet')) return COLORS.COMPLETE;
-        if (estado.includes('proces') || estado.includes('descarg')) return COLORS.IN_PROGRESS;
-        
-        // Si no hay estado específico, usamos el porcentaje
-        if (porcentaje >= 100) return COLORS.COMPLETE;
-        if (porcentaje >= 70) return COLORS.IN_PROGRESS;
-        if (porcentaje >= 30) return COLORS.WARNING;
-        
-        return COLORS.PENDING;
-    }
+                                                <div class="col-md-6 col-lg-2 text-center">
+                                                    <div class="escotilla-card p-3 border rounded-4 shadow-sm hover-lift">
+                                                        <div class="escotilla-number fw-bold text-primary mb-2">ESCOTILLA @numeroEscotilla</div>
+                                                        <div class="donut-chart-container position-relative mx-auto" style="width: 160px; height: 160px;">
+                                                            <canvas id="donutChart@(numeroEscotilla)" width="160" height="160" 
+                                                                  data-porcentaje="@porcentajeMostrar" 
+                                                                  data-color="@donutColor"
+                                                                  data-estado="@escotilla.Estado"></canvas>
+                                                            <div class="position-absolute top-50 start-50 translate-middle text-center" style="width: 100%;">
+                                                                <span class="fw-bold d-block" style="font-size: 2rem; color: @donutColor;">@porcentajeEscotilla.ToString("0")%</span>
+                                                                <span class="badge rounded-pill px-2" style="background-color: @donutColor !important; font-size: 0.7rem;">
+                                                                    <i class="fas @(estadoBajo.Contains("complet") ? "fa-check-circle" : 
+                                                                                  estadoBajo.Contains("proces") ? "fa-sync-alt" : "fa-clock") me-1"></i>
+                                                                @escotilla.Estado
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-3 small text-muted">
+                                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                                            <span>Capacidad:</span>
+                                                            <span class="fw-bold">@escotilla.CapacidadKg.ToString("N0") Kg</span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                                            <span>Descargado:</span>
+                                                            <span class="fw-bold" style="color: @donutColor">
+                                                                @escotilla.DescargaRealKg.ToString("N0") Kg
+                                                            </span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span>Diferencia:</span>
+                                                            <span class="fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Naranja : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
+                                                                @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0") Kg
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                
+                    <!-- Scripts para gráficos -->
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const COLORS = {
+            COMPLETE: '@ColorScheme.Verde',
+            IN_PROGRESS: '@ColorScheme.Naranja',
+            PENDING: '@ColorScheme.Gris',
+            BACKGROUND: '@ColorScheme.Fondo',
+            WARNING: '@ColorScheme.Amarillo',
+            DANGER: '@ColorScheme.Rojo',
+            INFO: '@ColorScheme.Naranja'
+        };
 
-    function initializeDonutCharts() {
-        document.querySelectorAll('canvas[id^="donutChart"]').forEach(canvas => {
-            const porcentaje = parseFloat(canvas.getAttribute('data-porcentaje') || 0);
-            const estado = canvas.getAttribute('data-estado');
-            const complemento = 100 - porcentaje;
+        function determinarColor(estado, porcentaje) {
+            estado = (estado || '').toLowerCase().trim();
+        
+            if (estado.includes('complet')) return COLORS.COMPLETE;
+            if (estado.includes('proces') || estado.includes('descarg')) return COLORS.IN_PROGRESS;
+            if (estado.includes('sin') || estado.includes('inici')) return COLORS.PENDING;
+        
+            if (porcentaje >= 100) return COLORS.COMPLETE;
+            if (porcentaje >= 70) return COLORS.IN_PROGRESS;
+            if (porcentaje >= 30) return COLORS.WARNING;
+        
+            return COLORS.DANGER;
+        }
+
+        function initializeDonutCharts() {
+            document.querySelectorAll('canvas[id^="donutChart"]').forEach(canvas => {
+                const porcentaje = parseFloat(canvas.getAttribute('data-porcentaje') || 0);
+                const estado = canvas.getAttribute('data-estado');
+                const complemento = 100 - porcentaje;
             
-            // Obtener el color basado en el estado y porcentaje
-            const color = determinarColor(estado, porcentaje);
+                const color = determinarColor(estado, porcentaje);
 
-            // Destruir gráfico existente si lo hay
-            if (Chart.getChart(canvas)) {
-                Chart.getChart(canvas).destroy();
-            }
+                if (Chart.getChart(canvas)) {
+                    Chart.getChart(canvas).destroy();
+                }
 
-            // Crear nuevo gráfico con configuración mejorada
-            new Chart(canvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [porcentaje, complemento],
-                        backgroundColor: [color, COLORS.BACKGROUND],
-                        borderWidth: 0,
-                        borderRadius: 5,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    rotation: -90,
-                    circumference: 360,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
+                new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [porcentaje, complemento],
+                            backgroundColor: [color, COLORS.BACKGROUND],
+                            borderWidth: 0,
+                            borderRadius: 5,
+                            hoverOffset: 4
+                        }]
                     },
-                    animation: {
-                        animateRotate: true,
-                        animateScale: true,
-                        duration: 2000,
-                        easing: 'easeOutQuart'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        rotation: -90,
+                        circumference: 360,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 2000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+
+                const container = canvas.closest('.donut-chart-container');
+                if (container) {
+                    const badge = container.querySelector('.badge');
+                    if (badge) {
+                        badge.style.backgroundColor = color;
+                        badge.style.color = 'white';
+                    }
+                
+                    const porcentajeSpan = container.querySelector('.fw-bold');
+                    if (porcentajeSpan) {
+                        porcentajeSpan.style.color = color; 
                     }
                 }
             });
+        }
 
-            // Actualizar el badge con el nuevo color
-            const container = canvas.closest('.donut-chart-container');
-            if (container) {
-                const badge = container.querySelector('.badge');
-                if (badge) {
-                    badge.style.backgroundColor = color;
-                    badge.style.color = 'white';
-                }
-                
-                // También actualizar el color del porcentaje si existe
-                const porcentajeSpan = container.querySelector('.fw-bold');
-                if (porcentajeSpan) {
-                    porcentajeSpan.style.color = porcentaje >= 100 ? COLORS.COMPLETE : 
-                                                porcentaje >= 70 ? COLORS.IN_PROGRESS : 
-                                                porcentaje >= 30 ? COLORS.WARNING : 
-                                                COLORS.PENDING;
-                }
-            }
+        setTimeout(initializeDonutCharts, 300);
+
+        const observer = new MutationObserver(() => {
+            initializeDonutCharts();
         });
-    }
 
-    // Inicializar las donas con un pequeño retraso para asegurar que el DOM esté listo
-    setTimeout(initializeDonutCharts, 300);
+        const container = document.querySelector('.card-body');
+        if (container) {
+            observer.observe(container, { 
+                childList: true, 
+                subtree: true 
+            });
+        }
 
-    // Reinicializar las donas si hay cambios en el DOM
-    const observer = new MutationObserver(() => {
-        initializeDonutCharts();
-    });
-
-    // Observar cambios en el contenedor principal
-    const container = document.querySelector('.card-body');
-    if (container) {
-        observer.observe(container, { 
-            childList: true, 
-            subtree: true 
-        });
-    }
-
-    // Manejar el cambio de unidades (código existente)
-    document.getElementById('btnToggleUnidad')?.addEventListener('click', function() {
-        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
-        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        document.getElementById('btnToggleUnidad')?.addEventListener('click', function() {
+            const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
+            const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
         
-        unitToggleElements.forEach(el => {
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
-        });
+            unitToggleElements.forEach(el => {
+                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            });
         
-        unitToggleRows.forEach(row => {
-            row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            unitToggleRows.forEach(row => {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            });
         });
     });
-});
-</script>
+    </script>
 
-<style>
-/* Estilos para las donas */
-.donut-chart-container {
-    position: relative;
-    margin: auto;
-    width: 160px;
-    height: 160px;
-}
+    <style>
+    .donut-chart-container {
+        position: relative;
+        margin: auto;
+        width: 160px;
+        height: 160px;
+    }
 
-.donut-chart-container canvas {
-    position: relative;
-    z-index: 1;
-}
+    .donut-chart-container canvas {
+        position: relative;
+        z-index: 1;
+    }
 
-.donut-chart-container .badge {
-    transition: background-color 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+    .donut-chart-container .badge {
+        transition: background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .estado-badge, .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .badge i, .estado-badge i {
+        margin-right: 4px;
+        font-size: 0.85em;
+    }
+    
+    .text-success {
+        color: @ColorScheme.Verde !important;
+    }
+    
+    .text-danger {
+        color: @ColorScheme.Rojo !important;
+    }
 
-/* Animación suave para el hover de las tarjetas */
-.escotilla-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
+    .escotilla-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
 
-.escotilla-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
-}
+    .escotilla-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
+    }
 
-.custom-progress-container {
-    height: 34px;
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-}
+    .custom-progress-container {
+        height: 34px;
+        background-color: #f0f0f0;
+        border-radius: 8px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
 
-.custom-progress-bar {
-    height: 100%;
-    background-color: #28a745;
-    transition: width 1s ease-in-out;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
+    .custom-progress-bar {
+        height: 100%;
+        transition: width 1s ease-in-out;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
 
-.progress-text {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
-    color: #000;
-    text-shadow: 0px 0px 3px rgba(255,255,255,0.9);
-}
-</style>
+    .progress-text {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        color: #000;
+        text-shadow: 0px 0px 3px rgba(255,255,255,0.9);
+    }
+    </style>
             }
         </div>
     </div>

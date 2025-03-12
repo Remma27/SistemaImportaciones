@@ -92,16 +92,20 @@
                                     <td>@item.CantidadRequerida kg</td>
                                     <td class="d-none d-sm-table-cell">@item.CantidadCamiones</td>
                                     <td class="text-end">
-                                        <a asp-action="Edit" asp-route-id="@item.IdMovimiento"
-                                            asp-route-selectedBarco="@selectedBarco" class="btn btn-sm btn-warning me-1"
-                                            title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a asp-action="Delete" asp-route-id="@item.IdMovimiento"
-                                            asp-route-selectedBarco="@selectedBarco" class="btn btn-sm btn-danger"
-                                            title="Eliminar">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Edit" asp-route-id="@item.IdMovimiento"
+                                               asp-route-selectedBarco="@selectedBarco" class="btn btn-warning"
+                                               title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                                <span class="d-none d-md-inline ms-1">Editar</span>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.IdMovimiento"
+                                               asp-route-selectedBarco="@selectedBarco" class="btn btn-danger"
+                                               title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                                <span class="d-none d-md-inline ms-1">Eliminar</span>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             }

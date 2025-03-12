@@ -33,12 +33,13 @@
     var ColorScheme = new
     {
         Verde = "#28a745",      
-        Naranja = "#fd7e14",    
+        Azul = "#0d6efd",      
         Gris = "#6c757d",       
         Rojo = "#dc3545",       
         Amarillo = "#ffc107",   
         Fondo = "#f8f9fa",     
-        Blanco = "#ffffff"      
+        Blanco = "#ffffff",
+        Naranja = "#0d6efd"  // Add this but use blue value since we're replacing orange with blue
     };
 
     Func<string, decimal, string> determinarColorUnificado = (estado, porcentaje) =>
@@ -46,19 +47,18 @@
         var estadoLower = (estado ?? "").ToLower().Trim();
         
         if (estadoLower.Contains("complet")) return ColorScheme.Verde;
-        if (estadoLower.Contains("proces") || estadoLower.Contains("descarg")) return ColorScheme.Naranja; 
+        if (estadoLower.Contains("proces") || estadoLower.Contains("descarg")) return porcentaje >= 90 ? ColorScheme.Azul : ColorScheme.Amarillo;
         if (estadoLower.Contains("sin") || estadoLower.Contains("inici")) return ColorScheme.Gris;
         
         if (porcentaje >= 100) return ColorScheme.Verde;
-        if (porcentaje >= 70) return ColorScheme.Naranja;
-        if (porcentaje >= 30) return ColorScheme.Amarillo;
+        if (porcentaje >= 90) return ColorScheme.Azul;
         
-        return ColorScheme.Rojo;
+        return ColorScheme.Amarillo;  // Todo antes de 90% en amarillo
     };
     
     Func<decimal, string> determinarColorDiferencia = (diferencia) =>
     {
-        if (diferencia < 0) return ColorScheme.Naranja;
+        if (diferencia < 0) return ColorScheme.Azul;  // Changed from Naranja to Azul
         if (diferencia > 0) return ColorScheme.Rojo;
         return "inherit";
     };
@@ -185,7 +185,7 @@
                         <div class="col-lg-5">
                             <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
                                 <div class="card-header bg-white border-0 pt-4 pb-0">
-                                    <h6 class="text-primary fw-bold mb-0">
+                                    <h6 class="text-success fw-bold mb-0">
                                         <i class="fas fa-tachometer-alt me-2"></i>Progreso General
                                     </h6>
                                 </div>
@@ -235,7 +235,7 @@
                         <div class="col-lg-7">
                             <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
                                 <div class="card-header bg-white border-0 pt-4 pb-0">
-                                    <h6 class="text-primary fw-bold mb-0">
+                                    <h6 class="text-success fw-bold mb-0">
                                         <i class="fas fa-chart-pie me-2"></i>Resumen de Carga
                                     </h6>
                                 </div>
@@ -275,7 +275,7 @@
                                     
                                         <div class="col-md-4">
                                             <div class="metric-box p-3 border rounded-4 h-100 shadow-sm d-flex flex-column justify-content-center position-relative overflow-hidden" 
-                                                 style="background-color: @(esSobrante ? ColorScheme.Naranja : esFaltante ? ColorScheme.Rojo : "#f8f9fa"); 
+                                                 style="background-color: @(esSobrante ? ColorScheme.Azul : esFaltante ? ColorScheme.Rojo : "#f8f9fa"); 
                                                         opacity: @(esSobrante || esFaltante ? "0.85" : "1")">
                                                 
                                                 <div class="metric-icon position-absolute opacity-10" style="top: -15px; right: -15px; font-size: 4rem; color: @(esSobrante || esFaltante ? "rgba(255,255,255,0.2)" : "#e0e0e0");">
@@ -302,7 +302,7 @@
                         <div class="col-12">
                             <div class="card bg-white shadow-sm border-0 rounded-4 overflow-hidden">
                                 <div class="card-header bg-white border-0 pt-4 pb-0">
-                                    <h6 class="text-primary fw-bold mb-0">
+                                    <h6 class="text-success fw-bold mb-0">
                                         <i class="fas fa-chart-pie me-2"></i>Estado de Descarga por Escotilla
                                     </h6>
                                 </div>
@@ -351,14 +351,14 @@
                                                         </div>
                                                         <div class="d-flex justify-content-between">
                                                             <span>Diferencia:</span>
-                                                            <span class="fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Naranja : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
+                                                            <span class="fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Azul : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
                                                                 @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0") Kg
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                                                        }
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -370,26 +370,27 @@
     document.addEventListener('DOMContentLoaded', function () {
         const COLORS = {
             COMPLETE: '@ColorScheme.Verde',
-            IN_PROGRESS: '@ColorScheme.Naranja',
+            IN_PROGRESS: '@ColorScheme.Azul', // Changed from Naranja to Azul
             PENDING: '@ColorScheme.Gris',
             BACKGROUND: '@ColorScheme.Fondo',
             WARNING: '@ColorScheme.Amarillo',
             DANGER: '@ColorScheme.Rojo',
-            INFO: '@ColorScheme.Naranja'
+            INFO: '@ColorScheme.Azul'  // Changed from Naranja to Azul
         };
 
         function determinarColor(estado, porcentaje) {
             estado = (estado || '').toLowerCase().trim();
         
             if (estado.includes('complet')) return COLORS.COMPLETE;
-            if (estado.includes('proces') || estado.includes('descarg')) return COLORS.IN_PROGRESS;
+            if (estado.includes('proces') || estado.includes('descarg')) {
+                return porcentaje >= 90 ? COLORS.IN_PROGRESS : COLORS.WARNING; // Changed logic
+            }
             if (estado.includes('sin') || estado.includes('inici')) return COLORS.PENDING;
         
             if (porcentaje >= 100) return COLORS.COMPLETE;
-            if (porcentaje >= 70) return COLORS.IN_PROGRESS;
-            if (porcentaje >= 30) return COLORS.WARNING;
-        
-            return COLORS.DANGER;
+            if (porcentaje >= 90) return COLORS.IN_PROGRESS; // Changed threshold to 90%
+            
+            return COLORS.WARNING; // Everything below 90% is yellow now
         }
 
         function initializeDonutCharts() {

@@ -175,6 +175,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
 
         private async Task HandleJsonRequestAsync(HttpContext context)
         {
+            _logger.LogInformation("Processing JSON request for path: {Path}", context.Request.Path);
+
             var originalBodyStream = context.Request.Body;
 
             try
@@ -189,6 +191,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
                 {
                     var body = await reader.ReadToEndAsync();
 
+                    _logger.LogDebug("Request body content: {BodyLength} chars", body?.Length ?? 0);
+                    if (string.IsNullOrEmpty(body))
+                    {
+                        _logger.LogWarning("Empty request body detected for JSON request");
+                    }
+
                     context.Request.Body.Position = 0;
 
                     if (ContainsSqlInjection(body) || ContainsXss(body))
@@ -198,6 +206,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
                 }
 
                 await _next(context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing JSON request in middleware");
+                throw;
             }
             finally
             {

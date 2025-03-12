@@ -18,8 +18,6 @@
 
                         <form method="post" asp-action="IniciarSesion" asp-controller="Auth">
                             @Html.AntiForgeryToken()
-                            @Html.ValidationSummary(true, "", new { @class = "text-danger small" })
-
                             <div class="form-floating mb-3">
                                 <input asp-for="Email" class="form-control" placeholder="nombre@ejemplo.com" required />
                                 <label asp-for="Email">Correo electrónico</label>
@@ -41,7 +39,7 @@
                         </form>
 
                         <div class="text-center">
-                            <p class="mb-0 small">¿No tienes una centa? 
+                            <p class="mb-0 small">¿No tienes una centa?
                                 <a asp-action="Registrarse" asp-controller="Auth" class="text-primary fw-bold">
                                     Regístrate aquí
                                 </a>

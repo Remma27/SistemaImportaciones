@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,8 +103,46 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 }
 
+// Añadir diagnóstico de conexión
+try
+{
+    using var conn = new MySqlConnection(connectionString);
+    Console.WriteLine("Intentando abrir conexión a AWS RDS MySQL...");
+    conn.Open();
+    Console.WriteLine("¡Conexión exitosa a la base de datos!");
+    conn.Close();
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"ERROR DE CONEXIÓN A BASE DE DATOS: {ex.Message}");
+    Console.WriteLine($"StackTrace: {ex.StackTrace}");
+    if (ex.InnerException != null)
+    {
+        Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+    }
+}
+
+// Use this for direct testing with AWS
+if (builder.Environment.IsDevelopment())
+{
+    // Log the connection string (without password) for verification
+    var connBuilder = new MySqlConnectionStringBuilder(connectionString);
+    var sanitizedConn = $"Server={connBuilder.Server};Database={connBuilder.Database};User={connBuilder.UserID};SslMode={connBuilder.SslMode}";
+    Console.WriteLine($"Using connection: {sanitizedConn}");
+}
+
 builder.Services.AddDbContext<ApiContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+    options.UseMySql(connectionString,
+        ServerVersion.AutoDetect(connectionString),
+        mySqlOptions =>
+        {
+            mySqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+            mySqlOptions.CommandTimeout(60);
+        })
+    .UseLowerCaseNamingConvention() // Aplica convención de minúsculas a todas las tablas
 );
 
 ServiceExtensions.AddApplicationServices(builder.Services, builder.Configuration);
@@ -214,11 +253,21 @@ builder.Services.AddHttpClient("API", (sp, client) =>
         throw new InvalidOperationException("API Base URL not configured");
     }
     client.BaseAddress = new Uri(apiUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(60); // Longer timeout for AWS
     client.DefaultRequestHeaders.Accept.Clear();
     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+    // For debugging
+    Console.WriteLine($"Configured API client with base URL: {apiUrl}");
 })
-.AddHttpMessageHandler<CookieDelegatingHandler>();
+.AddHttpMessageHandler<CookieDelegatingHandler>()
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // Don't validate SSL certs during testing
+    ServerCertificateCustomValidationCallback =
+        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+});
 
 builder.Services.AddScoped<IImportacionService>(sp =>
 {
@@ -231,6 +280,9 @@ builder.Services.AddScoped<IImportacionService>(sp =>
 builder.Services.AddScoped<IUsuarioService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    httpClient.DefaultRequestHeaders.Accept.Clear();
+    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+    httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json");
     return new UsuarioService(httpClient, builder.Configuration);
 });
 
@@ -312,26 +364,41 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
+// Configuración mejorada de archivos estáticos
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Corregir MIME types para archivos JavaScript
+        if (ctx.File.Name.EndsWith(".js"))
+        {
+            ctx.Context.Response.Headers["Content-Type"] = "application/javascript";
+        }
+    }
+});
 
 app.UseRouting();
 
-app.Use(async (context, next) =>
-{
-    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("X-Frame-Options", "DENY");
-    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
-    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
-    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-    await next();
-});
-
 app.UseCors("ApiPolicy");
 
+// Configurar el middleware de seguridad con una política más permisiva
+var securityHeadersPolicy = new SecurityHeadersPolicy
+{
+    FrameOptions = "DENY",
+    XssProtection = "1; mode=block",
+    ReferrerPolicy = "strict-origin-when-cross-origin",
+    PermissionsPolicy = "camera=(), microphone=(), geolocation=()"
+    // No establecer ContentTypeOptions para permitir el funcionamiento correcto
+    // No establecer ContentSecurityPolicy para usar la versión permisiva del middleware
+};
+
+// Orden de middleware - primero estáticos, después seguridad 
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<SecurityLoggingMiddleware>();
 app.UseMiddleware<ApiLoggingMiddleware>();
-app.UseMiddleware<RequestSanitizationMiddleware>();
+//app.UseMiddleware<RequestSanitizationMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();

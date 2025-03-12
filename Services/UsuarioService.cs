@@ -101,8 +101,15 @@ namespace SistemaDeGestionDeImportaciones.Services
                     activo = true
                 };
 
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Create", usuarioToCreate);
-                response.EnsureSuccessStatusCode();
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Registrar", usuarioToCreate);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[ERROR] Status: {response.StatusCode}, Content: {errorContent}");
+                    return OperationResult.CreateFailure($"Error al registrar el usuario: {response.StatusCode} - {errorContent}");
+                }
+
                 var usuario = await response.Content.ReadFromJsonAsync<Usuario>();
                 if (usuario == null)
                 {

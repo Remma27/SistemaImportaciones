@@ -323,7 +323,7 @@
 
                                                 <div class="col-md-6 col-lg-2 text-center">
                                                     <div class="escotilla-card p-3 border rounded-4 shadow-sm hover-lift">
-                                                        <div class="escotilla-number fw-bold text-primary mb-2">ESCOTILLA @numeroEscotilla</div>
+                                                        <div class="escotilla-number fw-bold text-success mb-2">Escotilla @numeroEscotilla</div>
                                                         <div class="donut-chart-container position-relative mx-auto" style="width: 160px; height: 160px;">
                                                             <canvas id="donutChart@(numeroEscotilla)" width="160" height="160" 
                                                                   data-porcentaje="@porcentajeMostrar" 
@@ -370,12 +370,12 @@
     document.addEventListener('DOMContentLoaded', function () {
         const COLORS = {
             COMPLETE: '@ColorScheme.Verde',
-            IN_PROGRESS: '@ColorScheme.Azul', // Changed from Naranja to Azul
+            IN_PROGRESS: '@ColorScheme.Azul',
             PENDING: '@ColorScheme.Gris',
             BACKGROUND: '@ColorScheme.Fondo',
             WARNING: '@ColorScheme.Amarillo',
             DANGER: '@ColorScheme.Rojo',
-            INFO: '@ColorScheme.Azul'  // Changed from Naranja to Azul
+            INFO: '@ColorScheme.Azul' 
         };
 
         function determinarColor(estado, porcentaje) {
@@ -383,14 +383,14 @@
         
             if (estado.includes('complet')) return COLORS.COMPLETE;
             if (estado.includes('proces') || estado.includes('descarg')) {
-                return porcentaje >= 90 ? COLORS.IN_PROGRESS : COLORS.WARNING; // Changed logic
+                return porcentaje >= 90 ? COLORS.IN_PROGRESS : COLORS.WARNING; 
             }
             if (estado.includes('sin') || estado.includes('inici')) return COLORS.PENDING;
         
             if (porcentaje >= 100) return COLORS.COMPLETE;
-            if (porcentaje >= 90) return COLORS.IN_PROGRESS; // Changed threshold to 90%
+            if (porcentaje >= 90) return COLORS.IN_PROGRESS; 
             
-            return COLORS.WARNING; // Everything below 90% is yellow now
+            return COLORS.WARNING;
         }
 
         function initializeDonutCharts() {

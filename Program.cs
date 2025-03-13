@@ -397,9 +397,14 @@ app.UseMiddleware<RequestSanitizationMiddleware>();
 
 // Configura los encabezados de seguridad para permitir recursos estáticos
 var securityHeadersPolicy = new SecurityHeadersPolicy();
-// Usa el método existente en la clase SecurityHeadersPolicy
-// No necesitamos configurar manualmente la política ya que ya tiene valores
-// predeterminados seguros pero flexibles en su constructor
+// Actualiza la política CSP para permitir CDNs específicos
+securityHeadersPolicy.Headers["Content-Security-Policy"] =
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
+    "style-src 'self' 'unsafe-inline' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
+    "img-src 'self' data:; " +
+    "font-src 'self' https://cdnjs.cloudflare.com; " +
+    "connect-src 'self'";
 
 app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
 

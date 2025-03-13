@@ -47,8 +47,15 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
             Headers["X-Frame-Options"] = "DENY";
             Headers["X-XSS-Protection"] = "1; mode=block";
             Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            // Menos restrictivo para permitir que funcione correctamente
-            Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'";
+
+            // Política CSP actualizada para permitir CDNs específicos
+            Headers["Content-Security-Policy"] =
+                "default-src 'self'; " +
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
+                "style-src 'self' 'unsafe-inline' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
+                "img-src 'self' data:; " +
+                "font-src 'self' https://cdnjs.cloudflare.com; " +
+                "connect-src 'self'";
         }
 
         // Método para agregar una política CSP personalizada

@@ -33,10 +33,12 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         [AllowAnonymous]
         public IActionResult IniciarSesion(string? returnUrl = null)
         {
-            // Limita la longitud de returnUrl para evitar redirecciones anidadas
-            if (!string.IsNullOrEmpty(returnUrl) && (returnUrl.Length > 200 || returnUrl.Contains("Error")))
+            if (string.IsNullOrEmpty(returnUrl) ||
+                returnUrl.Contains("Error") ||
+                returnUrl.Length > 100 ||
+                returnUrl.Count(c => c == '%') > 5)
             {
-                returnUrl = "/";  // Restablece a la página principal si hay un ciclo
+                returnUrl = "/";
             }
 
             ViewBag.ReturnUrl = returnUrl;

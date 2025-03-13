@@ -22,7 +22,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
             var path = context.Request.Path.ToString().ToLowerInvariant();
             var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
 
-            // Skip security headers for auth paths in development
             if (isDevelopment && (path.Contains("/auth/") || path.StartsWith("/authfix/")))
             {
                 _logger.LogInformation("Skipping security headers for auth path: {Path}", path);
@@ -30,17 +29,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
                 return;
             }
 
-            // Aplica los encabezados de seguridad siguiendo la política
             foreach (var headerValuePair in _policy.Headers)
             {
-                // Evita sobreescribir encabezados CSP ya definidos
                 if (context.Response.Headers.ContainsKey(headerValuePair.Key))
                 {
-                    if (headerValuePair.Key == "Content-Security-Policy")
-                    {
-                        // Mantén la entrada existente para CSP
-                        continue;
-                    }
                     context.Response.Headers.Remove(headerValuePair.Key);
                 }
                 context.Response.Headers.Append(headerValuePair.Key, headerValuePair.Value);
@@ -56,23 +48,20 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
 
         public SecurityHeadersPolicy()
         {
-            // Configuración base recomendada
             Headers["X-Content-Type-Options"] = "nosniff";
             Headers["X-Frame-Options"] = "DENY";
             Headers["X-XSS-Protection"] = "1; mode=block";
             Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
 
-            // Política CSP actualizada para permitir CDNs específicos
             Headers["Content-Security-Policy"] =
                 "default-src 'self'; " +
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
-                "style-src 'self' 'unsafe-inline' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.sheetjs.com; " +
+                "style-src 'self' 'unsafe-inline' https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
                 "img-src 'self' data:; " +
                 "font-src 'self' https://cdnjs.cloudflare.com; " +
                 "connect-src 'self'";
         }
 
-        // Método para agregar una política CSP personalizada
         public ContentSecurityPolicyBuilder AddContentSecurityPolicy()
         {
             var builder = new ContentSecurityPolicyBuilder();
@@ -144,6 +133,32 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
         public static IApplicationBuilder UseSecurityHeadersMiddleware(this IApplicationBuilder builder, SecurityHeadersPolicy policy)
         {
             return builder.UseMiddleware<SecurityHeadersMiddleware>(policy);
+        }
+    }
+
+    public class CspFixMiddleware
+    {
+        private readonly RequestDelegate _next;
+
+        public CspFixMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            await _next(context);
+
+            if (context.Response.Headers.ContainsKey("Content-Security-Policy"))
+            {
+                context.Response.Headers["Content-Security-Policy"] =
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.sheetjs.com; " +
+                    "style-src 'self' 'unsafe-inline' https://cdn.datatables.net https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
+                    "img-src 'self' data:; " +
+                    "font-src 'self' https://cdnjs.cloudflare.com; " +
+                    "connect-src 'self'";
+            }
         }
     }
 }

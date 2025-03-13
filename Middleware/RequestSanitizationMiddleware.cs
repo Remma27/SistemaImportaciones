@@ -199,7 +199,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
 
                     context.Request.Body.Position = 0;
 
-                    if (ContainsSqlInjection(body) || ContainsXss(body))
+                    if (!string.IsNullOrEmpty(body) && (ContainsSqlInjection(body) || ContainsXss(body)))
                     {
                         _logger.LogWarning("Potentially suspicious JSON content detected but allowing");
                     }

@@ -33,6 +33,12 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         [AllowAnonymous]
         public IActionResult IniciarSesion(string? returnUrl = null)
         {
+            // Limita la longitud de returnUrl para evitar redirecciones anidadas
+            if (!string.IsNullOrEmpty(returnUrl) && (returnUrl.Length > 200 || returnUrl.Contains("Error")))
+            {
+                returnUrl = "/";  // Restablece a la página principal si hay un ciclo
+            }
+
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
@@ -162,6 +168,12 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> IniciarSesion(LoginViewModel model, string? returnUrl = null)
         {
+            // Evita ciclos de redirección con returnUrl
+            if (!string.IsNullOrEmpty(returnUrl) && (returnUrl.Length > 200 || returnUrl.Contains("Error")))
+            {
+                returnUrl = "/";
+            }
+
             try
             {
                 if (!ModelState.IsValid)

@@ -1,17 +1,8 @@
 using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 namespace Sistema_de_Gestion_de_Importaciones.Middleware
 {
-    public class SecurityHeadersPolicy
-    {
-        public string? FrameOptions { get; set; }
-        public string? ContentTypeOptions { get; set; }
-        public string? XssProtection { get; set; }
-        public string? ContentSecurityPolicy { get; set; }
-        public string? ReferrerPolicy { get; set; }
-        public string? PermissionsPolicy { get; set; }
-    }
-
     public class SecurityHeadersMiddleware
     {
         private readonly RequestDelegate _next;
@@ -23,80 +14,107 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
             _policy = policy;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            try
+            // Aplica los encabezados de seguridad siguiendo la política
+            foreach (var headerValuePair in _policy.Headers)
             {
-                // Skip security headers for static files
-                if (IsStaticFile(context.Request.Path))
+                // Evita sobreescribir encabezados CSP ya definidos
+                if (context.Response.Headers.ContainsKey(headerValuePair.Key))
                 {
-                    await _next(context);
-                    return;
+                    if (headerValuePair.Key == "Content-Security-Policy")
+                    {
+                        // Mantén la entrada existente para CSP
+                        continue;
+                    }
+                    context.Response.Headers.Remove(headerValuePair.Key);
                 }
-
-                if (!string.IsNullOrEmpty(_policy.FrameOptions))
-                {
-                    context.Response.Headers.Append("X-Frame-Options", _policy.FrameOptions);
-                }
-
-                if (!string.IsNullOrEmpty(_policy.ContentTypeOptions))
-                {
-                    context.Response.Headers.Append("X-Content-Type-Options", _policy.ContentTypeOptions);
-                }
-
-                if (!string.IsNullOrEmpty(_policy.XssProtection))
-                {
-                    context.Response.Headers.Append("X-XSS-Protection", _policy.XssProtection);
-                }
-
-                // Establecer una CSP muy permisiva para desarrollo
-                // En producción, debe ser más restrictiva
-                context.Response.Headers.Append("Content-Security-Policy",
-                    "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; " +
-                    "style-src 'self' 'unsafe-inline' https: http:; " +
-                    "img-src 'self' data: https: http:; " +
-                    "font-src 'self' data: https: http:; " +
-                    "connect-src 'self' https: http:; " +
-                    "frame-src 'self' https: http:; " +
-                    "object-src 'none'"
-                );
-
-                if (!string.IsNullOrEmpty(_policy.ReferrerPolicy))
-                {
-                    context.Response.Headers.Append("Referrer-Policy", _policy.ReferrerPolicy);
-                }
-
-                if (!string.IsNullOrEmpty(_policy.PermissionsPolicy))
-                {
-                    context.Response.Headers.Append("Permissions-Policy", _policy.PermissionsPolicy);
-                }
-
-                await _next(context);
+                context.Response.Headers.Append(headerValuePair.Key, headerValuePair.Value);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in SecurityHeadersMiddleware: {ex.Message}");
-                await _next(context);
-            }
+
+            await _next(context);
+        }
+    }
+
+    public class SecurityHeadersPolicy
+    {
+        public IDictionary<string, string> Headers { get; } = new Dictionary<string, string>();
+
+        public SecurityHeadersPolicy()
+        {
+            // Configuración base recomendada
+            Headers["X-Content-Type-Options"] = "nosniff";
+            Headers["X-Frame-Options"] = "DENY";
+            Headers["X-XSS-Protection"] = "1; mode=block";
+            Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            // Menos restrictivo para permitir que funcione correctamente
+            Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'";
         }
 
-        private bool IsStaticFile(PathString path)
+        // Método para agregar una política CSP personalizada
+        public ContentSecurityPolicyBuilder AddContentSecurityPolicy()
         {
-            string pathStr = path.ToString().ToLowerInvariant();
-            return pathStr.StartsWith("/lib/") ||
-                   pathStr.StartsWith("/css/") ||
-                   pathStr.StartsWith("/js/") ||
-                   pathStr.StartsWith("/images/") ||
-                   pathStr.EndsWith(".css") ||
-                   pathStr.EndsWith(".js") ||
-                   pathStr.EndsWith(".png") ||
-                   pathStr.EndsWith(".jpg") ||
-                   pathStr.EndsWith(".jpeg") ||
-                   pathStr.EndsWith(".gif") ||
-                   pathStr.EndsWith(".ico") ||
-                   pathStr.EndsWith(".woff") ||
-                   pathStr.EndsWith(".woff2");
+            var builder = new ContentSecurityPolicyBuilder();
+            return builder;
+        }
+    }
+
+    public class ContentSecurityPolicyBuilder
+    {
+        private readonly Dictionary<string, List<string>> _directives = new Dictionary<string, List<string>>();
+
+        public ContentSecurityPolicyDirectiveBuilder AddDefaultSrc() => new ContentSecurityPolicyDirectiveBuilder(this, "default-src");
+        public ContentSecurityPolicyDirectiveBuilder AddScriptSrc() => new ContentSecurityPolicyDirectiveBuilder(this, "script-src");
+        public ContentSecurityPolicyDirectiveBuilder AddStyleSrc() => new ContentSecurityPolicyDirectiveBuilder(this, "style-src");
+        public ContentSecurityPolicyDirectiveBuilder AddImgSrc() => new ContentSecurityPolicyDirectiveBuilder(this, "img-src");
+        public ContentSecurityPolicyDirectiveBuilder AddFontSrc() => new ContentSecurityPolicyDirectiveBuilder(this, "font-src");
+        public ContentSecurityPolicyDirectiveBuilder AddConnectSrc() => new ContentSecurityPolicyDirectiveBuilder(this, "connect-src");
+
+        public void AddDirective(string directive, string value)
+        {
+            if (!_directives.ContainsKey(directive))
+            {
+                _directives[directive] = new List<string>();
+            }
+            _directives[directive].Add(value);
+        }
+
+        // Más métodos según sea necesario
+    }
+
+    public class ContentSecurityPolicyDirectiveBuilder
+    {
+        private readonly ContentSecurityPolicyBuilder _builder;
+        private readonly string _directive;
+
+        public ContentSecurityPolicyDirectiveBuilder(ContentSecurityPolicyBuilder builder, string directive)
+        {
+            _builder = builder;
+            _directive = directive;
+        }
+
+        public ContentSecurityPolicyDirectiveBuilder Self()
+        {
+            _builder.AddDirective(_directive, "'self'");
+            return this;
+        }
+
+        public ContentSecurityPolicyDirectiveBuilder UnsafeInline()
+        {
+            _builder.AddDirective(_directive, "'unsafe-inline'");
+            return this;
+        }
+
+        public ContentSecurityPolicyDirectiveBuilder UnsafeEval()
+        {
+            _builder.AddDirective(_directive, "'unsafe-eval'");
+            return this;
+        }
+
+        public ContentSecurityPolicyDirectiveBuilder Data()
+        {
+            _builder.AddDirective(_directive, "data:");
+            return this;
         }
     }
 

@@ -2,9 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
     <RootNamespace>Sistema_de_Gestion_de_Importaciones</RootNamespace>
+    <!-- Configura explícitamente el tipo de publicación -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Estas opciones aseguran que las dependencias se incluyan -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 
   <ItemGroup>

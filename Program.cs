@@ -170,7 +170,14 @@ builder.Services.AddLogging(logging =>
     logging.ClearProviders();
     logging.AddConsole();
     logging.AddDebug();
-    logging.SetMinimumLevel(LogLevel.Information);
+    // Eliminamos AddAzureWebAppDiagnostics() que requiere un paquete adicional
+    logging.SetMinimumLevel(LogLevel.Debug); // Mayor nivel de detalle para diagnosticar problemas
+
+    // Agrega un proveedor de archivo de texto básico para mejor diagnóstico en entornos de producción
+    if (!builder.Environment.IsDevelopment())
+    {
+        logging.AddEventSourceLogger(); // Agrega soporte para Event Tracing for Windows (ETW)
+    }
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -182,13 +189,6 @@ builder.Services.AddControllersWithViews(options =>
         .RequireAuthenticatedUser()
         .Build();
     options.Filters.Add(new AuthorizeFilter(policy));
-});
-
-builder.Services.AddAntiforgery(options =>
-{
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -382,43 +382,28 @@ else
     app.UseHsts();
 }
 
+// Asegúrate que UseHttpsRedirection esté antes de los middleware de archivos estáticos
 app.UseHttpsRedirection();
 
-// Configuración mejorada de archivos estáticos
-app.UseStaticFiles(new StaticFileOptions
-{
-    OnPrepareResponse = ctx =>
-    {
-        // Corregir MIME types para archivos JavaScript
-        if (ctx.File.Name.EndsWith(".js"))
-        {
-            ctx.Context.Response.Headers["Content-Type"] = "application/javascript";
-        }
-    }
-});
+// Agrega o asegúrate de que exista esta línea - CRÍTICO para servir archivos estáticos
+app.UseStaticFiles();
 
+// El middleware de enrutamiento debe ir después de los archivos estáticos
 app.UseRouting();
 
-app.UseCors("ApiPolicy");
-
-// Configurar el middleware de seguridad con una política más permisiva
-var securityHeadersPolicy = new SecurityHeadersPolicy
-{
-    FrameOptions = "DENY",
-    XssProtection = "1; mode=block",
-    ReferrerPolicy = "strict-origin-when-cross-origin",
-    PermissionsPolicy = "camera=(), microphone=(), geolocation=()"
-    // No establecer ContentTypeOptions para permitir el funcionamiento correcto
-    // No establecer ContentSecurityPolicy para usar la versión permisiva del middleware
-};
-
-// Orden de middleware - primero estáticos, después seguridad 
-app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseMiddleware<SecurityLoggingMiddleware>();
+// Agrega encabezados de seguridad adecuados pero no demasiado restrictivos
 app.UseMiddleware<ApiLoggingMiddleware>();
 app.UseMiddleware<RequestSanitizationMiddleware>();
+
+// Configura los encabezados de seguridad para permitir recursos estáticos
+var securityHeadersPolicy = new SecurityHeadersPolicy();
+// Usa el método existente en la clase SecurityHeadersPolicy
+// No necesitamos configurar manualmente la política ya que ya tiene valores
+// predeterminados seguros pero flexibles en su constructor
+
 app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
 
+// La autenticación y autorización deben ir después del enrutamiento
 app.UseAuthentication();
 app.UseAuthorization();
 

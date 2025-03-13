@@ -2,20 +2,28 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Sistema_de_Gestion_de_Importaciones</RootNamespace>
-    <!-- Configuración para Azure App Service 32-bit -->
-    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
-    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
-    <SelfContained>true</SelfContained>
-    <PublishSingleFile>false</PublishSingleFile>
-    <PublishReadyToRun>true</PublishReadyToRun>
+    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <UserSecretsId>B1095C02-C44F-72BA-599F-9EA2740E1D3D</UserSecretsId>
+    <!-- Fix for MVC Views publishing -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <MvcRazorCompileOnPublish>true</MvcRazorCompileOnPublish>
+    <!-- Prevent trimming to avoid issues with reflection -->
     <PublishTrimmed>false</PublishTrimmed>
-    <StartupHookSupport>true</StartupHookSupport>
-    <!-- Configuración para CI/CD -->
-    <Platform>x86</Platform>
+    <!-- Disable default content items so we can control them precisely -->
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
+
+  <!-- Add explicit inclusion of content files -->
+  <ItemGroup>
+    <Content Include="Views\**\*.cshtml" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="wwwroot\**\*" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Make sure we include other necessary files -->
+    <Content Include="appsettings.json" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="appsettings.*.json" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

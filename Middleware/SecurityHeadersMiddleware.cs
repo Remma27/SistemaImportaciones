@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Sistema_de_Gestion_de_Importaciones.Middleware
 {
@@ -7,15 +8,28 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly SecurityHeadersPolicy _policy;
+        private readonly ILogger<SecurityHeadersMiddleware> _logger;
 
-        public SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy)
+        public SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy, ILogger<SecurityHeadersMiddleware> logger)
         {
             _next = next;
             _policy = policy;
+            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
+            var path = context.Request.Path.ToString().ToLowerInvariant();
+            var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+
+            // Skip security headers for auth paths in development
+            if (isDevelopment && (path.Contains("/auth/") || path.StartsWith("/authfix/")))
+            {
+                _logger.LogInformation("Skipping security headers for auth path: {Path}", path);
+                await _next(context);
+                return;
+            }
+
             // Aplica los encabezados de seguridad siguiendo la política
             foreach (var headerValuePair in _policy.Headers)
             {

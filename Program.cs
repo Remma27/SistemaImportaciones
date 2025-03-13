@@ -23,10 +23,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using MySqlConnector;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Load environment variables from .env file
 DotEnv.Load(options: new DotEnvOptions(
     envFilePaths: new[] { ".env" },
     overwriteExistingVars: true
@@ -44,8 +44,14 @@ builder.WebHost.ConfigureKestrel(options =>
     options.Limits.MaxRequestHeadersTotalSize = 32 * 1024;
 });
 
-builder.Services.AddControllersWithViews()
-    .AddRazorRuntimeCompilation();
+builder.Services.AddControllersWithViews(options =>
+{
+    var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+    options.Filters.Add(new AuthorizeFilter(policy));
+})
+.AddRazorRuntimeCompilation();
 
 builder.Services.AddTransient<ResumenAgregadoViewComponent>();
 builder.Services.AddTransient<ResumenGeneralEscotillasViewComponent>();
@@ -106,7 +112,10 @@ builder.Services.AddDataProtection()
     .SetDefaultKeyLifetime(TimeSpan.FromDays(30))
     .PersistKeysToFileSystem(new DirectoryInfo(Environment.GetEnvironmentVariable("DATA_PROTECTION_PATH") ?? @"C:\DataProtection-Keys"));
 
-// Build connection string from environment variables
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
+    .SetApplicationName("SistemaGestionImportaciones");
+
 var connectionString = $"Server={Environment.GetEnvironmentVariable("DB_HOST")};" +
                        $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
                        $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
@@ -119,7 +128,6 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Database connection information not found in environment variables.");
 }
 
-// Añadir diagnóstico de conexión
 try
 {
     using var conn = new MySqlConnection(connectionString);
@@ -138,10 +146,8 @@ catch (Exception ex)
     }
 }
 
-// Use this for direct testing with AWS
 if (builder.Environment.IsDevelopment())
 {
-    // Log the connection string (without password) for verification
     var connBuilder = new MySqlConnectionStringBuilder(connectionString);
     var sanitizedConn = $"Server={connBuilder.Server};Database={connBuilder.Database};User={connBuilder.UserID};SslMode={connBuilder.SslMode}";
     Console.WriteLine($"Using connection: {sanitizedConn}");
@@ -158,7 +164,7 @@ builder.Services.AddDbContext<ApiContext>(options =>
                 errorNumbersToAdd: null);
             mySqlOptions.CommandTimeout(60);
         })
-    .UseLowerCaseNamingConvention() // Aplica convención de minúsculas a todas las tablas
+    .UseLowerCaseNamingConvention()
 );
 
 ServiceExtensions.AddApplicationServices(builder.Services, builder.Configuration);
@@ -170,13 +176,11 @@ builder.Services.AddLogging(logging =>
     logging.ClearProviders();
     logging.AddConsole();
     logging.AddDebug();
-    // Eliminamos AddAzureWebAppDiagnostics() que requiere un paquete adicional
-    logging.SetMinimumLevel(LogLevel.Debug); // Mayor nivel de detalle para diagnosticar problemas
+    logging.SetMinimumLevel(LogLevel.Debug);
 
-    // Agrega un proveedor de archivo de texto básico para mejor diagnóstico en entornos de producción
     if (!builder.Environment.IsDevelopment())
     {
-        logging.AddEventSourceLogger(); // Agrega soporte para Event Tracing for Windows (ETW)
+        logging.AddEventSourceLogger();
     }
 });
 
@@ -195,39 +199,47 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
         options.Cookie.Name = ".AspNetCore.Cookies";
         options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax;
 
-        if (builder.Environment.IsDevelopment())
+        options.Events.OnValidatePrincipal = async context =>
         {
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.SameSite = SameSiteMode.Lax;
-        }
-        else
-        {
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.SameSite = SameSiteMode.Strict;
-        }
+            if (context.Properties.ExpiresUtc.HasValue &&
+                context.Properties.ExpiresUtc.Value < DateTimeOffset.UtcNow)
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        };
 
         options.Events.OnRedirectToLogin = context =>
         {
             if (context.Request.Path.StartsWithSegments("/api") ||
-                (context.Request.Headers.TryGetValue("Accept", out var acceptValues) &&
-                 acceptValues.Any(v => v != null && v.Contains("application/json"))))
+                context.Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                context.Request.Headers["Accept"].ToString().Contains("application/json"))
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return Task.CompletedTask;
             }
 
-            context.Response.Redirect(context.RedirectUri);
+            var returnUrl = context.Request.Path + context.Request.QueryString;
+            context.Response.Redirect($"/Auth/IniciarSesion?returnUrl={WebUtility.UrlEncode(returnUrl)}");
             return Task.CompletedTask;
         };
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api") ||
+                context.Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                context.Request.Headers["Accept"].ToString().Contains("application/json"))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return Task.CompletedTask;
+            }
 
-        options.Cookie.IsEssential = true;
-        options.Cookie.MaxAge = TimeSpan.FromHours(8);
-
-        options.SessionStore = new MemoryCookieSessionStore();
-    });
-
-builder.Services.AddAuthentication()
+            context.Response.Redirect(options.AccessDeniedPath);
+            return Task.CompletedTask;
+        };
+    })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -257,29 +269,29 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<CookieDelegatingHandler>();
 
+builder.Services.AddTransient<ApiAuthenticationHandler>();
+
 builder.Services.AddHttpClient("API", (sp, client) =>
 {
-    // Use EnvironmentHelper instead of configuration
     var apiUrl = EnvironmentHelper.GetApiBaseUrl();
     if (string.IsNullOrEmpty(apiUrl))
     {
         throw new InvalidOperationException("API Base URL not configured");
     }
     client.BaseAddress = new Uri(apiUrl);
-    client.Timeout = TimeSpan.FromSeconds(60); // Longer timeout for AWS
+    client.Timeout = TimeSpan.FromSeconds(60);
     client.DefaultRequestHeaders.Accept.Clear();
     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
-    // For debugging
     Console.WriteLine($"Configured API client with base URL: {apiUrl}");
 })
-.AddHttpMessageHandler<CookieDelegatingHandler>()
+.AddHttpMessageHandler<ApiAuthenticationHandler>()
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
-    // Don't validate SSL certs during testing
-    ServerCertificateCustomValidationCallback =
-        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
-    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+    UseCookies = true,
+    CookieContainer = new System.Net.CookieContainer()
 });
 
 builder.Services.AddScoped<IImportacionService>(sp =>
@@ -362,6 +374,14 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
 });
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.HeaderName = "X-CSRF-TOKEN";
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -376,35 +396,28 @@ else
     app.UseHsts();
 }
 
-// Asegúrate que UseHttpsRedirection esté antes de los middleware de archivos estáticos
+var securityHeadersPolicy = new SecurityHeadersPolicy();
+
 app.UseHttpsRedirection();
 
-// Agrega o asegúrate de que exista esta línea - CRÍTICO para servir archivos estáticos
 app.UseStaticFiles();
 
-// El middleware de enrutamiento debe ir después de los archivos estáticos
 app.UseRouting();
 
-// Agrega encabezados de seguridad adecuados pero no demasiado restrictivos
-app.UseMiddleware<ApiLoggingMiddleware>();
-app.UseMiddleware<RequestSanitizationMiddleware>();
-
-// Configura los encabezados de seguridad para permitir recursos estáticos
-var securityHeadersPolicy = new SecurityHeadersPolicy();
-// Actualiza la política CSP para permitir CDNs específicos
-securityHeadersPolicy.Headers["Content-Security-Policy"] =
-    "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
-    "style-src 'self' 'unsafe-inline' https://cdn.datatables.net https://cdnjs.cloudflare.com; " +
-    "img-src 'self' data:; " +
-    "font-src 'self' https://cdnjs.cloudflare.com; " +
-    "connect-src 'self'";
-
-app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
-
-// La autenticación y autorización deben ir después del enrutamiento
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<AuthDebugMiddleware>();
+
+app.UseMiddleware<SessionExpirationMiddleware>();
+
+app.UseMiddleware<ApiLoggingMiddleware>();
+app.UseMiddleware<RequestSanitizationMiddleware>();
+app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
+app.UseMiddleware<CspFixMiddleware>();
+
+app.UseMiddleware<ApiErrorHandlingMiddleware>();
+app.UseMiddleware<AuthorizationExceptionMiddleware>();
 
 app.MapControllerRoute(
     name: "mvc",
@@ -422,5 +435,9 @@ app.MapControllerRoute(
 );
 
 app.MapControllers();
+
+app.MapGet("/health", () => "Healthy")
+   .AllowAnonymous()
+   .WithDisplayName("Health Check");
 
 app.Run();

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Sistema_de_Gestion_de_Importaciones.Services;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using SistemaDeGestionDeImportaciones.Services;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 namespace Sistema_de_Gestion_de_Importaciones.Extensions
 {
@@ -11,11 +12,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
             // Remove any existing IMovimientoService registration if present
-            string apiBaseUrl = configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5079";
+            string apiBaseUrl = EnvironmentHelper.GetApiBaseUrl();
+            if (string.IsNullOrEmpty(apiBaseUrl))
+            {
+                throw new InvalidOperationException("API Base URL not configured in environment variables");
+            }
 
             services.AddHttpClient("API", client =>
             {
                 client.BaseAddress = new Uri(apiBaseUrl);
+                client.DefaultRequestHeaders.Add("User-Agent", "SistemaGestionImportaciones");
             });
 
             // Registro de servicios

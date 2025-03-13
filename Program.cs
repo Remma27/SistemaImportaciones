@@ -1,3 +1,5 @@
+using dotenv.net;
+using dotenv.net.Utilities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -20,8 +22,15 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using MySqlConnector;
+using Sistema_de_Gestion_de_Importaciones.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Load environment variables from .env file
+DotEnv.Load(options: new DotEnvOptions(
+    envFilePaths: new[] { ".env" },
+    overwriteExistingVars: true
+));
 
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -95,12 +104,19 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddDataProtection()
     .SetApplicationName("SistemaGestionImportaciones")
     .SetDefaultKeyLifetime(TimeSpan.FromDays(30))
-    .PersistKeysToFileSystem(new DirectoryInfo(@"C:\DataProtection-Keys"));
+    .PersistKeysToFileSystem(new DirectoryInfo(Environment.GetEnvironmentVariable("DATA_PROTECTION_PATH") ?? @"C:\DataProtection-Keys"));
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Build connection string from environment variables
+var connectionString = $"Server={Environment.GetEnvironmentVariable("DB_HOST")};" +
+                       $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
+                       $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
+                       $"User={Environment.GetEnvironmentVariable("DB_USER")};" +
+                       $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")};" +
+                       "Convert Zero Datetime=True;ConnectionTimeout=30;";
+
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+    throw new InvalidOperationException("Database connection information not found in environment variables.");
 }
 
 // Añadir diagnóstico de conexión
@@ -223,13 +239,15 @@ builder.Services.AddAuthentication()
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
             ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured")))
+                Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY") ??
+                throw new InvalidOperationException("JWT Key not found in environment variables."))
+            )
         };
     })
     .AddApiKeySupport(options => { });
@@ -247,7 +265,8 @@ builder.Services.AddTransient<CookieDelegatingHandler>();
 
 builder.Services.AddHttpClient("API", (sp, client) =>
 {
-    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"];
+    // Use EnvironmentHelper instead of configuration
+    var apiUrl = EnvironmentHelper.GetApiBaseUrl();
     if (string.IsNullOrEmpty(apiUrl))
     {
         throw new InvalidOperationException("API Base URL not configured");
@@ -397,7 +416,7 @@ var securityHeadersPolicy = new SecurityHeadersPolicy
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<SecurityLoggingMiddleware>();
 app.UseMiddleware<ApiLoggingMiddleware>();
-//app.UseMiddleware<RequestSanitizationMiddleware>();
+app.UseMiddleware<RequestSanitizationMiddleware>();
 app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
 
 app.UseAuthentication();

@@ -55,4 +55,4 @@ jobs:
           app-name: 'Import'
           slot-name: 'Production'
           package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5F9DC77055194783BAC205EB7415874D }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_E6E7D25235D341149F9CC03DD6507FD8 }}

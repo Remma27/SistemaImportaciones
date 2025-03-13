@@ -5,13 +5,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Sistema_de_Gestion_de_Importaciones</RootNamespace>
-    <!-- Configura explícitamente el tipo de publicación -->
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <!-- Estas opciones aseguran que las dependencias se incluyan -->
+    <!-- Configuración para Azure App Service 32-bit -->
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>false</PublishSingleFile>
     <PublishReadyToRun>true</PublishReadyToRun>
     <PublishTrimmed>false</PublishTrimmed>
+    <StartupHookSupport>true</StartupHookSupport>
+    <!-- Configuración para CI/CD -->
+    <Platform>x86</Platform>
   </PropertyGroup>
 
   <ItemGroup>

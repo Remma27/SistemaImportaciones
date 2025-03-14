@@ -33,10 +33,12 @@ namespace SistemaDeGestionDeImportaciones.Controllers
         [AllowAnonymous]
         public IActionResult IniciarSesion(string? returnUrl = null)
         {
-            // Limita la longitud de returnUrl para evitar redirecciones anidadas
-            if (!string.IsNullOrEmpty(returnUrl) && (returnUrl.Length > 200 || returnUrl.Contains("Error")))
+            if (string.IsNullOrEmpty(returnUrl) ||
+                returnUrl.Contains("Error") ||
+                returnUrl.Length > 100 ||
+                returnUrl.Count(c => c == '%') > 5)
             {
-                returnUrl = "/";  // Restablece a la página principal si hay un ciclo
+                returnUrl = "/";
             }
 
             ViewBag.ReturnUrl = returnUrl;
@@ -178,6 +180,16 @@ namespace SistemaDeGestionDeImportaciones.Controllers
             {
                 if (!ModelState.IsValid)
                 {
+                    var errorMessages = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+
+                    string errorMessage = errorMessages.Any()
+                        ? errorMessages.First()
+                        : "Por favor, completa correctamente todos los campos";
+
+                    this.Error($"Error de validación: {errorMessage}");
                     return View(model);
                 }
 
@@ -185,8 +197,22 @@ namespace SistemaDeGestionDeImportaciones.Controllers
                 if (!resultado.Success)
                 {
                     _logger.LogWarning($"Error de inicio de sesión: {resultado.ErrorMessage}");
-                    this.Error("Credenciales inválidas");
-                    ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? "Credenciales inválidas");
+
+                    string mensajeError = "Credenciales inválidas";
+                    if (!string.IsNullOrEmpty(resultado.ErrorMessage))
+                    {
+                        if (resultado.ErrorMessage.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
+                            mensajeError = "El correo electrónico no está registrado en el sistema";
+                        else if (resultado.ErrorMessage.Contains("contraseña", StringComparison.OrdinalIgnoreCase))
+                            mensajeError = "La contraseña ingresada es incorrecta";
+                        else if (resultado.ErrorMessage.Contains("bloqueado", StringComparison.OrdinalIgnoreCase))
+                            mensajeError = "La cuenta está bloqueada. Contacte al administrador";
+                        else
+                            mensajeError = $"Error de autenticación: {resultado.ErrorMessage}";
+                    }
+
+                    this.Error(mensajeError);
+                    ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? mensajeError);
                     return View(model);
                 }
 
@@ -227,9 +253,19 @@ namespace SistemaDeGestionDeImportaciones.Controllers
             }
             catch (Exception ex)
             {
-                this.Error("Ha ocurrido un error durante el inicio de sesión");
+                string mensajeError = "Ha ocurrido un error durante el inicio de sesión";
+                if (ex is HttpRequestException httpEx)
+                {
+                    mensajeError = $"Error de conexión: {FormatearErrorHttp((HttpRequestException)ex)}";
+                }
+                else if (ex.InnerException != null)
+                {
+                    mensajeError = $"Error: {ObtenerMensajeAmigable(ex.InnerException.Message)}";
+                }
+
+                this.Error(mensajeError);
                 _logger.LogError(ex, "Error en el proceso de inicio de sesión");
-                ModelState.AddModelError(string.Empty, "Ha ocurrido un error durante el inicio de sesión");
+                ModelState.AddModelError(string.Empty, mensajeError);
                 return View(model);
             }
         }
@@ -258,8 +294,14 @@ namespace SistemaDeGestionDeImportaciones.Controllers
             }
             catch (Exception ex)
             {
-                this.Error("Error al cerrar sesión");
-                _logger.LogError(ex, "Error durante el cierre de sesión");
+                string mensajeError = "Error al cerrar la sesión";
+                if (ex.Message.Contains("Cookie"))
+                    mensajeError = "Error al eliminar cookies de sesión";
+                else if (ex.Message.Contains("Authentication"))
+                    mensajeError = "Error en el sistema de autenticación";
+
+                this.Error(mensajeError);
+                _logger.LogError(ex, "Error durante el cierre de sesión: {Message}", ex.Message);
                 return RedirectToAction("Index", "Home");
             }
         }

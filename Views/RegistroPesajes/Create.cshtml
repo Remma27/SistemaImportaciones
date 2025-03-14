@@ -6,6 +6,14 @@
             <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Nuevo Registro de Pesaje</h4>
         </div>
         <div class="card-body">
+            <!-- Botón de escaneo principal -->
+            <div class="mb-4">
+                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#scannerModal">
+                    <i class="fas fa-camera me-2"></i>Escanear documento
+                </button>
+                <small class="text-muted ms-2">Capture o suba una imagen para extraer datos automáticamente</small>
+            </div>
+
             <form asp-action="Create" method="post" class="needs-validation" novalidate>
                 <input type="hidden" asp-for="Id" />
                 <input type="hidden" asp-for="IdImportacion" />
@@ -55,8 +63,8 @@
                                 data-bs-target="#librasModal">
                                 <i class="fas fa-exchange-alt"></i> Libras
                             </button>
-                            <span asp-validation-for="PesoEntregado" class="text-danger"></span>
                         </div>
+                        <span asp-validation-for="PesoEntregado" class="text-danger"></span>
                     </div>
                     <!-- Escotilla -->
                     <div class="col-md-6">
@@ -122,24 +130,338 @@
     </div>
 </div>
 
+<!-- Modal para escaneo de documentos -->
+<div class="modal fade" id="scannerModal" tabindex="-1" aria-labelledby="scannerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scannerModalLabel">Escanear documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" id="scanTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera"
+                            type="button" role="tab" aria-controls="camera" aria-selected="true">
+                            <i class="fas fa-camera me-2"></i>Cámara
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload"
+                            type="button" role="tab" aria-controls="upload" aria-selected="false">
+                            <i class="fas fa-upload me-2"></i>Subir imagen
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content mt-3">
+                    <!-- Tab de cámara -->
+                    <div class="tab-pane fade show active" id="camera" role="tabpanel" aria-labelledby="camera-tab">
+                        <div class="text-center">
+                            <video id="camera-preview" class="img-fluid border rounded"
+                                style="max-height: 350px; display: none;"></video>
+                            <canvas id="camera-canvas" class="img-fluid border rounded"
+                                style="max-height: 350px; display: none;"></canvas>
+                            <div class="mt-3">
+                                <button id="start-camera" class="btn btn-primary">
+                                    <i class="fas fa-video me-2"></i>Iniciar cámara
+                                </button>
+                                <button id="take-photo" class="btn btn-info d-none">
+                                    <i class="fas fa-camera me-2"></i>Tomar foto
+                                </button>
+                                <button id="retake-photo" class="btn btn-secondary d-none">
+                                    <i class="fas fa-redo me-2"></i>Repetir foto
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab de subida de imagen -->
+                    <div class="tab-pane fade" id="upload" role="tabpanel" aria-labelledby="upload-tab">
+                        <div class="text-center">
+                            <div class="mb-3">
+                                <label for="image-upload" class="form-label">Seleccionar imagen</label>
+                                <input class="form-control" type="file" id="image-upload" accept="image/*">
+                            </div>
+                            <img id="upload-preview" class="img-fluid border rounded mt-3"
+                                style="max-height: 350px; display: none;" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de resultado del OCR -->
+                <div id="ocr-result" class="mt-4 d-none">
+                    <h5><i class="fas fa-check-circle text-success me-2"></i>Datos detectados</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <tbody>
+                                <tr>
+                                    <th style="width: 30%">Guía</th>
+                                    <td id="ocr-guia"></td>
+                                </tr>
+                                <tr>
+                                    <th>Guía Alterna</th>
+                                    <td id="ocr-guia-alterna"></td>
+                                </tr>
+                                <tr>
+                                    <th>Placa</th>
+                                    <td id="ocr-placa"></td>
+                                </tr>
+                                <tr>
+                                    <th>Placa Alterna</th>
+                                    <td id="ocr-placa-alterna"></td>
+                                </tr>
+                                <tr>
+                                    <th>Peso (kg)</th>
+                                    <td id="ocr-peso"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>Los datos detectados se aplicarán al formulario al
+                        presionar "Aplicar datos"
+                    </div>
+                </div>
+
+                <div id="ocr-processing" class="text-center my-4 d-none">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Procesando...</span>
+                    </div>
+                    <p class="mt-2">Procesando imagen, por favor espere...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="process-ocr" class="btn btn-primary d-none">
+                    <i class="fas fa-search me-2"></i>Procesar imagen
+                </button>
+                <button type="button" id="apply-ocr-data" class="btn btn-success d-none">
+                    <i class="fas fa-check me-2"></i>Aplicar datos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    
+
     <script>
-        $(document).ready(function() {
-            $("#btnConvertirLibras").click(function() {
+        $(document).ready(function () {
+            // Código para conversión de libras existente
+            $("#btnConvertirLibras").click(function () {
                 const libras = parseFloat($("#inputLibras").val());
                 if (!isNaN(libras)) {
                     const kilos = libras * 0.453592;
                     const kilosRedondeados = Math.round(kilos * 100) / 100;
                     $("#inputKilos").val(kilosRedondeados);
-                    
+
                     $("#librasModal").modal('hide');
-                    
+
                     $("#inputLibras").val('');
                 }
+            });
+
+            // Variables para la cámara
+            let stream = null;
+            let capturedImage = null;
+            let uploadedImage = null;
+            let ocrResults = null;
+
+            // Iniciar la cámara
+            $("#start-camera").click(function () {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(function (mediaStream) {
+                            stream = mediaStream;
+                            const video = document.getElementById('camera-preview');
+                            video.srcObject = mediaStream;
+                            video.style.display = 'block';
+                            video.onloadedmetadata = function (e) {
+                                video.play();
+                            };
+
+                            $("#start-camera").addClass('d-none');
+                            $("#take-photo").removeClass('d-none');
+                        })
+                        .catch(function (err) {
+                            console.log("Error accediendo a la cámara: " + err);
+                            alert("No se pudo acceder a la cámara. Por favor, verifique los permisos.");
+                        });
+                } else {
+                    alert("Su navegador no soporta acceso a la cámara.");
+                }
+            });
+
+            // Tomar foto
+            $("#take-photo").click(function () {
+                const video = document.getElementById('camera-preview');
+                const canvas = document.getElementById('camera-canvas');
+                const context = canvas.getContext('2d');
+
+                // Configurar el canvas con las dimensiones del video
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+
+                // Dibujar el frame actual del video en el canvas
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Obtener la imagen como base64
+                capturedImage = canvas.toDataURL('image/jpeg');
+
+                // Mostrar la imagen capturada
+                video.style.display = 'none';
+                canvas.style.display = 'block';
+                $("#take-photo").addClass('d-none');
+                $("#retake-photo").removeClass('d-none');
+                $("#process-ocr").removeClass('d-none');
+
+                // Detener la transmisión del video
+                if (stream) {
+                    stream.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                }
+            });
+
+            // Repetir foto
+            $("#retake-photo").click(function () {
+                $("#camera-canvas").css('display', 'none');
+                $("#start-camera").removeClass('d-none');
+                $("#retake-photo").addClass('d-none');
+                $("#process-ocr").addClass('d-none');
+                capturedImage = null;
+            });
+
+            // Manejar subida de imagen
+            $("#image-upload").change(function () {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        uploadedImage = e.target.result;
+                        $("#upload-preview").attr('src', uploadedImage).css('display', 'block');
+                        $("#process-ocr").removeClass('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Cambio de pestañas - Resetear
+            $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+                $("#process-ocr").addClass('d-none');
+                $("#apply-ocr-data").addClass('d-none');
+                $("#ocr-result").addClass('d-none');
+                $("#ocr-processing").addClass('d-none');
+            });
+
+            // Procesar OCR
+            $("#process-ocr").click(function () {
+                // Determinar qué imagen procesar
+                let imageData = null;
+                if (capturedImage) {
+                    imageData = capturedImage;
+                } else if (uploadedImage) {
+                    imageData = uploadedImage;
+                } else {
+                    alert("No hay imagen disponible para procesar.");
+                    return;
+                }
+
+                // Mostrar spinner de carga
+                $("#ocr-processing").removeClass('d-none');
+                $("#process-ocr").addClass('d-none');
+
+                // Llamada a la API de OCR
+                fetch('/api/ocr/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imageData: imageData })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error en la respuesta del servidor');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Ocultar spinner
+                        $("#ocr-processing").addClass('d-none');
+
+                        // Guardar resultados
+                        ocrResults = data;
+
+                        // Mostrar datos detectados
+                        $("#ocr-guia").text(data.guia || 'No detectado');
+                        $("#ocr-guia-alterna").text(data.guiaAlterna || 'No detectado');
+                        $("#ocr-placa").text(data.placa || 'No detectado');
+                        $("#ocr-placa-alterna").text(data.placaAlterna || 'No detectado');
+                        $("#ocr-peso").text(data.peso ? data.peso + ' kg' : 'No detectado');
+
+                        // Mostrar sección de resultados
+                        $("#ocr-result").removeClass('d-none');
+                        $("#apply-ocr-data").removeClass('d-none');
+                    })
+                    .catch(error => {
+                        console.error('Error procesando OCR:', error);
+                        $("#ocr-processing").addClass('d-none');
+                        alert("Ocurrió un error al procesar la imagen. Intente nuevamente.");
+                    });
+            });
+
+            // Aplicar datos del OCR al formulario
+            $("#apply-ocr-data").click(function () {
+                if (ocrResults) {
+                    // Aplicar valores a los campos del formulario
+                    if (ocrResults.guia) $("#Guia").val(ocrResults.guia);
+                    if (ocrResults.guiaAlterna) $("#GuiaAlterna").val(ocrResults.guiaAlterna);
+                    if (ocrResults.placa) $("#Placa").val(ocrResults.placa);
+                    if (ocrResults.placaAlterna) $("#PlacaAlterna").val(ocrResults.placaAlterna);
+                    if (ocrResults.peso) $("#inputKilos").val(ocrResults.peso);
+
+                    // Cerrar modal
+                    $("#scannerModal").modal('hide');
+
+                    // Restablecer variables
+                    capturedImage = null;
+                    uploadedImage = null;
+                    ocrResults = null;
+
+                    // Mostrar notificación
+                    alert("Datos aplicados correctamente al formulario.");
+                }
+            });
+
+            // Limpiar cuando se cierra el modal
+            $('#scannerModal').on('hidden.bs.modal', function () {
+                // Detener cámara si está activa
+                if (stream) {
+                    stream.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                }
+
+                // Restablecer elementos UI
+                $("#camera-preview").css('display', 'none');
+                $("#camera-canvas").css('display', 'none');
+                $("#start-camera").removeClass('d-none');
+                $("#take-photo").addClass('d-none');
+                $("#retake-photo").addClass('d-none');
+                $("#process-ocr").addClass('d-none');
+                $("#apply-ocr-data").addClass('d-none');
+                $("#ocr-result").addClass('d-none');
+                $("#ocr-processing").addClass('d-none');
+                $("#upload-preview").css('display', 'none');
+                $("#image-upload").val('');
+
+                // Limpiar variables
+                capturedImage = null;
+                uploadedImage = null;
+                ocrResults = null;
             });
         });
     </script>

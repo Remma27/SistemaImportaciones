@@ -273,7 +273,14 @@
             // Iniciar la cámara
             $("#start-camera").click(function () {
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ video: true })
+                    // Configuración para preferir cámara trasera en móviles
+                    const constraints = { 
+                        video: { 
+                            facingMode: "environment" 
+                        } 
+                    };
+                    
+                    navigator.mediaDevices.getUserMedia(constraints)
                         .then(function (mediaStream) {
                             stream = mediaStream;
                             const video = document.getElementById('camera-preview');

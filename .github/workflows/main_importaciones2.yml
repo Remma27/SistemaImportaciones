@@ -4,55 +4,86 @@
 name: Build and deploy ASP.Net Core app to Azure Web App - Importaciones2
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+    workflow_dispatch:
+
+env:
+    DOTNET_VERSION: '9.x'
+    BUILD_CONFIGURATION: 'Release'
 
 jobs:
-  build:
-    runs-on: windows-latest
-    permissions:
-      contents: read #This is required for actions/checkout
+    build:
+        runs-on: windows-latest
+        permissions:
+            contents: read #This is required for actions/checkout
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Set up .NET Core
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.x'
+            - name: Set up .NET Core
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+            - name: Restore NuGet packages cache
+              uses: actions/cache@v3
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+            - name: Restore dependencies
+              run: dotnet restore
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+            - name: Build with dotnet
+              run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
 
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: .net-app
-      
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'Importaciones2'
-          slot-name: 'Production'
-          package: .
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4A79BCE99CFA40E096917F025D6C7C73 }}
+            - name: Run tests
+              run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
+
+            - name: dotnet publish
+              run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o "${{env.DOTNET_ROOT}}/myapp" --no-build
+
+            - name: Upload artifact for deployment job
+              uses: actions/upload-artifact@v4
+              with:
+                  name: .net-app
+                  path: ${{env.DOTNET_ROOT}}/myapp
+                  retention-days: 5
+
+    deploy:
+        runs-on: windows-latest
+        needs: build
+        if: github.event_name != 'pull_request'
+        environment:
+            name: 'Production'
+            url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+        steps:
+            - name: Download artifact from build job
+              uses: actions/download-artifact@v4
+              with:
+                  name: .net-app
+
+            - name: Deploy to Azure Web App
+              id: deploy-to-webapp
+              uses: azure/webapps-deploy@v3
+              with:
+                  app-name: 'Importaciones2'
+                  slot-name: 'Production'
+                  package: .
+                  publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4A79BCE99CFA40E096917F025D6C7C73 }}
+
+            - name: Post-deployment health check
+              run: |
+                  $statusCode = (Invoke-WebRequest -Uri "${{ steps.deploy-to-webapp.outputs.webapp-url }}" -UseBasicParsing).StatusCode
+                  if ($statusCode -ne 200) {
+                    Write-Error "Deployment verification failed. Status code: $statusCode"
+                    exit 1
+                  }

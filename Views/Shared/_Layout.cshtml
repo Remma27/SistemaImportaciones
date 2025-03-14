@@ -27,69 +27,13 @@
 
 <body class="h-100">
     <div class="wrapper">
-        <header class="bg-dark text-white py-3 mb-4">
-            <div class="container">
-                <div class="row g-3">
-                    @if (User.Identity?.IsAuthenticated ?? false)
-                    {
-                        <div class="col-12 col-md-6">
-                            <a href="/" class="text-white text-decoration-none">
-                                <h4 class="mb-0 text-center text-md-start">
-                                    <i class="fas fa-seedling me-2"></i>Sistema de Importaciones
-                                </h4>
-                            </a>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div
-                                class="d-flex flex-column flex-md-row align-items-center justify-content-center justify-content-md-end gap-2">
-                                <div class="mb-2 mb-md-0">
-                                    <span class="badge bg-light text-dark d-inline-flex align-items-center"
-                                        style="height: 38px; padding: 0 0.75rem; font-size: 0.875rem;">
-                                        <i class="fas fa-user me-1"></i>
-                                        Bienvenido, @User.Identity.Name
-                                    </span>
-                                </div>
-                                <form asp-controller="Auth" asp-action="CerrarSesion" method="post">
-                                    <button type="submit" class="btn btn-danger btn-sm d-inline-flex align-items-center fw-bold"
-                                        style="height: 38px;">
-                                        <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="col-12">
-                            <h4 class="mb-0 text-center">
-                                <i class="fas fa-seedling me-2"></i>Sistema de Gestión de Importaciones
-                            </h4>
-                        </div>
-                    }
-                </div>
-            </div>
-        </header>
+        @await Html.PartialAsync("_Header")
 
         <main role="main" class="@(ViewData["FullWidth"] != null ? "container-fluid" : "container") pb-3">
             @RenderBody()
         </main>
 
-        <footer class="footer py-3 bg-light border-top mt-auto">
-            <div class="container">
-                <div class="row g-2">
-                    <div class="col-12 col-md-6 text-center text-md-start">
-                        <span class="text-muted">
-                            <i class="fas fa-copyright me-1"></i>2025 Sistema de Gestión de Importaciones
-                        </span>
-                    </div>
-                    <div class="col-12 col-md-6 text-center text-md-end">
-                        <span class="text-muted">
-                            <i class="fas fa-code me-1"></i>Desarrollado por Emmanuel Rodriguez
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        @await Html.PartialAsync("_Footer")
     </div>
 
     <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>

@@ -25,7 +25,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
                 _logger.LogInformation("Bypassing authentication for path: {Path}", path);
 
                 // Check for authenticated user claim if needed for views
-                if (!context.User.Identity.IsAuthenticated && path != "/auth/iniciarsesion" && path != "/auth/registrarse")
+                if (!(context.User.Identity?.IsAuthenticated ?? false) && path != "/auth/iniciarsesion" && path != "/auth/registrarse")
                 {
                     // Add a temporary identity for testing if needed
                     // This would allow views that expect an authenticated user to still render

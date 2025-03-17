@@ -87,3 +87,38 @@ jobs:
                     Write-Error "Deployment verification failed. Status code: $statusCode"
                     exit 1
                   }
+            
+            - name: Post-deployment health check
+              run: |
+                  Write-Host "Waiting for 30 seconds to allow the application to start..."
+                  Start-Sleep -Seconds 30
+                  
+                  $maxRetries = 5
+                  $retryCount = 0
+                  $success = $false
+                  
+                  while ($retryCount -lt $maxRetries -and -not $success) {
+                      try {
+                          Write-Host "Attempt $($retryCount + 1) to check application health..."
+                          $response = Invoke-WebRequest -Uri "${{ steps.deploy-to-webapp.outputs.webapp-url }}" -UseBasicParsing -TimeoutSec 30
+                          $statusCode = $response.StatusCode
+                          
+                          if ($statusCode -eq 200) {
+                              Write-Host "Application is healthy with status code: $statusCode"
+                              $success = $true
+                          } else {
+                              Write-Host "Application returned status code: $statusCode"
+                              $retryCount++
+                              Start-Sleep -Seconds 15
+                          }
+                      } catch {
+                          Write-Host "Error checking application health: $_"
+                          $retryCount++
+                          Start-Sleep -Seconds 15
+                      }
+                  }
+                  
+                  if (-not $success) {
+                      Write-Error "Application health check failed after $maxRetries attempts."
+                      exit 1
+                  }

@@ -8,13 +8,18 @@
     <div class="card shadow">
         <div class="card-header bg-primary text-white py-3">
             <div class="row align-items-center">
-                <div class="col">
+                <div class="col-12 col-sm-6 mb-2 mb-sm-0">
                     <h3 class="mb-0">Gestión de Bodegas</h3>
                 </div>
-                <div class="col text-end">
-                    <a asp-controller="Bodega" asp-action="Create" class="btn btn-light">
-                        <i class="fas fa-plus-circle me-1"></i>Nueva Bodega
-                    </a>
+                <div class="col-12 col-sm-6">
+                    <div class="d-flex flex-column flex-sm-row justify-content-sm-end gap-2">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-light w-100 w-sm-auto">
+                            <i class="fas fa-arrow-left me-1"></i><span class="d-inline-block">Volver</span>
+                        </a>
+                        <a asp-controller="Bodega" asp-action="Create" class="btn btn-light w-100 w-sm-auto">
+                            <i class="fas fa-plus-circle me-1"></i><span class="d-inline-block">Nueva Bodega</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

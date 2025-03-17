@@ -11,13 +11,14 @@
         <div class="card-header bg-primary bg-gradient text-white py-3">
             <div class="row g-3">
                 <!-- Título -->
-                <div class="col-12 col-md-6 col-lg-4">
-                    <h3 class="mb-0 text-center text-md-start"><i class="fas fa-clipboard-list me-2"></i>Registro de
-                        Requerimientos</h3>
+                <div class="col-12 col-md-6 col-lg-3">
+                    <h3 class="mb-0 text-center text-md-start">
+                        <i class="fas fa-clipboard-list me-2"></i>Registro de Requerimientos
+                    </h3>
                 </div>
 
-                <!-- Selector de importación -->
-                <div class="col-12 col-md-6 col-lg-4">
+                <!-- Selector de importación - Ajustado para ser más ancho en pantallas grandes -->
+                <div class="col-12 col-md-6 col-lg-5">
                     <form method="get" asp-action="Index" class="mb-0">
                         <div class="input-group">
                             <label class="input-group-text bg-primary text-white border-0">
@@ -31,21 +32,26 @@
                     </form>
                 </div>
 
-                <!-- Botón de acción -->
-                <div class="col-12 col-md-12 col-lg-4 text-center text-lg-end">
-                    @if (!string.IsNullOrEmpty(selectedBarco))
-                    {
-                        <a asp-action="Create" asp-route-selectedBarco="@selectedBarco"
-                            class="btn btn-light d-inline-flex align-items-center">
-                            <i class="fas fa-plus me-2"></i> Nuevo Registro
+                <!-- Botones de acción - Ajustado el ancho para mantener el balance -->
+                <div class="col-12 col-md-12 col-lg-4">
+                    <div class="d-flex flex-column flex-sm-row justify-content-center justify-content-lg-end gap-2">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-light w-100 w-sm-auto">
+                            <i class="fas fa-arrow-left me-1"></i><span class="d-inline-block">Volver</span>
                         </a>
-                    }
-                    else
-                    {
-                        <button class="btn btn-light d-inline-flex align-items-center" disabled>
-                            <i class="fas fa-plus me-2"></i> Nuevo Registro
-                        </button>
-                    }
+                        @if (!string.IsNullOrEmpty(selectedBarco))
+                        {
+                            <a asp-action="Create" asp-route-selectedBarco="@selectedBarco"
+                                class="btn btn-light w-100 w-sm-auto">
+                                <i class="fas fa-plus me-2"></i>Nuevo Registro
+                            </a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-light w-100 w-sm-auto" disabled>
+                                <i class="fas fa-plus me-2"></i>Nuevo Registro
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
         </div>

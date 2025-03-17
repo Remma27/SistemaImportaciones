@@ -15,6 +15,10 @@
             display: none;
         }
 
+        .columna-conversion.visible-conversion {
+            display: table-cell !important;
+        }
+
         /* Estilos para definir el ancho de las columnas */
         #tablaDetallada th:nth-child(1) {
             width: 70px;
@@ -222,27 +226,6 @@
     <script>
         $(document).ready(function () {
             $('#btnExportarExcel').prop('disabled', false).removeClass('disabled');
-
-            // Función para mostrar/ocultar columnas de conversión
-            $('#btnToggleConversiones').on('click', function () {
-                $('.columna-conversion').toggle();
-
-                // Cambiar texto del botón según el estado
-                const isVisible = $('.columna-conversion').is(':visible');
-                $(this).html(isVisible ?
-                    '<i class="fas fa-calculator me-1"></i>Ocultar Conversiones' :
-                    '<i class="fas fa-calculator me-1"></i>Mostrar Conversiones');
-
-                // Cambiar el título del botón
-                $(this).attr('title', isVisible ? 'Ocultar Conversiones' : 'Mostrar Conversiones');
-
-                // Cambiar el color del botón según el estado
-                if (isVisible) {
-                    $(this).removeClass('btn-info').addClass('btn-warning');
-                } else {
-                    $(this).removeClass('btn-warning').addClass('btn-info');
-                }
-            });
 
             setTimeout(function () {
                 if ($('#btnExportarExcel').prop('disabled')) {

@@ -227,8 +227,7 @@ function getHeaderStructure(headerCells) {
         }
 
         if (cell.classList.contains('unit-toggle-columns')) {
-            const headerName =
-                cell.querySelector('div:first-child')?.textContent.trim() || headerText.split('\n')[0].trim()
+            const headerName = cell.textContent.trim()
 
             headerRow.push(`${headerName} (Libras)`)
             headerRow.push(`${headerName} (Quintales)`)
@@ -266,8 +265,8 @@ function processTableRow(row, headerInfo) {
         }
 
         if (cell.classList.contains('unit-toggle-columns')) {
-            const topValue = cell.querySelector('.top-value')?.textContent || ''
-            const bottomValue = cell.querySelector('.bottom-value')?.textContent || ''
+            const topValue = cell.querySelector('.top-value')?.textContent.trim() || cell.innerText.trim()
+            const bottomValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
 
             const [lbsIndex, qqIndex] = Array.isArray(columnMapping[colIndex])
                 ? columnMapping[colIndex]
@@ -492,91 +491,78 @@ function addConversionColumns() {
     const tabla2 = $('#tabla2')
     if (tabla2.length === 0) return
 
-    $('.unit-toggle-columns').hide()
+    // Remove or comment out the line that hides unit-toggle columns:
+    // $('.unit-toggle-columns').hide(); 
 }
 
 // Función unificada que maneja tanto filas como columnas
-function setupUnitToggle() {
-    // Variable global para rastrear el estado
-    window.showingMetric = true // Por defecto, mostrar en Kg
-
-    $('#btnToggleUnidad')
-        .off('click')
-        .on('click', function () {
-            if ($(this).prop('disabled')) return
-
-            // Cambiar estado
-            window.showingMetric = !window.showingMetric
-
-            // Actualizar botón
-            const buttonText = $(this).find('span')
-            buttonText.text(window.showingMetric ? 'Libras' : 'Kilogramos')
-            $(this).attr('title', window.showingMetric ? 'Ver en Libras' : 'Ver en Kilogramos')
-            $(this).find('i').toggleClass('fa-weight fa-balance-scale')
-
-            // 1. FILAS (tabla escotillas)
-            const toggleRows = document.querySelectorAll('.unit-toggle-row')
-
-            toggleRows.forEach(row => {
-                if (!window.showingMetric) {
-                    $(row).slideDown(300)
-                } else {
-                    $(row).slideUp(300)
-                }
-            })
-
-            // 2. COLUMNAS (otras tablas)
-            const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
-
-            // Para columnas necesitamos un tratamiento especial
-            toggleColumns.forEach(col => {
-                if (!window.showingMetric) {
-                    col.style.display = 'table-cell'
-                    $(col).css('opacity', 0).animate({ opacity: 1 }, 300)
-                } else {
-                    $(col).animate({ opacity: 0 }, 300, function () {
-                        col.style.display = 'none'
-                    })
-                }
-            })
-        })
-
-    // Asegurar que el estado inicial es correcto
-    const toggleColumns = document.querySelectorAll('.unit-toggle-columns')
-    toggleColumns.forEach(col => {
-        col.style.display = window.showingMetric ? 'none' : 'table-cell'
-    })
-
-    // Actualizar estado del botón
-    const selectedBarco = $('select[name="selectedBarco"]').val()
-    const hasData = hasTableData('tabla2')
-    $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData)
-
-    // Añadir estilos para compactar las filas de unidades alternativas
-    const styleElement = document.getElementById('unit-toggle-styles') || document.createElement('style')
-    styleElement.id = 'unit-toggle-styles'
-    styleElement.innerHTML = `
-        .unit-toggle-row td {
-            padding-top: 0.25rem !important;
-            padding-bottom: 0.25rem !important;
-        }
-        .unit-toggle-row .d-block {
-            line-height: 1.1;
-        }
-        .unit-toggle-row .d-block.small {
-            font-size: 0.75rem;
-        }
-        .unit-toggle-row div {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-    `
-
-    if (!document.getElementById('unit-toggle-styles')) {
-        document.head.appendChild(styleElement)
-    }
+function toggleColumnsByIndex(table, colIndexes, show) {
+    // Comment out the entire logic to avoid hiding columns:
+    // const rows = table.querySelectorAll('tr');
+    // rows.forEach(row => {
+    //     const cells = row.children;
+    //     colIndexes.forEach(idx => {
+    //         if (idx < cells.length) {
+    //             cells[idx].style.display = show ? 'table-cell' : 'none';
+    //         }
+    //     });
+    // });
 }
+
+// ...existing code...
+function setupUnitToggle() {
+    window.showingMetric = true; // Default to showing metric (Kg)
+
+    $('#btnToggleUnidad').off('click').on('click', function () {
+        if ($(this).prop('disabled')) return;
+        window.showingMetric = !window.showingMetric;
+
+        // Update button text and icon
+        const buttonText = $(this).find('span');
+        buttonText.text(window.showingMetric ? 'Libras' : 'Kilogramos');
+        $(this).attr('title', window.showingMetric ? 'Ver en Libras' : 'Ver en Kilogramos');
+        $(this).find('i').toggleClass('fa-weight fa-balance-scale');
+
+        // Toggle rows
+        $('.unit-toggle-row').each(function() {
+            if (!window.showingMetric) {
+                $(this).slideDown(300);
+            } else {
+                $(this).slideUp(300);
+            }
+        });
+
+        // Use direct CSS to force visibility of columns
+        if (window.showingMetric) {
+            // Hide unit columns - use important flag to override all other styles
+            document.querySelectorAll('.unit-toggle-columns').forEach(el => {
+                el.style.cssText = "display: none !important";
+            });
+        } else {
+            // Show unit columns
+            document.querySelectorAll('.unit-toggle-columns').forEach(el => {
+                el.style.cssText = "display: table-cell !important; opacity: 1;";
+            });
+        }
+    });
+
+    // Set initial state forcefully
+    if (window.showingMetric) {
+        document.querySelectorAll('.unit-toggle-columns').forEach(el => {
+            el.style.cssText = "display: none !important";
+        });
+    } else {
+        document.querySelectorAll('.unit-toggle-columns').forEach(el => {
+            el.style.cssText = "display: table-cell !important; opacity: 1;";
+        });
+    }
+
+    // Update button state
+    const selectedBarco = $('select[name="selectedBarco"]').val();
+    const hasData = hasTableData('tabla2');
+    $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData);
+}
+// ...existing code...
 
 // Asegurarse que la función se ejecute cuando el DOM esté listo
 $(document).ready(function () {

@@ -1,0 +1,78 @@
+.escotilla-header {
+    font-weight: 600;
+    text-align: center;
+    padding: 4px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin: 0 3px;  /* Added horizontal margin */
+    min-width: 45px;
+    flex: 1;
+    white-space: nowrap;
+}
+
+.escotilla-value {
+    text-align: center;
+    padding: 6px 4px;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    margin: 0 3px;  /* Added horizontal margin */
+    min-width: 45px;
+    flex: 1;
+    white-space: nowrap;
+}
+
+.escotillas-container {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+    padding: 3px 0;  /* Added vertical padding */
+}
+
+/* Additional spacing on small screens */
+@media (max-width: 992px) {
+    .escotilla-header, .escotilla-value {
+        margin: 0 4px;  /* Increased margin on small screens */
+        min-width: 50px;  /* Slightly wider on small screens */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);  /* Subtle shadow for better separation */
+    }
+    
+    .escotillas-container {
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 5px;
+        background-color: #fcfcfc;
+    }
+}
+
+.escotilla-row:hover .escotilla-value {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.escotilla-value.non-zero {
+    color: black;
+}
+
+.table-header-row {
+    background-color: #f8f9fa;
+}
+
+.action-buttons .btn {
+    margin: 0 2px;
+    padding: 6px 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.barco-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #333;
+    vertical-align: middle;
+}
+
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #f8f9fa;
+}

@@ -4,49 +4,9 @@
     ViewData["Title"] = "Barcos";
 }
 
-<style>
-    .escotilla-header {
-        font-weight: 600;
-        text-align: center;
-        padding: 4px;
-        background-color: #f8f9fa;
-        border-radius: 4px;
-        margin-bottom: 2px;
-    }
-
-    .escotilla-value {
-        text-align: center;
-        padding: 6px 4px;
-        font-weight: 500;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-    }
-
-    .escotilla-row:hover .escotilla-value {
-        background-color: rgba(0, 123, 255, 0.05);
-    }
-
-    .escotilla-value.non-zero {
-        color: black;
-    }
-
-    .table-header-row {
-        background-color: #f8f9fa;
-    }
-
-    .action-buttons .btn {
-        margin: 0 2px;
-        padding: 6px 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .barco-name {
-        font-weight: 600;
-        font-size: 1.05rem;
-        color: #333;
-        vertical-align: middle;
-    }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="~/css/barco-styles.css" />
+}
 
 <div class="container-fluid mt-4">
     <div class="row">
@@ -59,23 +19,23 @@
                     </a>
                 </div>
                 <div class="card-body px-3 py-4">
-                    <div class="table-responsive">
+                    <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
                         <table class="table table-hover table-striped">
-                            <thead>
+                            <thead class="table-light sticky-top">
                                 <tr class="table-header-row">
-                                    <th style="width: 25%">Nombre</th>
-                                    <th style="width: 60%">
-                                        <div class="d-flex">
-                                            <div class="escotilla-header" style="width: 14.28%">E1</div>
-                                            <div class="escotilla-header" style="width: 14.28%">E2</div>
-                                            <div class="escotilla-header" style="width: 14.28%">E3</div>
-                                            <div class="escotilla-header" style="width: 14.28%">E4</div>
-                                            <div class="escotilla-header" style="width: 14.28%">E5</div>
-                                            <div class="escotilla-header" style="width: 14.28%">E6</div>
-                                            <div class="escotilla-header" style="width: 14.28%">E7</div>
+                                    <th style="width: 25%; min-width: 150px;">Nombre</th>
+                                    <th style="width: 60%; min-width: 300px;">
+                                        <div class="escotillas-container">
+                                            <div class="escotilla-header">E1</div>
+                                            <div class="escotilla-header">E2</div>
+                                            <div class="escotilla-header">E3</div>
+                                            <div class="escotilla-header">E4</div>
+                                            <div class="escotilla-header">E5</div>
+                                            <div class="escotilla-header">E6</div>
+                                            <div class="escotilla-header">E7</div>
                                         </div>
                                     </th>
-                                    <th style="width: 15%" class="text-center">Acciones</th>
+                                    <th style="width: 15%; min-width: 100px;" class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -86,33 +46,26 @@
                                         <tr class="escotilla-row">
                                             <td class="barco-name">@barco.nombrebarco</td>
                                             <td>
-                                                <div class="d-flex">
-                                                    <div class="escotilla-value @(barco.escotilla1 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                <div class="escotillas-container">
+                                                    <div class="escotilla-value @(barco.escotilla1 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla1 > 0 ? barco.escotilla1 : 0)
                                                     </div>
-                                                    <div class="escotilla-value @(barco.escotilla2 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                    <div class="escotilla-value @(barco.escotilla2 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla2 > 0 ? barco.escotilla2 : 0)
                                                     </div>
-                                                    <div class="escotilla-value @(barco.escotilla3 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                    <div class="escotilla-value @(barco.escotilla3 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla3 > 0 ? barco.escotilla3 : 0)
                                                     </div>
-                                                    <div class="escotilla-value @(barco.escotilla4 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                    <div class="escotilla-value @(barco.escotilla4 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla4 > 0 ? barco.escotilla4 : 0)
                                                     </div>
-                                                    <div class="escotilla-value @(barco.escotilla5 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                    <div class="escotilla-value @(barco.escotilla5 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla5 > 0 ? barco.escotilla5 : 0)
                                                     </div>
-                                                    <div class="escotilla-value @(barco.escotilla6 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                    <div class="escotilla-value @(barco.escotilla6 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla6 > 0 ? barco.escotilla6 : 0)
                                                     </div>
-                                                    <div class="escotilla-value @(barco.escotilla7 > 0 ? "non-zero" : "")"
-                                                        style="width: 14.28%">
+                                                    <div class="escotilla-value @(barco.escotilla7 > 0 ? "non-zero" : "")">
                                                         @(barco.escotilla7 > 0 ? barco.escotilla7 : 0)
                                                     </div>
                                                 </div>
@@ -150,3 +103,29 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Make the escotillas containers scrollable horizontally
+    document.addEventListener('DOMContentLoaded', function() {
+        const containers = document.querySelectorAll('.escotillas-container');
+        
+        // Add visual cue for scrollable areas on small screens
+        if (window.innerWidth < 992) {
+            containers.forEach(container => {
+                if (container.scrollWidth > container.clientWidth) {
+                    container.style.boxShadow = '0 0 5px rgba(0,0,0,0.1)';
+                    
+                    // Add subtle divider lines between escotillas on small screens
+                    const escotillas = container.querySelectorAll('.escotilla-header, .escotilla-value');
+                    escotillas.forEach(el => {
+                        el.style.borderRight = '1px solid #f0f0f0';
+                    });
+                    // Remove border from last element
+                    if (escotillas.length > 0) {
+                        escotillas[escotillas.length - 1].style.borderRight = 'none';
+                    }
+                }
+            });
+        }
+    });
+</script>

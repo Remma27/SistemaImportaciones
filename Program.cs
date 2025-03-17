@@ -436,8 +436,4 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
-app.MapGet("/health", () => "Healthy")
-   .AllowAnonymous()
-   .WithDisplayName("Health Check");
-
 app.Run();

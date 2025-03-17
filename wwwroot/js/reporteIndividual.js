@@ -14,6 +14,30 @@ $(document).ready(function () {
         adjustTableHeight()
     })
 
+    // Función para manejar el botón de mostrar/ocultar conversiones
+    $('#btnToggleConversiones').on('click', function () {
+        // Toggle the visibility class on conversion columns
+        $('.columna-conversion').toggleClass('visible-conversion');
+        
+        // Check if columns are now visible
+        const isVisible = $('.columna-conversion').hasClass('visible-conversion');
+        
+        // Update button text and appearance
+        $(this).html(isVisible ? 
+            '<i class="fas fa-calculator me-1"></i>Ocultar Conversiones' : 
+            '<i class="fas fa-calculator me-1"></i>Mostrar Conversiones');
+        
+        $(this).attr('title', isVisible ? 'Ocultar Conversiones' : 'Mostrar Conversiones');
+        
+        if (isVisible) {
+            $(this).removeClass('btn-info').addClass('btn-warning');
+        } else {
+            $(this).removeClass('btn-warning').addClass('btn-info');
+        }
+        
+        console.log('Columnas de conversión:', isVisible ? 'mostradas' : 'ocultadas');
+    });
+
     const totalFilas = $('#tablaDetallada tbody tr').length
 
     $('#btnExportarExcel').on('click', function () {

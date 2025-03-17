@@ -105,6 +105,7 @@
 .table {
     width: 100%;
     margin-bottom: 0;
+    table-layout: fixed;
 }
 
 .table > :not(caption) > * > * {
@@ -114,6 +115,9 @@
 .table td,
 .table th {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 250px; /* Reasonable maximum width for all cells */
 }
 
 .table-responsive-custom,
@@ -142,6 +146,10 @@
     position: sticky;
     top: 0;
     z-index: 2;
+    min-width: 120px !important;
+    max-width: 250px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .table tfoot tr td {
@@ -346,22 +354,33 @@ tr.totals td {
 
 /* Unit toggle columns */
 .unit-toggle-columns {
-    opacity: 0;
-    width: auto !important;
-    min-width: 100px;
-    max-width: 120px;
-    display: none;
-    transition: all 0.3s ease;
-    padding-left: 0.25rem !important;
-    padding-right: 0.25rem !important;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    padding: 4px 12px !important;  /* Increased padding */
 }
 
+/* Fix for dual value cells inside unit toggle columns */
+.unit-toggle-columns .dual-value-cell,
+.unit-toggle-columns .top-value,
+.unit-toggle-columns .bottom-value {
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+/* Clean up old display/opacity settings that might conflict */
 .unit-toggle-columns.visible {
-    opacity: 1;
-    display: table-cell;
-    animation: fadeIn 0.3s ease;
-    background-color: transparent !important;
-    color: inherit !important;
+    display: table-cell !important;
+    opacity: 1 !important;
+}
+
+/* Ensure consistent padding in column cells */
+.table > tbody > tr > td.unit-toggle-columns,
+.table > tfoot > tr > td.unit-toggle-columns,
+.table > thead > tr > th.unit-toggle-columns {
+    padding: 4px 8px !important;
 }
 
 /* Fix for colored rows with unit toggle columns */
@@ -398,14 +417,22 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
     padding: 0.5rem !important;
     min-height: 38px;
     white-space: nowrap;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    padding: 4px 12px !important;  /* Increased padding */
 }
 
 .dual-value-cell .top-value {
     display: block;
     font-weight: 500;
     color: #0056b3;
-    font-size: 0.8rem;
+    font-size: 0.85rem; /* Slightly larger font */
     line-height: 1.1;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .dual-value-cell .divider {
@@ -414,9 +441,13 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 
 .dual-value-cell .bottom-value {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.85rem; /* Slightly larger font */
     line-height: 1.1;
     color: #555;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Conversion cell highlighting */
@@ -427,6 +458,10 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
     border-left: 1px solid #e9ecef;
     border-right: 1px solid #e9ecef;
     transition: background-color 0.2s ease;
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+    padding: 4px 12px !important;  /* Increased padding */
 }
 
 .conversion-cell:hover {
@@ -537,7 +572,7 @@ tr:not(.bg-purple):not(.bg-success):not(.bg-info) td.unit-toggle-columns.visible
 .btn-success:hover,
 .btn-success:focus {
     background: var(--success-hover);
-    border-color: var(--success-hover);
+    border-color: var (--success-hover);
 }
 
 .btn-info {
@@ -728,6 +763,37 @@ th.unit-toggle-columns small {
 /* Make header row consistent */
 .table > thead > tr {
     background-color: white;
+}
+
+/* Override unit-toggle header widths to ensure adequate space */
+table > thead > tr > th.unit-toggle-columns,
+table > thead > tr > th.unit-toggle-columns.visible {
+    min-width: 180px !important;
+    width: 180px !important;
+    max-width: 180px !important;
+}
+
+/* Force unit-toggle columns to use a fixed width so they don’t share space with others */
+.unit-toggle-columns {
+    display: table-cell !important;
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+    padding-left: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    transition: all 0.3s ease;
+}
+
+/* Ensure better spacing for the conversion values */
+.dual-value-cell .top-value,
+.dual-value-cell .bottom-value {
+    padding: 2px 0;
+    font-size: 0.85rem; /* Slightly larger font */
+}
+
+/* Decrease min-width for other columns to balance table width */
+.table > thead > tr > th:not(.unit-toggle-columns):not(.conversion-cell) {
+    min-width: 100px !important;
 }
 
 /*==============================================
@@ -926,4 +992,9 @@ th.unit-toggle-columns small {
         max-width: 70px !important;
         padding: 0.2rem !important;
     }
+}
+
+/* Add visual indicator for text that's cut off */
+.table td[title], .table th[title] {
+    position: relative;
 }

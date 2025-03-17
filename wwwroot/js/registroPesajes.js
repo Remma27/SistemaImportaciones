@@ -480,36 +480,32 @@ function formatNumber(num) {
 }
 
 function initializeWeightValues() {
-    addConversionColumns()
-}
-
-function addConversionColumns() {
-    if ($('.unit-toggle-columns').length > 0) {
-        return
-    }
-
-    const tabla2 = $('#tabla2')
-    if (tabla2.length === 0) return
-
-    // Remove or comment out the line that hides unit-toggle columns:
-    // $('.unit-toggle-columns').hide(); 
+    // Make sure unit toggle columns are initially hidden
+    document.querySelectorAll('.unit-toggle-columns').forEach(el => {
+        el.classList.remove('visible');
+    });
+    $('.unit-toggle-row').hide();
 }
 
 // Función unificada que maneja tanto filas como columnas
 function toggleColumnsByIndex(table, colIndexes, show) {
-    // Comment out the entire logic to avoid hiding columns:
-    // const rows = table.querySelectorAll('tr');
-    // rows.forEach(row => {
-    //     const cells = row.children;
-    //     colIndexes.forEach(idx => {
-    //         if (idx < cells.length) {
-    //             cells[idx].style.display = show ? 'table-cell' : 'none';
-    //         }
-    //     });
-    // });
+    // For consistent behavior, we'll use CSS classes instead of direct style manipulation
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.children;
+        colIndexes.forEach(idx => {
+            if (idx < cells.length) {
+                if (show) {
+                    cells[idx].classList.add('visible');
+                } else {
+                    cells[idx].classList.remove('visible');
+                }
+            }
+        });
+    });
 }
 
-// ...existing code...
+// Setup consistent unit toggle behavior
 function setupUnitToggle() {
     window.showingMetric = true; // Default to showing metric (Kg)
 
@@ -523,7 +519,7 @@ function setupUnitToggle() {
         $(this).attr('title', window.showingMetric ? 'Ver en Libras' : 'Ver en Kilogramos');
         $(this).find('i').toggleClass('fa-weight fa-balance-scale');
 
-        // Toggle rows
+        // Toggle rows consistently
         $('.unit-toggle-row').each(function() {
             if (!window.showingMetric) {
                 $(this).slideDown(300);
@@ -532,37 +528,28 @@ function setupUnitToggle() {
             }
         });
 
-        // Use direct CSS to force visibility of columns
-        if (window.showingMetric) {
-            // Hide unit columns - use important flag to override all other styles
-            document.querySelectorAll('.unit-toggle-columns').forEach(el => {
-                el.style.cssText = "display: none !important";
-            });
-        } else {
-            // Show unit columns
-            document.querySelectorAll('.unit-toggle-columns').forEach(el => {
-                el.style.cssText = "display: table-cell !important; opacity: 1;";
-            });
-        }
+        // Toggle columns consistently using classes
+        const unitToggleColumns = document.querySelectorAll('.unit-toggle-columns');
+        unitToggleColumns.forEach(el => {
+            if (window.showingMetric) {
+                el.classList.remove('visible');
+            } else {
+                el.classList.add('visible');
+            }
+        });
     });
 
-    // Set initial state forcefully
-    if (window.showingMetric) {
-        document.querySelectorAll('.unit-toggle-columns').forEach(el => {
-            el.style.cssText = "display: none !important";
-        });
-    } else {
-        document.querySelectorAll('.unit-toggle-columns').forEach(el => {
-            el.style.cssText = "display: table-cell !important; opacity: 1;";
-        });
-    }
+    // Set initial state
+    document.querySelectorAll('.unit-toggle-columns').forEach(el => {
+        el.classList.remove('visible');
+    });
+    $('.unit-toggle-row').hide();
 
     // Update button state
     const selectedBarco = $('select[name="selectedBarco"]').val();
     const hasData = hasTableData('tabla2');
     $('#btnToggleUnidad').prop('disabled', !selectedBarco || !hasData);
 }
-// ...existing code...
 
 // Asegurarse que la función se ejecute cuando el DOM esté listo
 $(document).ready(function () {

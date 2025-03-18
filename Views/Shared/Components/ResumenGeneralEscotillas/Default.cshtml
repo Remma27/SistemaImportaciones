@@ -551,63 +551,6 @@
                 } else {
                     $(row).fadeOut(300);
                 }
-                if (row.style.display === 'none' || row.style.display === '') {
-                    $(row).fadeIn(300);
-                } else {
-                    $(row).fadeOut(300);
-                }
-            });
-
-            // Opcional: actualizar atributo del botón para controlar estado
-            const isShowing = this.getAttribute('data-showing') === 'true';
-            this.setAttribute('data-showing', !isShowing);
-        });
-        */
-    });
-</script>
-<script>
-    // Sincronizar con el estado global del toggle
-    document.addEventListener('DOMContentLoaded', function() {
-        // Asegurarse que todos los elementos están ocultos inicialmente
-        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
-        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
-        
-        // Ocultar todo por defecto
-        unitToggleElements.forEach(el => { el.style.display = 'none'; });
-        unitToggleRows.forEach(row => { el.style.display = 'none'; });
-        
-        // Verificar si ya se inicializó el toggle en otro lugar
-        setTimeout(function() {
-            // Si el estado global indica mostrar unidades alternativas
-            if (window.showingMetric === false) {
-                unitToggleElements.forEach(el => {
-                    $(el).fadeIn(300);
-                });
-                
-                unitToggleRows.forEach(row => {
-                    $(row).fadeIn(300);
-                });
-            }
-        }, 300);
-        
-        // Escuchar eventos globales de cambio de unidades
-        window.addEventListener('unitToggleChanged', function(e) {
-            const showAlternative = e.detail.showAlternative;
-            
-            unitToggleElements.forEach(el => {
-                if (showAlternative) {
-                    $(el).fadeIn(300);
-                } else {
-                    $(el).fadeOut(300);
-                }
-            });
-            
-            unitToggleRows.forEach(row => {
-                if (showAlternative) {
-                    $(row).fadeIn(300);
-                } else {
-                    $(row).fadeOut(300);
-                }
             });
         });
     });
@@ -1033,52 +976,6 @@
     }
 </style>
 
-<style>
-    /* Estilos existentes para el donut chart... */
-    .donut-chart-container {
-        position: relative;
-        margin: auto;
-        width: 160px;
-        height: 160px;
-    }
-    
-    /* Modificación para hacer las cards de escotilla más uniformes */
-    .col-md-6.col-lg-2.text-center {
-        display: flex; /* Usar flexbox para igualar alturas */
-    }
-    
-    .col-md-6.col-lg-2.text-center > div {
-        width: 100%; /* Asegurar que la card ocupe todo el ancho */
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Hacer que todas las cards tengan la misma altura basada en la más alta */
-    .escotilla-card {
-        height: 100%;
-        min-height: 380px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* La sección de detalles crece para llenar el espacio disponible */
-    .escotilla-card .mt-3.small.text-muted {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    /* Los separadores deben tener margen consistente */
-    .escotilla-card .d-flex.justify-content-between {
-        padding: 0.5rem 0;
-    }
-    
-    /* Resto de estilos existentes... */
-    .donut-chart-container canvas {
-        position: relative;
-        z-index: 1;
-    }
-    
 <style>
     /* Estilos existentes para el donut chart... */
     .donut-chart-container {

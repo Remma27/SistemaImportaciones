@@ -1,3 +1,4 @@
+@using Sistema_de_Gestion_de_Importaciones.ViewModels
 @model IEnumerable<Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>
 @{
     var totalKilosRequeridos = ViewData["KilosRequeridos"] is decimal kilosReq ? kilosReq : 0M;
@@ -76,7 +77,7 @@
         <div class="card-header bg-gradient bg-primary text-white py-3">
             <div class="d-flex align-items-center">
                 <i class="fas fa-ship me-3 fa-fw fa-lg"></i>
-                <h5 class="mb-0 fw-bold">Estado de Escotillas</h5>
+                <h5 class="mb-0">Estado de Escotillas</h5>
             </div>
         </div>
         <div class="card-body bg-light p-4">

@@ -474,13 +474,534 @@
             });
         
             unitToggleRows.forEach(row => {
-                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+                if (row.style.display === 'none' || row.style.display === '') {
+                    $(row).fadeIn(300);
+                } else {
+                    $(row).fadeOut(300);
+                }
+            });
+
+            // Opcional: actualizar atributo del botón para controlar estado
+            const isShowing = this.getAttribute('data-showing') === 'true';
+            this.setAttribute('data-showing', !isShowing);
+        });
+        */
+    });
+</script>
+<script>
+    // Sincronizar con el estado global del toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        // Asegurarse que todos los elementos están ocultos inicialmente
+        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
+        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        // Ocultar todo por defecto
+        unitToggleElements.forEach(el => { el.style.display = 'none'; });
+        unitToggleRows.forEach(row => { el.style.display = 'none'; });
+        
+        // Verificar si ya se inicializó el toggle en otro lugar
+        setTimeout(function() {
+            // Si el estado global indica mostrar unidades alternativas
+            if (window.showingMetric === false) {
+                unitToggleElements.forEach(el => {
+                    $(el).fadeIn(300);
+                });
+                
+                unitToggleRows.forEach(row => {
+                    $(row).fadeIn(300);
+                });
+            }
+        }, 300);
+        
+        // Escuchar eventos globales de cambio de unidades
+        window.addEventListener('unitToggleChanged', function(e) {
+            const showAlternative = e.detail.showAlternative;
+            
+            unitToggleElements.forEach(el => {
+                if (showAlternative) {
+                    $(el).fadeIn(300);
+                } else {
+                    $(el).fadeOut(300);
+                }
+            });
+            
+            unitToggleRows.forEach(row => {
+                if (showAlternative) {
+                    $(row).fadeIn(300);
+                } else {
+                    $(row).fadeOut(300);
+                }
             });
         });
     });
-    </script>
+</script>
+<script>
+    // Función para asegurar que todas las cards de escotillas respondan al toggle
+    function verificarElementosToggle() {
+        // Verificar elementos en las cards de escotillas
+        const elementosEscotilla = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log('Elementos toggle en escotillas encontrados:', elementosEscotilla.length);
+        
+        // Si no hay elementos o son pocos, verificar la estructura
+        if (elementosEscotilla.length < 10) {
+            // Buscar elementos que podrían necesitar la clase unit-toggle-element
+            const posiblesElementosToggle = document.querySelectorAll('.escotilla-card span:contains("lbs"), .escotilla-card span:contains("qq")');
+            console.log('Posibles elementos que necesitan clase toggle:', posiblesElementosToggle.length);
+        }
+        
+        // Verificar filas de tabla toggle
+        const filasToggle = document.querySelectorAll('.unit-toggle-row');
+        console.log('Filas con toggle encontradas:', filasToggle.length);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ejecutar verificación después de que todo esté cargado
+        setTimeout(verificarElementosToggle, 1000);
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Asegurarse que todos los elementos estén ocultos inicialmente
+        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
+        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        // Ocultar todo por defecto
+        unitToggleElements.forEach(el => { el.style.display = 'none'; });
+        unitToggleRows.forEach(row => { row.style.display = 'none'; });
+        
+        // Escuchar eventos globales de cambio de unidades desde registroPesajes.js
+        window.addEventListener('unitToggleChanged', function(e) {
+            const showAlternative = e.detail.showAlternative;
+            
+            // Aplicar a los elementos de este componente
+            unitToggleElements.forEach(el => {
+                if (showAlternative) {
+                    $(el).fadeIn(300);
+                } else {
+                    $(el).fadeOut(300);
+                }
+            });
+            
+            unitToggleRows.forEach(row => {
+                if (showAlternative) {
+                    $(row).fadeIn(300);
+                } else {
+                    $(row).fadeOut(300);
+                }
+            });
+        });
+        
+        // Verificar estado inicial después de cargar
+        setTimeout(function() {
+            if (window.showingMetric === false) {
+                unitToggleElements.forEach(el => {
+                    $(el).show();
+                });
+                
+                unitToggleRows.forEach(row => {
+                    $(row).show();
+                });
+            }
+            
+            // Ejecutar verificación después de que todo esté cargado
+            verificarElementosToggle();
+        }, 300);
+    });
 
-    <style>
+    // Función para asegurar que todas las cards de escotillas respondan al toggle
+    function verificarElementosToggle() {
+        // Verificar elementos en las cards de escotillas
+        const elementosEscotilla = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log('Elementos toggle en escotillas encontrados:', elementosEscotilla.length);
+        
+        // Verificar filas de tabla toggle
+        const filasToggle = document.querySelectorAll('.unit-toggle-row');
+        console.log('Filas con toggle encontradas:', filasToggle.length);
+        
+        // Forzar actualización de visualización para las cards de escotillas si es necesario
+        if (window.showingMetric === false) {
+            elementosEscotilla.forEach(el => {
+                el.style.display = 'block';
+            });
+        }
+    }
+</script>
+<script>
+    // Diagnóstico para verificar si las unidades se muestran correctamente
+    function diagnosticarToggleUnidades() {
+        console.group("Diagnóstico de toggle de unidades");
+        console.log("showingMetric global:", window.showingMetric);
+        
+        const elementosToggle = document.querySelectorAll('.unit-toggle-element');
+        const elementosToggleVisibles = Array.from(elementosToggle).filter(el => 
+            el.style.display !== 'none' && getComputedStyle(el).display !== 'none');
+        
+        console.log("Elementos con clase unit-toggle-element:", elementosToggle.length);
+        console.log("Elementos visibles:", elementosToggleVisibles.length);
+        
+        // Verificar elementos específicos
+        const escotillaToggleElements = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log("Elementos en escotillas:", escotillaToggleElements.length);
+        console.log("Elementos visibles en escotillas:", 
+            Array.from(escotillaToggleElements).filter(el => 
+                el.style.display !== 'none' && getComputedStyle(el).display !== 'none').length);
+        
+        console.groupEnd();
+    }
+    
+    // Ejecutar diagnóstico después de la carga inicial y cada vez que cambia el estado
+    setTimeout(diagnosticarToggleUnidades, 1000);
+    window.addEventListener('unitToggleChanged', function() {
+        setTimeout(diagnosticarToggleUnidades, 500);
+    });
+</script>
+<script>
+    // Función mejorada para diagnosticar y corregir problemas de visualización de unidades
+    function diagnosticarToggleUnidades(forceUpdate = false) {
+        console.group("Diagnóstico y corrección de toggle de unidades");
+        
+        // Usar try-catch para prevenir errores de localStorage en entornos restrictivos
+        let savedMetricState;
+        try {
+            savedMetricState = localStorage.getItem('showingMetric');
+        } catch (error) {
+            console.warn("Error accediendo a localStorage:", error);
+            savedMetricState = 'true'; // Valor predeterminado seguro
+        }
+        
+        // Si no hay valor en localStorage o es indefinido, forzar a true (métrico)
+        if (savedMetricState === null || typeof savedMetricState === 'undefined') {
+            try {
+                localStorage.setItem('showingMetric', 'true');
+            } catch (error) {
+                console.warn("No se pudo guardar en localStorage:", error);
+            }
+            window.showingMetric = true;
+        } else {
+            // Actualizar variable global para reflejar el valor en localStorage
+            window.showingMetric = savedMetricState === 'true';
+        }
+        
+        const showAlternative = window.showingMetric === false;
+        console.log("Estado actual: showingMetric =", window.showingMetric);
+        console.log("Estado en localStorage =", savedMetricState);
+        console.log("Mostrando unidades alternativas:", showAlternative);
+        
+        // Seleccionar todos los elementos de toggle en este componente
+        const toggleElements = document.querySelectorAll('.unit-toggle-element');
+        const toggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        console.log("Total elementos toggle encontrados:", toggleElements.length);
+        console.log("Total filas toggle encontradas:", toggleRows.length);
+        
+        // Aplicar visibilidad directamente basada en el estado global
+        toggleElements.forEach(el => {
+            if (showAlternative) {
+                el.style.display = 'block';
+                el.classList.add('show');
+            } else {
+                el.style.display = 'none';
+                el.classList.remove('show');
+            }
+        });
+        
+        // Misma lógica para filas
+        toggleRows.forEach(row => {
+            if (showAlternative) {
+                row.style.display = 'table-row'; // Mostrar como fila de tabla
+                row.classList.add('show');
+            } else {
+                row.style.display = 'none';
+                row.classList.remove('show');
+            }
+        });
+        
+        console.groupEnd();
+        
+        // Retornar estado para validación
+        return { 
+            updated: true,
+            showAlternative: showAlternative
+        };
+    }
+    
+    // Versión simplificada y más robusta para ejecutar diagnóstico y corrección
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar estado una vez al cargar
+        setTimeout(() => diagnosticarToggleUnidades(true), 300);
+        
+        // Escuchar eventos de cambio de unidades y aplicar cambios
+        window.addEventListener('unitToggleChanged', function(e) {
+            const showAlternative = e.detail.showAlternative;
+            
+            // Sincronizar el estado global con el evento
+            window.showingMetric = !showAlternative;
+            
+            // Aplicar el cambio directamente sin diagnóstico
+            const toggleElements = document.querySelectorAll('.unit-toggle-element');
+            const toggleRows = document.querySelectorAll('.unit-toggle-row');
+            
+            // Actualizar elementos
+            toggleElements.forEach(el => {
+                if (showAlternative) {
+                    el.style.display = 'block';
+                    el.classList.add('show');
+                } else {
+                    el.style.display = 'none';
+                    el.classList.remove('show');
+                }
+            });
+            
+            // Actualizar filas
+            toggleRows.forEach(row => {
+                if (showAlternative) {
+                    row.style.display = 'table-row';
+                    row.classList.add('show');
+                } else {
+                    row.style.display = 'none';
+                    row.classList.remove('show');
+                }
+            });
+        });
+    });
+    
+    // Verificación simplificada del estado inicial
+    (function() {
+        try {
+            const savedMetricState = localStorage.getItem('showingMetric');
+            window.showingMetric = savedMetricState !== null ? savedMetricState === 'true' : true;
+        } catch (error) {
+            console.warn("Error accediendo a localStorage durante inicialización:", error);
+            window.showingMetric = true; // Valor predeterminado seguro
+        }
+    })();
+</script>
+
+<!-- Reemplazar scripts previos de sincronización por esta versión unificada -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Manejo unificado para todos los elementos togglables
+        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
+        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        // Función para aplicar estado actual
+        function aplicarEstadoUnidades(showAlternative) {
+            unitToggleElements.forEach(el => {
+                if (showAlternative) {
+                    el.style.display = 'block';
+                    el.classList.add('show');
+                } else {
+                    el.style.display = 'none';
+                    el.classList.remove('show');
+                }
+            });
+            
+            unitToggleRows.forEach(row => {
+                if (showAlternative) {
+                    row.style.display = 'table-row';
+                    row.classList.add('show');
+                } else {
+                    row.style.display = 'none';
+                    row.classList.remove('show');
+                }
+            });
+        }
+        
+        // Aplicar estado inicial después de un breve retraso
+        setTimeout(function() {
+            try {
+                const showAlternative = window.showingMetric === false;
+                aplicarEstadoUnidades(showAlternative);
+            } catch (error) {
+                console.warn("Error al aplicar estado inicial:", error);
+            }
+        }, 500);
+        
+        // Escuchar cambios globales
+        window.addEventListener('unitToggleChanged', function(e) {
+            try {
+                const showAlternative = e.detail.showAlternative;
+                aplicarEstadoUnidades(showAlternative);
+            } catch (error) {
+                console.warn("Error al procesar cambio de unidades:", error);
+            }
+        });
+    });
+    
+    // Eliminar verificaciones periódicas que pueden causar problemas
+    // El código anterior que usaba setInterval ha sido removido
+</script>
+
+<!-- Añadir script de emergencia para reconexión con el sistema global -->
+<script>
+    // Script de emergencia para reconectar con el sistema global si se pierde la sincronización
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnToggleUnidadGlobal = document.getElementById('btnToggleUnidad');
+        
+        // Si existe un botón global de unidades, usarlo como fuente de verdad
+        if (btnToggleUnidadGlobal) {
+            btnToggleUnidadGlobal.addEventListener('click', function() {
+                // Forzar actualización después de un corto retraso
+                setTimeout(function() {
+                    try {
+                        // Leer el estado actual del sistema desde localStorage
+                        const savedMetricState = localStorage.getItem('showingMetric');
+                        const showAlternative = savedMetricState === 'false';
+                        
+                        // Aplicar a todos los elementos toggle en este componente
+                        document.querySelectorAll('.unit-toggle-element').forEach(el => {
+                            el.style.display = showAlternative ? 'block' : 'none';
+                            if (showAlternative) el.classList.add('show');
+                            else el.classList.remove('show');
+                        });
+                        
+                        document.querySelectorAll('.unit-toggle-row').forEach(row => {
+                            row.style.display = showAlternative ? 'table-row' : 'none';
+                            if (showAlternative) row.classList.add('show');
+                            else row.classList.remove('show');
+                        });
+                    } catch (error) {
+                        console.warn("Error en recuperación de emergencia:", error);
+                    }
+                }, 300);
+            });
+        }
+    });
+</script>
+
+<script>
+    // Script específico para entornos de producción (Azure)
+    (function() {
+        const isProduction = window.location.hostname !== 'localhost' && 
+                            window.location.hostname !== '127.0.0.1';
+        
+        if (isProduction) {
+            // En entornos de producción, añadir retardo adicional para asegurar sincronización
+            setTimeout(function() {
+                try {
+                    // Verificar si estamos correctamente sincronizados
+                    const savedMetricState = localStorage.getItem('showingMetric');
+                    const showAlternative = savedMetricState === 'false';
+                    const visibleCount = Array.from(document.querySelectorAll('.unit-toggle-element'))
+                        .filter(el => getComputedStyle(el).display !== 'none').length;
+                    
+                    // Detectar desincronización
+                    const estaDesincronizado = (showAlternative && visibleCount === 0) || 
+                                             (!showAlternative && visibleCount > 0);
+                    
+                    if (estaDesincronizado) {
+                        console.log("Detectada desincronización en producción, corrigiendo...");
+                        document.querySelectorAll('.unit-toggle-element').forEach(el => {
+                            el.style.display = showAlternative ? 'block' : 'none';
+                        });
+                        
+                        document.querySelectorAll('.unit-toggle-row').forEach(row => {
+                            row.style.display = showAlternative ? 'table-row' : 'none';
+                        });
+                    }
+                } catch (error) {
+                    console.warn("Error en verificación para entorno de producción:", error);
+                }
+            }, 1000);
+        }
+    })();
+</script>
+
+<!-- ...existing script and style tags... -->
+
+<style>
+    /* Asegurar que los elementos toggle se muestren correctamente cuando están activos */
+    .unit-toggle-element.show {
+        display: block !important;
+    }
+    
+    /* Asegurar que las filas toggle se muestren correctamente cuando están activas */
+    tr.unit-toggle-row.show {
+        display: table-row !important;
+    }
+    
+    /* Estilos específicos para elementos en cards de escotillas */
+    .escotilla-card .unit-toggle-element.show {
+        display: block !important;
+        margin-top: 3px;
+    }
+    
+    /* Fijar altura mínima para las cards de escotilla para consistencia */
+    .escotilla-card {
+        min-height: 380px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Hacer que el contenedor de gráficos tenga altura fija */
+    .donut-chart-container {
+        height: 160px;
+        margin-bottom: 1rem;
+        flex-shrink: 0; /* Evitar que se comprima */
+    }
+    
+    /* Hacer que los datos de la card se expandan para llenar el espacio restante */
+    .escotilla-card .mt-3.small.text-muted {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    /* Asegurar que todas las secciones de información tienen el mismo alto */
+    .escotilla-card .d-flex.justify-content-between {
+        min-height: 2.5rem; /* Altura mínima para cada línea */
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+<style>
+    /* Estilos existentes para el donut chart... */
+    .donut-chart-container {
+        position: relative;
+        margin: auto;
+        width: 160px;
+        height: 160px;
+    }
+    
+    /* Modificación para hacer las cards de escotilla más uniformes */
+    .col-md-6.col-lg-2.text-center {
+        display: flex; /* Usar flexbox para igualar alturas */
+    }
+    
+    .col-md-6.col-lg-2.text-center > div {
+        width: 100%; /* Asegurar que la card ocupe todo el ancho */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Hacer que todas las cards tengan la misma altura basada en la más alta */
+    .escotilla-card {
+        height: 100%;
+        min-height: 380px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* La sección de detalles crece para llenar el espacio disponible */
+    .escotilla-card .mt-3.small.text-muted {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Los separadores deben tener margen consistente */
+    .escotilla-card .d-flex.justify-content-between {
+        padding: 0.5rem 0;
+    }
+    
+    /* Resto de estilos existentes... */
+    .donut-chart-container canvas {
+        position: relative;
+        z-index: 1;
+    }
+    
     .donut-chart-container {
         position: relative;
         margin: auto;

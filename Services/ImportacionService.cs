@@ -1,6 +1,7 @@
 using API.Models;
 using System.Text.Json;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using System.Text;
 
 namespace Sistema_de_Gestion_de_Importaciones.Services;
 
@@ -96,9 +97,71 @@ public class ImportacionService : IImportacionService
 
     public async Task<Importacion> CreateAsync(Importacion importacion)
     {
-        var response = await _httpClient.PostAsJsonAsync(_apiBaseUrl + "Create", importacion);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<Importacion>() ?? importacion;
+        try
+        {
+            _logger.LogInformation($"Creating importacion: {JsonSerializer.Serialize(importacion)}");
+            
+            // Add detailed request logging
+            var requestContent = new StringContent(
+                JsonSerializer.Serialize(importacion), 
+                Encoding.UTF8, 
+                "application/json");
+            
+            _logger.LogInformation($"Request to API: {_apiBaseUrl}Create");
+            
+            // Use HttpClient directly for more control
+            var response = await _httpClient.PostAsync(_apiBaseUrl + "Create", requestContent);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            _logger.LogInformation($"API response status: {(int)response.StatusCode} {response.StatusCode}");
+            _logger.LogInformation($"API response content: {responseContent}");
+            
+            // Save the raw response for debugging
+            System.IO.File.WriteAllText(
+                Path.Combine(Path.GetTempPath(), $"importacion_response_{DateTime.Now:yyyyMMdd_HHmmss}.json"), 
+                responseContent);
+                
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"API error: {response.StatusCode}, Content: {responseContent}");
+                throw new HttpRequestException($"Error from API: {response.StatusCode}, Details: {responseContent}");
+            }
+            
+            // Try to parse the response - with extensive error handling
+            try {
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                
+                using var document = JsonDocument.Parse(responseContent);
+                _logger.LogInformation($"Parsed JSON document with root kind: {document.RootElement.ValueKind}");
+                
+                // Try to extract the created importacion
+                if (document.RootElement.TryGetProperty("value", out var valueElement))
+                {
+                    var importacionJson = valueElement.GetRawText();
+                    _logger.LogInformation($"Found value element: {importacionJson}");
+                    
+                    var result = JsonSerializer.Deserialize<Importacion>(importacionJson, options);
+                    _logger.LogInformation($"Created importation with ID: {result?.id ?? 0}");
+                    return result ?? importacion;
+                }
+                else
+                {
+                    _logger.LogWarning("No 'value' property found in response");
+                    var result = JsonSerializer.Deserialize<Importacion>(responseContent, options);
+                    return result ?? importacion;
+                }
+            }
+            catch (JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "JSON deserialization error when creating importation");
+                throw new Exception($"Error processing API response: {jsonEx.Message}", jsonEx);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating importation");
+            throw;
+        }
     }
 
     public async Task<Importacion> UpdateAsync(int id, Importacion importacion)

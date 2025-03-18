@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using API.Models;
 using API.Data;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using API.Services;
 
 namespace API.Controllers
 {
@@ -14,11 +14,13 @@ namespace API.Controllers
     {
         private readonly ApiContext _context;
         private readonly ILogger<UnidadController> _logger;
+        private readonly HistorialService _historialService;
 
-        public UnidadController(ApiContext context, ILogger<UnidadController> logger)
+        public UnidadController(ApiContext context, ILogger<UnidadController> logger, HistorialService historialService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _historialService = historialService;
         }
 
         [HttpPost]
@@ -39,6 +41,9 @@ namespace API.Controllers
 
                 await _context.Unidades.AddAsync(unidad);
                 await _context.SaveChangesAsync();
+                
+                // Registrar en historial
+                _historialService.GuardarHistorial("CREAR", unidad, "Unidades", $"Creación de unidad: {unidad.nombre}");
 
                 _logger.LogInformation("Unidad creada exitosamente: {Id}", unidad.id);
                 return CreatedAtAction(nameof(Get), new { id = unidad.id }, unidad);
@@ -72,9 +77,26 @@ namespace API.Controllers
                     _logger.LogWarning("Unidad no encontrada: {Id}", id);
                     return NotFound(new { error = $"Unidad con ID {id} no encontrada" });
                 }
+                
+                // Registrar estado anterior claramente
+                _historialService.GuardarHistorial(
+                    "ANTES_EDITAR", 
+                    unidadExistente, 
+                    "Unidades", 
+                    $"Estado anterior de unidad {unidadExistente.nombre} (ID: {unidadExistente.id})"
+                );
 
+                // Aplicar los cambios
                 _context.Entry(unidadExistente).CurrentValues.SetValues(unidad);
                 await _context.SaveChangesAsync();
+                
+                // Registrar estado nuevo claramente
+                _historialService.GuardarHistorial(
+                    "DESPUES_EDITAR", 
+                    unidad, 
+                    "Unidades", 
+                    $"Estado nuevo de unidad {unidad.nombre} (ID: {unidad.id})"
+                );
 
                 _logger.LogInformation("Unidad actualizada exitosamente: {Id}", id);
                 return Ok(unidad);
@@ -118,6 +140,9 @@ namespace API.Controllers
                     _logger.LogWarning("Intento de eliminar unidad inexistente: {Id}", id);
                     return NotFound(new { error = $"Unidad con ID {id} no encontrada" });
                 }
+                
+                // Registrar antes de eliminar
+                _historialService.GuardarHistorial("ELIMINAR", unidad, "Unidades", $"Eliminación de unidad ID: {id}");
 
                 _context.Unidades.Remove(unidad);
                 await _context.SaveChangesAsync();

@@ -7,37 +7,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
     public class SecurityHeadersMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly SecurityHeadersPolicy _policy;
-        private readonly ILogger<SecurityHeadersMiddleware> _logger;
 
-        public SecurityHeadersMiddleware(RequestDelegate next, SecurityHeadersPolicy policy, ILogger<SecurityHeadersMiddleware> logger)
+        public SecurityHeadersMiddleware(RequestDelegate next)
         {
             _next = next;
-            _policy = policy;
-            _logger = logger;
         }
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var path = context.Request.Path.ToString().ToLowerInvariant();
-            var isDevelopment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
-
-            if (isDevelopment && (path.Contains("/auth/") || path.StartsWith("/authfix/")))
-            {
-                _logger.LogInformation("Skipping security headers for auth path: {Path}", path);
-                await _next(context);
-                return;
-            }
-
-            foreach (var headerValuePair in _policy.Headers)
-            {
-                if (context.Response.Headers.ContainsKey(headerValuePair.Key))
-                {
-                    context.Response.Headers.Remove(headerValuePair.Key);
-                }
-                context.Response.Headers.Append(headerValuePair.Key, headerValuePair.Value);
-            }
-
+            // Agregar headers de seguridad antes de que comience la respuesta
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["X-Frame-Options"] = "DENY";
+            context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            
+            // Continuar con el pipeline
             await _next(context);
         }
     }

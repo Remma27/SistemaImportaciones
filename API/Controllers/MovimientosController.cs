@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
+using API.Services;
 
 namespace API.Controllers
 {
@@ -16,12 +17,15 @@ namespace API.Controllers
         private readonly ApiContext _context;
         private readonly ILogger<MovimientosController> _logger;
         private readonly IMemoryCache _memoryCache;
+        private readonly HistorialService _historialService;
         private readonly Dictionary<string, decimal> _conversionFactors = new Dictionary<string, decimal>();
-        public MovimientosController(ApiContext context, ILogger<MovimientosController> logger, IMemoryCache memoryCache)
+
+        public MovimientosController(ApiContext context, ILogger<MovimientosController> logger, IMemoryCache memoryCache, HistorialService historialService)
         {
             _context = context;
             _logger = logger;
             _memoryCache = memoryCache;
+            _historialService = historialService;
         }
 
         private async Task<Dictionary<string, decimal>> GetConversionFactors()
@@ -98,6 +102,10 @@ namespace API.Controllers
 
             _context.Movimientos.Add(movimiento);
             _context.SaveChanges();
+            
+            // Registrar en historial
+            _historialService.GuardarHistorial("CREAR", movimiento, "Movimientos", $"Creación de movimiento {movimiento.id}");
+            
             return new JsonResult(Ok(movimiento));
         }
 
@@ -127,11 +135,29 @@ namespace API.Controllers
                 return new JsonResult(NotFound());
             }
 
+            // Registrar estado anterior claramente
+            _historialService.GuardarHistorial(
+                "ANTES_EDITAR", 
+                movimientoInDb, 
+                "Movimientos", 
+                $"Estado anterior de movimiento ID: {movimientoInDb.id}"
+            );
+            
             // Preserve the original fechahorasistema
             movimiento.fechahorasistema = movimientoInDb.fechahorasistema;
 
+            // Aplicar los cambios
             _context.Entry(movimientoInDb).CurrentValues.SetValues(movimiento);
             _context.SaveChanges();
+            
+            // Registrar estado nuevo claramente
+            _historialService.GuardarHistorial(
+                "DESPUES_EDITAR", 
+                movimiento, 
+                "Movimientos", 
+                $"Estado nuevo de movimiento ID: {movimiento.id}"
+            );
+            
             return new JsonResult(Ok(movimiento));
         }
 
@@ -156,6 +182,10 @@ namespace API.Controllers
             {
                 return new JsonResult(NotFound());
             }
+            
+            // Registrar antes de eliminar
+            _historialService.GuardarHistorial("ELIMINAR", result, "Movimientos", $"Eliminación de movimiento {result.id}");
+            
             _context.Movimientos.Remove(result);
             _context.SaveChanges();
             return new JsonResult(NoContent());

@@ -64,8 +64,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     _logger.LogError(ex, "Error al crear la importacion");
                     ModelState.AddModelError("", "Ocurrió un error al crear la importacion.");
+                    this.Error("Error al crear la importación: " + ex.Message);
                 }
             }
+            
+            // Repopulate dropdown when returning to view due to errors
+            try
+            {
+                var barcos = await _barcoService.GetAllAsync();
+                ViewBag.Barcos = new SelectList(barcos, "id", "nombrebarco", importacion.idbarco);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar los barcos para el formulario después de un error de validación");
+            }
+            
             return View(importacion);
         }
 
@@ -121,8 +134,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 {
                     _logger.LogError(ex, "Error al actualizar la importacion");
                     ModelState.AddModelError("", "Ocurrió un error al actualizar la importacion.");
+                    this.Error("Error al actualizar la importación: " + ex.Message);
                 }
             }
+            
+            // Repopulate dropdown when returning to view due to errors
+            try
+            {
+                var barcos = await _barcoService.GetAllAsync();
+                ViewBag.Barcos = new SelectList(barcos, "id", "nombrebarco", importacion.idbarco);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar los barcos para el formulario después de un error de validación");
+            }
+            
             return View(importacion);
         }
 

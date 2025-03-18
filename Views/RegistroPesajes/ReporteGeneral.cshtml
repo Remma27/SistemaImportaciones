@@ -82,18 +82,18 @@
                             </h4>
                         </div>
                         
-                        <!-- Botones - Se apilan en móvil, se alinean a la derecha en desktop -->
+                        <!-- Botones mejorados para responsividad -->
                         <div class="col-12 col-md-6">
-                            <div class="d-flex flex-column flex-sm-row justify-content-md-end gap-2">
-                                <button id="toggleUnits" class="btn btn-info w-100 w-sm-auto">
+                            <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2">
+                                <button id="toggleUnits" class="btn btn-info px-3 py-2">
                                     <i class="fas fa-eye me-1"></i>
-                                    <span class="d-inline">Mostrar Todas las Unidades</span>
+                                    <span>Mostrar Todas las Unidades</span>
                                 </button>
                                 
                                 <a href="@Url.Action("Index", backController, new { selectedBarco = Context.Request.Query["selectedBarco"] })" 
-                                   class="btn btn-secondary w-100 w-sm-auto mt-2 mt-sm-0">
+                                   class="btn btn-secondary px-3 py-2">
                                     <i class="fas fa-arrow-left me-1"></i>
-                                    <span class="d-inline">Volver</span>
+                                    <span>Volver</span>
                                 </a>
                             </div>
                         </div>
@@ -157,7 +157,7 @@
                                 <!-- Fila para Toneladas -->
                                 <tr class="unidad-row ton-row">
                                     <td>Toneladas</td>
-                                    @foreach (var numeroEscotilla in todasLas Escotillas)
+                                    @foreach (var numeroEscotilla in todasLasEscotillas)
                                     {
                                         var escotilla = empresa.Escotillas.FirstOrDefault(e => e.NumeroEscotilla == numeroEscotilla);
                                         <td class="text-end">@(escotilla?.DescargaTon.ToString("N4") ?? "0.0000")</td>

@@ -1,0 +1,589 @@
+/* Estilos para el módulo de historial */
+
+/* Contenedor principal */
+.historial-container {
+    transition: all 0.3s;
+}
+
+/* Estilos para los filtros */
+.filter-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.filter-container:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.filter-title {
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+/* Estilos para la tabla de historial */
+.historial-table {
+    width: 100%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+    min-width: 800px; /* Asegura un ancho mínimo para que se active el scroll horizontal */
+}
+
+.historial-table thead th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    padding: 15px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.historial-table tbody tr {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.historial-table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+/* Estilos para las insignias de operación */
+.badge-crear {
+    background-color: #28a745;
+    color: white;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 20px;
+}
+
+.badge-antes-editar {
+    background-color: #ffc107;
+    color: #343a40;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 20px;
+}
+
+.badge-despues-editar {
+    background-color: #17a2b8;
+    color: white;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 20px;
+}
+
+.badge-eliminar {
+    background-color: #dc3545;
+    color: white;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 20px;
+}
+
+.badge-login, .badge-logout {
+    background-color: #6f42c1;
+    color: white;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 20px;
+}
+
+/* Nuevos estilos de etiquetas de operación mejoradas */
+.operacion-tag {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    max-width: 100%;
+    color: white;
+    justify-content: center;
+    width: auto;
+    min-width: 80px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.operacion-crear {
+    background-color: #28a745;
+}
+
+.operacion-antes-editar {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.operacion-despues-editar {
+    background-color: #17a2b8;
+}
+
+.operacion-eliminar {
+    background-color: #dc3545;
+}
+
+.operacion-login {
+    background-color: #6f42c1;
+}
+
+.operacion-logout {
+    background-color: #6c757d;
+}
+
+.operacion-otro {
+    background-color: #6c757d;
+}
+
+/* Estilos para nombre de tabla */
+.table-badge-container {
+    display: flex;
+    align-items: center;
+}
+
+.table-name {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+/* Mejoras para las celdas de descripción */
+.descripcion-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Estilo para la fecha */
+.fecha-container {
+    font-size: 0.9rem;
+}
+
+/* Mejoras responsivas específicas para la tabla de historial */
+@media (max-width: 992px) {
+    .operacion-tag {
+        padding: 5px 7px;
+        min-width: 32px;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    
+    .operacion-text {
+        font-size: 0.7rem;
+        /* No ocultamos el texto, solo lo hacemos más pequeño */
+    }
+    
+    .operacion-tag i {
+        font-size: 0.9rem;
+        margin-right: 3px;
+    }
+    
+    .table-name {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .descripcion-cell {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 768px) {
+    .descripcion-cell {
+        max-width: 100%;
+    }
+    
+    .historial-table td[data-label="Operación"] {
+        width: 30px;
+    }
+    
+    .historial-table td[data-label="Tabla"] .table-name {
+        max-width: 100%;
+    }
+    
+    .operacion-tag {
+        min-width: 100%;
+        padding: 7px 10px;
+        justify-content: flex-start;
+    }
+    
+    .operacion-tag i {
+        font-size: 1.1rem;
+        margin-right: 8px;
+    }
+    
+    .operacion-text {
+        font-size: 0.9rem;
+    }
+    
+    .historial-table {
+        min-width: unset;
+    }
+    
+    .historial-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+    
+    .historial-table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #fff;
+    }
+    
+    .historial-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #f2f2f2;
+        text-align: right;
+    }
+    
+    .historial-table td:last-child {
+        border-bottom: 0;
+    }
+    
+    .historial-table td:before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+        margin-right: 1rem;
+    }
+    
+    .historial-table td .operacion-tag {
+        min-width: 120px;
+        width: auto;
+        justify-content: center;
+    }
+    
+    .historial-table td .operacion-text {
+        display: inline-block;
+        font-size: 0.85rem;
+    }
+    
+    .descripcion-cell {
+        max-width: 100%;
+        white-space: normal;
+    }
+    
+    .table-name {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .historial-table td[data-label="Usuario"],
+    .historial-table td[data-label="Tabla"],
+    .historial-table td[data-label="Operación"],
+    .historial-table td[data-label="Fecha y Hora"],
+    .historial-table td[data-label="Descripción"] {
+        padding: 10px 15px;
+        flex-wrap: wrap;
+    }
+    
+    .historial-table td[data-label]::before {
+        min-width: 100%;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .operacion-tag {
+        padding: 8px 12px;
+        width: 100%;
+        margin-left: auto;
+    }
+    
+    .operacion-text {
+        font-size: 0.95rem;
+    }
+    
+    .operacion-tag i {
+        font-size: 1.2rem;
+        margin-right: 10px;
+    }
+    
+    .historial-table td {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .historial-table td:before {
+        margin-bottom: 0.5rem;
+        width: 100%;
+    }
+    
+    .historial-table td .operacion-tag {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 10px;
+    }
+    
+    .fecha-container {
+        width: 100%;
+    }
+}
+
+/* Estilos para los detalles */
+.detail-card {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    border: none;
+}
+
+.detail-header {
+    background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 20px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.detail-section {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.detail-section:hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.info-value {
+    padding: 5px 0;
+}
+
+/* JSON Viewer */
+.json-preview {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    color: #212529;
+    border: 1px solid #dee2e6;
+}
+
+.json-preview .string { color: #28a745; }
+.json-preview .number { color: #fd7e14; }
+.json-preview .boolean { color: #dc3545; }
+.json-preview .null { color: #6c757d; }
+.json-preview .key { color: #007bff; }
+
+/* Botones de acción */
+.action-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .filter-container {
+        padding: 15px;
+    }
+    
+    .historial-table {
+        font-size: 0.9rem;
+    }
+    
+    .historial-table th, 
+    .historial-table td {
+        padding: 10px 5px;
+    }
+    
+    .action-btn {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .detail-section {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .historial-table thead {
+        display: none;
+    }
+    
+    .historial-table tbody tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    .historial-table tbody td {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 5px;
+        border: none;
+        border-bottom: 1px solid #f2f2f2;
+    }
+    
+    .historial-table tbody td:before {
+        content: attr(data-label);
+        font-weight: 600;
+    }
+    
+    .historial-table tbody td:last-child {
+        border-bottom: none;
+    }
+}
+
+/* Mejoras para pantallas grandes */
+@media (min-width: 992px) {
+    .detail-container {
+        padding: 0 30px;
+    }
+    
+    .filter-container .row {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+    
+    .filter-container [class*="col-"] {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .json-preview {
+        max-height: 600px;
+        font-size: 1rem;
+    }
+}
+
+/* Reemplazo de las clases de DataTables para mejor apariencia */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+    margin-bottom: 15px;
+}
+
+.dataTables_wrapper .dataTables_length select,
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 6px 10px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 4px;
+    padding: 6px 12px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #007bff !important;
+    color: white !important;
+    border: 1px solid #007bff !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #e9ecef !important;
+    color: #007bff !important;
+    border: 1px solid #dee2e6 !important;
+}
+
+/* Mejoras para etiquetas de operación */
+.operacion-tag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    width: auto;
+    min-width: 80px;
+    color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.operacion-tag i {
+    font-size: 1rem;
+    margin-right: 5px;
+}
+
+/* Mejoras para la tabla responsive */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mejoras para DataTables responsive */
+table.dataTable.dtr-inline.collapsed>tbody>tr>td.dtr-control:before,
+table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
+    background-color: #007bff !important;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    margin-top: 1rem;
+    float: none;
+    text-align: center;
+}
+
+.dataTables_wrapper .dataTables_info {
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        text-align: left;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dataTables_wrapper .dataTables_filter {
+        margin-top: 0.5rem;
+    }
+    
+    .dataTables_wrapper .dataTables_filter input {
+        margin-left: 0;
+        width: 100%;
+    }
+}

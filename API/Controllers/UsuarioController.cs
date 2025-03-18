@@ -18,11 +18,13 @@ namespace API.Controllers
     {
         private readonly ApiContext _context;
         private readonly PasswordHashService _passwordHashService;
+        private readonly HistorialService _historialService;
 
-        public UsuarioController(ApiContext context, PasswordHashService passwordHashService)
+        public UsuarioController(ApiContext context, PasswordHashService passwordHashService, HistorialService historialService)
         {
             _context = context;
             _passwordHashService = passwordHashService;
+            _historialService = historialService;
         }
 
         // Endpoint para crear un nuevo Usuario
@@ -42,15 +44,29 @@ namespace API.Controllers
 
             if (usuario.password_hash != null)
             {
+                // Guarda una copia del password original para no guardarlo en historial
+                string passwordOriginal = usuario.password_hash;
                 usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
+                
+                _context.Usuarios.Add(usuario);
+                _context.SaveChanges();
+                
+                // Crear una copia para el historial sin el password
+                var usuarioParaHistorial = new { 
+                    Id = usuario.id,
+                    Nombre = usuario.nombre,
+                    Email = usuario.email,
+                    Activo = usuario.activo
+                };
+                
+                // Registrar en historial
+                _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {usuario.email}");
             }
             else
             {
                 return new JsonResult(BadRequest("La contraseña no puede estar vacía."));
             }
-
-            _context.Usuarios.Add(usuario);
-            _context.SaveChanges();
+            
             return new JsonResult(Ok(usuario));
         }
 
@@ -62,14 +78,67 @@ namespace API.Controllers
             {
                 return new JsonResult(BadRequest("Debe proporcionar un id válido para editar un usuario."));
             }
+            
             var usuarioInDb = _context.Usuarios.Find(usuario.id);
             if (usuarioInDb == null)
             {
                 return new JsonResult(NotFound());
             }
 
+            // Crear una copia para el historial sin el password
+            var usuarioAnteriorParaHistorial = new Usuario
+            {
+                id = usuarioInDb.id,
+                nombre = usuarioInDb.nombre,
+                email = usuarioInDb.email,
+                password_hash = "[PROTEGIDO]",
+                fecha_creacion = usuarioInDb.fecha_creacion,
+                ultimo_acceso = usuarioInDb.ultimo_acceso,
+                activo = usuarioInDb.activo
+            };
+            
+            // Registrar estado anterior claramente
+            _historialService.GuardarHistorial(
+                "ANTES_EDITAR", 
+                usuarioAnteriorParaHistorial, 
+                "Usuarios", 
+                $"Estado anterior de usuario {usuarioInDb.email} (ID: {usuarioInDb.id})"
+            );
+            
+            // Si se proporciona un nueva contraseña, hasheala
+            if (!string.IsNullOrEmpty(usuario.password_hash) && !usuario.password_hash.StartsWith("$2a$"))
+            {
+                usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
+            }
+            else
+            {
+                // Mantener la contraseña existente si no se proporciona una nueva
+                usuario.password_hash = usuarioInDb.password_hash;
+            }
+
             _context.Entry(usuarioInDb).CurrentValues.SetValues(usuario);
             _context.SaveChanges();
+            
+            // Crear una copia para el historial sin el password
+            var usuarioNuevoParaHistorial = new Usuario
+            {
+                id = usuario.id,
+                nombre = usuario.nombre,
+                email = usuario.email,
+                password_hash = "[PROTEGIDO]",
+                fecha_creacion = usuario.fecha_creacion,
+                ultimo_acceso = usuario.ultimo_acceso,
+                activo = usuario.activo
+            };
+            
+            // Registrar estado nuevo claramente
+            _historialService.GuardarHistorial(
+                "DESPUES_EDITAR", 
+                usuarioNuevoParaHistorial, 
+                "Usuarios", 
+                $"Estado nuevo de usuario {usuario.email} (ID: {usuario.id})"
+            );
+            
             return new JsonResult(Ok(usuario));
         }
 
@@ -82,6 +151,10 @@ namespace API.Controllers
             {
                 return new JsonResult(NotFound());
             }
+            
+            // No enviar el hash de la contraseña
+            result.password_hash = null;
+            
             return new JsonResult(Ok(result));
         }
 
@@ -94,6 +167,18 @@ namespace API.Controllers
             {
                 return new JsonResult(NotFound());
             }
+            
+            // Crear una copia para el historial sin el password
+            var usuarioParaHistorial = new { 
+                Id = result.id,
+                Nombre = result.nombre,
+                Email = result.email,
+                Activo = result.activo
+            };
+            
+            // Registrar antes de eliminar
+            _historialService.GuardarHistorial("ELIMINAR", usuarioParaHistorial, "Usuarios", $"Eliminación de usuario ID: {id}");
+            
             _context.Usuarios.Remove(result);
             _context.SaveChanges();
             return new JsonResult(NoContent());
@@ -104,6 +189,13 @@ namespace API.Controllers
         public JsonResult GetAll()
         {
             var result = _context.Usuarios.ToList();
+            
+            // No enviar los hashes de contraseñas
+            foreach (var usuario in result)
+            {
+                usuario.password_hash = null;
+            }
+            
             return new JsonResult(Ok(result));
         }
 
@@ -120,14 +212,29 @@ namespace API.Controllers
 
             if (model.password_hash != null)
             {
+                // Guarda una copia del password original para no guardarlo en historial
+                string passwordOriginal = model.password_hash;
                 model.password_hash = _passwordHashService.HashPassword(model.password_hash);
+                
                 _context.Usuarios.Add(model);
+                _context.SaveChanges();
+                
+                // Crear una copia para el historial sin el password
+                var usuarioParaHistorial = new { 
+                    Id = model.id,
+                    Nombre = model.nombre,
+                    Email = model.email,
+                    Activo = model.activo
+                };
+                
+                // Registrar en historial con usuario del sistema (ya que estamos en un endpoint no autenticado)
+                _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {model.email}");
             }
             else
             {
                 return new JsonResult(BadRequest("La contraseña no puede estar vacía."));
             }
-            _context.SaveChanges();
+            
             return new JsonResult(Ok(model));
         }
 
@@ -181,6 +288,10 @@ namespace API.Controllers
                     ultimo_acceso = usuario.ultimo_acceso,
                     activo = usuario.activo
                 };
+                
+                // Registrar historial de login
+                _historialService.GuardarHistorial("LOGIN", new { UserId = usuario.id, Email = usuario.email, Time = DateTime.Now }, 
+                    "Autenticación", $"Inicio de sesión: {usuario.email}");
 
                 // Return the sanitized user object
                 return Ok(new
@@ -199,6 +310,30 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> CerrarSesion()
         {
+            // Obtener ID de usuario para el historial antes de cerrar sesión
+            int userId = 0;
+            string userEmail = "desconocido";
+            
+            if (HttpContext.User.Identity?.IsAuthenticated == true)
+            {
+                var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+                var emailClaim = HttpContext.User.FindFirst(ClaimTypes.Email);
+                
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out userId))
+                {
+                    // ID obtenido correctamente
+                }
+                
+                if (emailClaim != null)
+                {
+                    userEmail = emailClaim.Value;
+                }
+                
+                // Registrar historial de logout
+                _historialService.GuardarHistorial("LOGOUT", new { UserId = userId, Email = userEmail, Time = DateTime.Now }, 
+                    "Autenticación", $"Cierre de sesión: {userEmail}");
+            }
+            
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             foreach (var cookie in Request.Cookies.Keys)

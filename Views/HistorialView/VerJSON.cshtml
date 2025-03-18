@@ -1,0 +1,244 @@
+@model HistorialViewModel
+@{
+    ViewData["Title"] = "Visualizador JSON";
+    
+    string GetOperacionNombre(string tipoOperacion)
+    {
+        switch (tipoOperacion.ToUpper())
+        {
+            case "CREAR": return "Creación";
+            case "ANTES_EDITAR": return "Antes de Editar";
+            case "DESPUES_EDITAR": return "Después de Editar";
+            case "ELIMINAR": return "Eliminación";
+            case "LOGIN": return "Inicio de Sesión";
+            case "LOGOUT": return "Cierre de Sesión";
+            default: return tipoOperacion;
+        }
+    }
+}
+
+<link rel="stylesheet" href="~/css/historial.css" asp-append-version="true" />
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Index">Historial</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Detalle" asp-route-id="@Model.Id">Registro #@Model.Id</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Visualizador JSON</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h4 class="mb-0">
+                            <i class="fas fa-code me-2"></i> Datos JSON - Registro #@Model.Id
+                        </h4>
+                        <div class="mt-2 mt-md-0">
+                            <button id="btnCopyJson" class="btn btn-sm btn-outline-light me-2">
+                                <i class="fas fa-copy me-1"></i>Copiar JSON
+                            </button>
+                            <button id="btnToggleFormat" class="btn btn-sm btn-outline-light">
+                                <i class="fas fa-indent me-1"></i><span id="formatButtonText">Vista compacta</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <div class="info-bar bg-light p-3 border-bottom">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="info-label me-2">Tabla:</span>
+                                    <span class="badge bg-primary">@Model.Tabla</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="info-label me-2">Operación:</span>
+                                    <span class="badge bg-secondary">@GetOperacionNombre(Model.TipoOperacion)</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="info-label me-2">Fecha y hora:</span>
+                                    <span>@Model.FechaHora.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <span class="info-label me-2">Descripción:</span>
+                                <span>@(Model.Descripcion ?? "Sin descripción")</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="position-relative">
+                        <!-- Barra de herramientas -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <div class="btn-group btn-group-sm">
+                                <button id="btnExpandAll" class="btn btn-sm btn-light" title="Expandir todo">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </button>
+                                <button id="btnCollapseAll" class="btn btn-sm btn-light" title="Contraer todo">
+                                    <i class="fas fa-compress-arrows-alt"></i>
+                                </button>
+                                <button id="btnZoomIn" class="btn btn-sm btn-light" title="Aumentar tamaño">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                                <button id="btnZoomOut" class="btn btn-sm btn-light" title="Disminuir tamaño">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Visor de JSON -->
+                        <pre id="jsonViewer" class="json-viewer" style="min-height: 60vh;">@ViewBag.FormattedJSON</pre>
+                    </div>
+                </div>
+                
+                <div class="card-footer d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="mt-2 mt-md-0 mb-2 mb-md-0">
+                        <span class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i> 
+                            Usa las herramientas para explorar el JSON fácilmente
+                        </span>
+                    </div>
+                    <div>
+                        <a asp-action="Detalle" asp-route-id="@Model.Id" class="btn btn-secondary me-2">
+                            <i class="fas fa-arrow-left me-1"></i> Volver al detalle
+                        </a>
+                        <a asp-action="Index" class="btn btn-primary">
+                            <i class="fas fa-list me-1"></i> Volver al listado
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let compactView = false;
+            let currentFontSize = 14;
+            const jsonViewer = document.getElementById('jsonViewer');
+            
+            // Formatear el JSON inicialmente
+            try {
+                const jsonText = jsonViewer.textContent;
+                const jsonObj = JSON.parse(jsonText);
+                const formattedJson = JSON.stringify(jsonObj, null, 2);
+                jsonViewer.textContent = formattedJson;
+                
+                // Colorear el JSON (implementación simple para demostración)
+                highlightJson();
+            } catch (e) {
+                console.error("Error al procesar JSON:", e);
+            }
+            
+            // Función para resaltar la sintaxis JSON
+            function highlightJson() {
+                let jsonText = jsonViewer.textContent;
+                // Esta es una implementación básica, en producción usaríamos una biblioteca como highlight.js
+                jsonText = jsonText
+                    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
+                        let cls = 'text-primary'; // número
+                        if (/^"/.test(match)) {
+                            if (/:$/.test(match)) {
+                                cls = 'text-success fw-bold'; // clave
+                            } else {
+                                cls = 'text-danger'; // string
+                            }
+                        } else if (/true|false/.test(match)) {
+                            cls = 'text-warning'; // booleano
+                        } else if (/null/.test(match)) {
+                            cls = 'text-secondary'; // null
+                        }
+                        return '<span class="' + cls + '">' + match + '</span>';
+                    });
+                
+                jsonViewer.innerHTML = jsonText;
+            }
+            
+            // Botón para copiar el JSON
+            $('#btnCopyJson').on('click', function() {
+                navigator.clipboard.writeText(jsonViewer.textContent)
+                    .then(() => {
+                        // Mostrar mensaje de éxito
+                        const toast = document.createElement('div');
+                        toast.className = 'position-fixed bottom-0 end-0 p-3 m-3 bg-success text-white rounded';
+                        toast.style.zIndex = '9999';
+                        toast.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <span>¡JSON copiado al portapapeles!</span>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 2000);
+                    });
+            });
+            
+            // Botón para alternar el formato compacto/expandido
+            $('#btnToggleFormat').on('click', function() {
+                try {
+                    const jsonObj = JSON.parse(jsonViewer.textContent);
+                    compactView = !compactView;
+                    
+                    if (compactView) {
+                        // Vista compacta
+                        jsonViewer.textContent = JSON.stringify(jsonObj);
+                        $('#formatButtonText').text('Vista expandida');
+                    } else {
+                        // Vista expandida
+                        jsonViewer.textContent = JSON.stringify(jsonObj, null, 2);
+                        $('#formatButtonText').text('Vista compacta');
+                    }
+                    
+                    highlightJson();
+                } catch (e) {
+                    console.error("Error al alternar formato:", e);
+                }
+            });
+            
+            // Controles de zoom
+            $('#btnZoomIn').on('click', function() {
+                currentFontSize += 2;
+                jsonViewer.style.fontSize = currentFontSize + 'px';
+            });
+            
+            $('#btnZoomOut').on('click', function() {
+                if (currentFontSize > 8) {
+                    currentFontSize -= 2;
+                    jsonViewer.style.fontSize = currentFontSize + 'px';
+                }
+            });
+            
+            // Funcionalidad para expandir/contraer (simulada)
+            $('#btnExpandAll').on('click', function() {
+                highlightJson();
+            });
+            
+            $('#btnCollapseAll').on('click', function() {
+                try {
+                    const jsonObj = JSON.parse(jsonViewer.textContent);
+                    jsonViewer.textContent = JSON.stringify(jsonObj);
+                    highlightJson();
+                } catch (e) {
+                    console.error("Error al contraer JSON:", e);
+                }
+            });
+        });
+    </script>
+}

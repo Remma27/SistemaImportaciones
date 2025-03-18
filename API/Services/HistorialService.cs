@@ -27,7 +27,17 @@ namespace API.Services
             {
                 // Obtener el ID del usuario autenticado
                 var usuarioId = ObtenerUsuarioAutenticado();
-                
+
+                // Si no se pudo obtener un ID válido, usar el usuario del sistema (1)
+                if (usuarioId <= 0)
+                {
+                    _logger.LogWarning("No se pudo obtener un ID de usuario válido, usando usuario del sistema (ID=1)");
+                    usuarioId = 1;
+                }
+
+                // Registrar explícitamente el ID que se está usando
+                _logger.LogInformation("Registrando historial con UsuarioId: {UsuarioId}", usuarioId);
+
                 // Mejorado: Configuración de opciones de JSON para evitar referencias circulares y formatear mejor
                 var options = new JsonSerializerOptions
                 {
@@ -39,7 +49,7 @@ namespace API.Services
 
                 // Serializa directamente a string
                 string jsonData;
-                try 
+                try
                 {
                     jsonData = JsonSerializer.Serialize(entidad, options);
                 }
@@ -47,12 +57,12 @@ namespace API.Services
                 {
                     // Si falla la serialización, intentamos una versión simplificada
                     _logger.LogWarning(jsonEx, "Error en serialización JSON completa, intentando simplificada");
-                    
+
                     // Convertimos manualmente a diccionario simple para evitar referencias circulares
                     var simpleProperties = new Dictionary<string, object>();
                     foreach (var prop in entidad.GetType().GetProperties())
                     {
-                        if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string) || 
+                        if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string) ||
                             prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(decimal))
                         {
                             var value = prop.GetValue(entidad);
@@ -76,12 +86,12 @@ namespace API.Services
                 _context.HistorialCambios.Add(historial);
                 _context.SaveChanges();
 
-                _logger.LogInformation("Historial registrado: {Operacion} en {Tabla} por usuario {UsuarioId}", 
+                _logger.LogInformation("Historial registrado: {Operacion} en {Tabla} por usuario {UsuarioId}",
                     operacion, tabla, usuarioId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al registrar historial: {Operacion} {Tabla} - {Error}", 
+                _logger.LogError(ex, "Error al registrar historial: {Operacion} {Tabla} - {Error}",
                     operacion, tabla, ex.Message);
             }
         }
@@ -89,59 +99,36 @@ namespace API.Services
         private int ObtenerUsuarioAutenticado()
         {
             var httpContext = _httpContextAccessor.HttpContext;
-            if (httpContext == null)
-            {
-                _logger.LogWarning("No se pudo acceder al HttpContext");
-                return 1;
-            }
-            
-            if (httpContext.User == null || httpContext.User.Identity == null || !httpContext.User.Identity.IsAuthenticated)
+            if (httpContext == null || httpContext.User == null || httpContext.User.Identity == null || !httpContext.User.Identity.IsAuthenticated)
             {
                 _logger.LogWarning("Usuario no autenticado");
-                return 1;
+                return 0; // Usuario no autenticado
             }
 
-            // Intentar directamente con ClaimTypes.NameIdentifier primero
-            var nameIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
-            if (nameIdClaim != null && int.TryParse(nameIdClaim.Value, out int nameIdValue))
+            // Usar el helper directamente
+            int userId = httpContext.User.GetUserId();
+
+            // Si el helper devuelve 0, intentar obtener el ID directamente desde las claims
+            if (userId <= 0)
             {
-                _logger.LogDebug("ID obtenido de NameIdentifier: {UserId}", nameIdValue);
-                return nameIdValue;
-            }
-            
-            // Si falla, intentar con la extensión
-            try
-            {
-                var userId = httpContext.User.GetUserId();
-                if (userId > 0)
+                // Obtener el ID directamente desde ClaimTypes.NameIdentifier
+                var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out userId))
                 {
-                    _logger.LogDebug("ID de usuario obtenido de extensión: {UserId}", userId);
+                    _logger.LogInformation("ID de usuario extraído correctamente: {UserId}", userId);
                     return userId;
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error al obtener ID de usuario desde extensión");
+
+                // Registrar todas las claims para depuración
+                var claims = httpContext.User.Claims.ToList();
+                _logger.LogWarning("Claims disponibles: {Claims}",
+                    string.Join(", ", claims.Select(c => $"{c.Type}={c.Value}")));
+
+                _logger.LogWarning("No se pudo determinar el ID de usuario desde claims");
+                return 0;
             }
 
-            // Si todavía no funciona, intentar con todos los claims posibles
-            foreach (var claim in httpContext.User.Claims)
-            {
-                _logger.LogDebug("Claim disponible: {Type} = {Value}", claim.Type, claim.Value);
-                
-                if (claim.Type.EndsWith("nameidentifier", StringComparison.OrdinalIgnoreCase) || 
-                    claim.Type.Contains("userid", StringComparison.OrdinalIgnoreCase) ||
-                    claim.Type.EndsWith("id", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (int.TryParse(claim.Value, out int id))
-                    {
-                        return id;
-                    }
-                }
-            }
-
-            _logger.LogWarning("No se pudo determinar el ID de usuario, usando valor por defecto");
-            return 1;
+            return userId > 0 ? userId : 1; // Si el helper devuelve 0, usar el usuario del sistema
         }
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,6 +37,26 @@ namespace Sistema_de_Gestion_de_Importaciones.Handlers
                     {
                         request.Headers.Add("Cookie", $".AspNetCore.Cookies={cookies[".AspNetCore.Cookies"]}");
                     }
+                }
+            }
+
+            // Si hay un contexto HTTP y el usuario está autenticado
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext?.User?.Identity?.IsAuthenticated == true)
+            {
+                // Buscar explícitamente el ID del usuario
+                var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim != null)
+                {
+                    // Loguear para verificar que se está pasando correctamente
+                    _logger.LogDebug("Enviando solicitud a API con ID de usuario: {UserId}", userIdClaim.Value);
+                    
+                    // Asegurarse de que se esté pasando en un header personalizado
+                    request.Headers.Add("X-UserId", userIdClaim.Value);
+                }
+                else
+                {
+                    _logger.LogWarning("No se encontró claim de ID de usuario para autenticación API");
                 }
             }
 

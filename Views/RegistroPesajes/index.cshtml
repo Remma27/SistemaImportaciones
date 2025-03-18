@@ -5,6 +5,7 @@
 }
 
 @{
+    ViewData["Title"] = "Registro de Pesajes";
     var isBarcoSelected = !String.IsNullOrEmpty(Context.Request.Query["selectedBarco"].ToString());
     var isEmpresaSelected = !String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString());
     var isFormValid = isBarcoSelected && isEmpresaSelected;

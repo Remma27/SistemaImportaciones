@@ -8,6 +8,7 @@
 }
 
 @{
+        ViewData["Title"] = "Informacion General";
     var selectedBarco = Context.Request.Query["selectedBarco"].ToString();
     var isBarcoSelected = !String.IsNullOrEmpty(selectedBarco);
     var isEmpresaSelected = !String.IsNullOrEmpty(Context.Request.Query["empresaId"].ToString());

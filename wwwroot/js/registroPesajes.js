@@ -201,6 +201,9 @@ function getHeaderStructure(headerCells) {
     const columnMapping = []
     let outputColIndex = 0
 
+    // Verificar si las columnas de conversión están visibles
+    const conversionesVisibles = document.querySelector('.unit-toggle-columns.visible') !== null
+
     headerCells.forEach((cell, index) => {
         const headerText = cell.innerText.trim()
 
@@ -226,14 +229,22 @@ function getHeaderStructure(headerCells) {
             return
         }
 
+        // Solo incluir columnas de conversión si están visibles
         if (cell.classList.contains('unit-toggle-columns')) {
-            const headerName = cell.textContent.trim()
+            // Si las columnas de conversión están visibles, incluirlas
+            if (conversionesVisibles) {
+                const headerName = cell.textContent.trim()
 
-            headerRow.push(`${headerName} (Libras)`)
-            headerRow.push(`${headerName} (Quintales)`)
+                headerRow.push(`${headerName} (Libras)`)
+                headerRow.push(`${headerName} (Quintales)`)
 
-            columnMapping[index] = [outputColIndex, outputColIndex + 1]
-            outputColIndex += 2
+                columnMapping[index] = [outputColIndex, outputColIndex + 1]
+                outputColIndex += 2
+            } else {
+                // Si están ocultas, marcar para excluir
+                excludeColumnIndices.push(index)
+                columnMapping[index] = -1
+            }
         } else {
             headerRow.push(headerText)
             columnMapping[index] = outputColIndex
@@ -265,18 +276,21 @@ function processTableRow(row, headerInfo) {
         }
 
         if (cell.classList.contains('unit-toggle-columns')) {
-            const topValue = cell.querySelector('.top-value')?.textContent.trim() || cell.innerText.trim()
-            const bottomValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+            // Solo procesar columnas de conversión si no están excluidas
+            if (!excludeColumnIndices.includes(colIndex)) {
+                const topValue = cell.querySelector('.top-value')?.textContent.trim() || cell.innerText.trim()
+                const bottomValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
 
-            const [lbsIndex, qqIndex] = Array.isArray(columnMapping[colIndex])
-                ? columnMapping[colIndex]
-                : [columnMapping[colIndex], columnMapping[colIndex] + 1]
+                const [lbsIndex, qqIndex] = Array.isArray(columnMapping[colIndex])
+                    ? columnMapping[colIndex]
+                    : [columnMapping[colIndex], columnMapping[colIndex] + 1]
 
-            const lbsValue = topValue.replace(/[^\d.,\-]/g, '').trim()
-            rowData[lbsIndex] = lbsValue
+                const lbsValue = topValue.replace(/[^\d.,\-]/g, '').trim()
+                rowData[lbsIndex] = lbsValue
 
-            const qqValue = bottomValue.replace(/[^\d.,\-]/g, '').trim()
-            rowData[qqIndex] = qqValue
+                const qqValue = bottomValue.replace(/[^\d.,\-]/g, '').trim()
+                rowData[qqIndex] = qqValue
+            }
         } else if (colspan > 1) {
             rowData[columnMapping[colIndex]] = cell.innerText.trim()
         } else {
@@ -419,15 +433,54 @@ function formatNumbersInExcelSheet(worksheet, data) {
 }
 
 function calculateColumnWidths(data) {
-    const colWidths = data.reduce((acc, row) => {
-        for (let i = 0; i < row.length; i++) {
-            const cellValue = row[i] || ''
-            acc[i] = Math.max(acc[i] || 8, cellValue.toString().length + 2)
+    // Inicializar array de anchos con base en los encabezados
+    const colWidths = data[0].map(header => Math.max(10, header.length * 1.2));
+    
+    // Analizar el contenido de cada celda para ajustar los anchos
+    for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
+        const row = data[rowIdx];
+        for (let colIdx = 0; colIdx < row.length; colIdx++) {
+            const cellValue = row[colIdx];
+            
+            if (cellValue === undefined || cellValue === null || cellValue === '') {
+                continue; // Omitir celdas vacías
+            }
+            
+            let displayWidth;
+            
+            if (typeof cellValue === 'number') {
+                // Para números, considerar su representación formateada
+                const numStr = cellValue.toLocaleString('es-GT');
+                displayWidth = numStr.length + 1;  // +1 para un poco de margen
+            } else {
+                // Para texto, usar la longitud de la cadena
+                displayWidth = String(cellValue).length;
+            }
+            
+            // Actualizar el ancho máximo para esta columna
+            colWidths[colIdx] = Math.max(colWidths[colIdx], displayWidth);
         }
-        return acc
-    }, [])
-
-    return colWidths.map(w => ({ width: w }))
+    }
+    
+    // Aplicar ajustes específicos para tipos de columnas
+    return colWidths.map((width, idx) => {
+        const header = data[0][idx] || '';
+        
+        // Columnas especiales
+        if (header.includes('Empresa')) {
+            return { wch: Math.max(width, 25) }; // Empresas necesitan más espacio
+        } else if (header.includes('Guía') || header.includes('Placa')) {
+            return { wch: Math.max(width, 15) }; // Guías y placas
+        } else if (header.includes('%')) {
+            return { wch: Math.min(width + 2, 12) }; // Porcentajes
+        } else if (header.includes('Libras') || header.includes('Quintales') || 
+                  header.includes('Kg') || header.includes('Ton')) {
+            return { wch: Math.min(width + 3, 15) }; // Columnas de peso
+        }
+        
+        // General case - limit between 8 and 25
+        return { wch: Math.min(Math.max(width, 8), 25) };
+    });
 }
 
 function hasTableData(tableId) {
@@ -485,65 +538,89 @@ function initializeWeightValues() {
         el.classList.remove('visible');
     });
     $('.unit-toggle-row').hide();
+    $('.unit-toggle-element').hide();
+    
+    // Check localStorage for saved state
+    const savedMetricState = localStorage.getItem('showingMetric');
+    if (savedMetricState === 'false') {
+        window.showingMetric = false;
+        toggleUnitDisplay(true);
+    }
 }
 
-// Función unificada que maneja tanto filas como columnas
-function toggleColumnsByIndex(table, colIndexes, show) {
-    // For consistent behavior, we'll use CSS classes instead of direct style manipulation
-    const rows = table.querySelectorAll('tr');
-    rows.forEach(row => {
-        const cells = row.children;
-        colIndexes.forEach(idx => {
-            if (idx < cells.length) {
-                if (show) {
-                    cells[idx].classList.add('visible');
-                } else {
-                    cells[idx].classList.remove('visible');
-                }
-            }
-        });
+// Unified function for toggling unit display
+function toggleUnitDisplay(showAlternative) {
+    // Toggle rows
+    $('.unit-toggle-row').each(function() {
+        if (showAlternative) {
+            $(this).slideDown(300);
+        } else {
+            $(this).slideUp(300);
+        }
     });
+
+    // Toggle elements
+    $('.unit-toggle-element').each(function() {
+        if (showAlternative) {
+            $(this).slideDown(300);
+        } else {
+            $(this).slideUp(300);
+        }
+    });
+
+    // Toggle columns
+    const unitToggleColumns = document.querySelectorAll('.unit-toggle-columns');
+    unitToggleColumns.forEach(el => {
+        if (showAlternative) {
+            el.classList.add('visible');
+        } else {
+            el.classList.remove('visible');
+        }
+    });
+    
+    // Dispatch custom event for other components to react
+    window.dispatchEvent(new CustomEvent('unitToggleChanged', { 
+        detail: { showAlternative: showAlternative } 
+    }));
 }
 
 // Setup consistent unit toggle behavior
 function setupUnitToggle() {
-    window.showingMetric = true; // Default to showing metric (Kg)
+    // Check localStorage for saved state
+    const savedMetricState = localStorage.getItem('showingMetric');
+    window.showingMetric = savedMetricState !== null ? savedMetricState === 'true' : true;
 
     $('#btnToggleUnidad').off('click').on('click', function () {
         if ($(this).prop('disabled')) return;
         window.showingMetric = !window.showingMetric;
+        
+        // Save state to localStorage
+        localStorage.setItem('showingMetric', window.showingMetric);
 
         // Update button text and icon
         const buttonText = $(this).find('span');
         buttonText.text(window.showingMetric ? 'Libras' : 'Kilogramos');
         $(this).attr('title', window.showingMetric ? 'Ver en Libras' : 'Ver en Kilogramos');
         $(this).find('i').toggleClass('fa-weight fa-balance-scale');
+        
+        // Update data attribute for other scripts
+        $(this).attr('data-showing-metric', window.showingMetric);
 
-        // Toggle rows consistently
-        $('.unit-toggle-row').each(function() {
-            if (!window.showingMetric) {
-                $(this).slideDown(300);
-            } else {
-                $(this).slideUp(300);
-            }
-        });
-
-        // Toggle columns consistently using classes
-        const unitToggleColumns = document.querySelectorAll('.unit-toggle-columns');
-        unitToggleColumns.forEach(el => {
-            if (window.showingMetric) {
-                el.classList.remove('visible');
-            } else {
-                el.classList.add('visible');
-            }
-        });
+        // Toggle all unit displays
+        toggleUnitDisplay(!window.showingMetric);
     });
 
     // Set initial state
-    document.querySelectorAll('.unit-toggle-columns').forEach(el => {
-        el.classList.remove('visible');
-    });
-    $('.unit-toggle-row').hide();
+    const btnToggleUnidad = $('#btnToggleUnidad');
+    if (btnToggleUnidad.length) {
+        btnToggleUnidad.find('span').text(window.showingMetric ? 'Libras' : 'Kilogramos');
+        btnToggleUnidad.attr('title', window.showingMetric ? 'Ver en Libras' : 'Ver en Kilogramos');
+        btnToggleUnidad.find('i').toggleClass('fa-weight fa-balance-scale', window.showingMetric);
+        btnToggleUnidad.attr('data-showing-metric', window.showingMetric);
+    }
+    
+    // Set initial display state
+    toggleUnitDisplay(!window.showingMetric);
 
     // Update button state
     const selectedBarco = $('select[name="selectedBarco"]').val();
@@ -622,56 +699,87 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         // Extraer los datos de la tabla asegurando consistencia de columnas
         const data = []
 
+        // Verificar si las columnas de conversión están visibles
+        const conversionesVisibles = document.querySelector('.unit-toggle-columns.visible') !== null
+
         // Procesar encabezados
         const headerRow = []
         const headerCells = table.querySelectorAll('thead th')
         const unitToggleColumns = [] // Índices de columnas con unidades duales
+        const columnTypes = [] // Para almacenar el tipo de cada columna
 
         headerCells.forEach((cell, index) => {
             if (cell.classList.contains('unit-toggle-columns')) {
-                const headerName =
-                    cell.querySelector('div:first-child')?.textContent.trim() || cell.textContent.split('\n')[0].trim()
-                headerRow.push(`${headerName} (Quintales)`)
-                headerRow.push(`${headerName} (Libras)`)
-                unitToggleColumns.push(index)
+                // Solo incluir columnas de conversión si están visibles
+                if (conversionesVisibles) {
+                    const headerName =
+                        cell.querySelector('div:first-child')?.textContent.trim() || cell.textContent.split('\n')[0].trim()
+                    headerRow.push(`${headerName} (Quintales)`)
+                    headerRow.push(`${headerName} (Libras)`)
+                    unitToggleColumns.push(index)
+                    // Tipos de columnas
+                    columnTypes.push('quintales')
+                    columnTypes.push('libras')
+                }
             } else if (cell.textContent.includes('Acciones')) {
                 // Ignorar columna de acciones
                 return
             } else {
-                headerRow.push(cell.textContent.trim())
+                const headerText = cell.textContent.trim();
+                headerRow.push(headerText)
+                
+                // Categorizar columna por su tipo
+                if (headerText.includes('%')) {
+                    columnTypes.push('percentage')
+                } else if (headerText.includes('Kg') || headerText.includes('Ton')) {
+                    columnTypes.push('weight')
+                } else if (headerText === 'Empresa') {
+                    columnTypes.push('text')
+                } else {
+                    columnTypes.push('numeric')
+                }
             }
         })
 
         data.push(headerRow)
 
-        // Función para preservar el texto original del número pero extraer un valor numérico para Excel
+        // Función mejorada para procesar texto numérico
         function processNumericText(text) {
             // Guarda el texto original
             const originalText = text.trim()
 
-            // Si el texto está vacío o no es un número, devolverlo tal cual
-            if (!originalText || originalText === '-' || isNaN(originalText.replace(/[^\d,.-]/g, ''))) {
-                return { text: originalText, value: originalText }
+            // Si el texto está vacío o es un guión, devolverlo como texto
+            if (!originalText || originalText === '-') {
+                return { text: originalText, value: '', isNumeric: false }
             }
 
+            // Extraer solo la parte numérica si existe
+            const numberPattern = /[-+]?[\d.,]+/;
+            const match = originalText.match(numberPattern);
+            
+            if (!match) {
+                return { text: originalText, value: '', isNumeric: false }
+            }
+            
+            const numStr = match[0];
+            
             // Detecta si es un número con formato europeo (1.234,56)
-            const isEuropeanFormat = /\d{1,3}(?:\.\d{3})+(?:,\d+)?/.test(originalText)
+            const isEuropeanFormat = /\d{1,3}(?:\.\d{3})+(?:,\d+)?/.test(numStr);
 
-            let numericValue
+            let numericValue;
             if (isEuropeanFormat) {
                 // Convierte formato europeo a número: elimina puntos y reemplaza coma por punto
-                numericValue = originalText.replace(/\./g, '').replace(',', '.')
+                numericValue = numStr.replace(/\./g, '').replace(',', '.')
             } else {
                 // Asume formato estadounidense o simplemente número con coma decimal
-                numericValue = originalText.replace(',', '.')
+                numericValue = numStr.replace(',', '.')
             }
 
-            // Elimina cualquier carácter no numérico excepto punto decimal y signo negativo
-            numericValue = numericValue.replace(/[^\d.-]/g, '')
-
+            const value = parseFloat(numericValue);
             return {
                 text: originalText,
-                value: parseFloat(numericValue),
+                value: isNaN(value) ? '' : value,
+                isNumeric: !isNaN(value)
             }
         }
 
@@ -679,138 +787,95 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         const rows = table.querySelectorAll('tbody tr')
         rows.forEach(row => {
             const rowData = []
-            const cellValues = [] // Para almacenar los valores numéricos
             const cells = row.querySelectorAll('td')
 
             cells.forEach((cell, index) => {
                 if (unitToggleColumns.includes(index)) {
-                    // Para columnas con valores duales (quintales/libras)
-                    const qqText = cell.querySelector('.top-value')?.textContent.trim() || ''
-                    const lbsText = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+                    // Para columnas con valores duales (quintales/libras), solo si están visibles
+                    if (conversionesVisibles) {
+                        const qqText = cell.querySelector('.top-value')?.textContent.trim() || ''
+                        const lbsText = cell.querySelector('.bottom-value')?.textContent.trim() || ''
 
-                    // Procesar quintales
-                    const qqProcessed = processNumericText(qqText.replace('qq', '').trim())
-                    rowData.push(qqProcessed.text)
-                    cellValues.push(qqProcessed.value)
+                        // Procesar quintales
+                        const qqProcessed = processNumericText(qqText.replace('qq', '').trim())
+                        rowData.push(qqProcessed.isNumeric ? qqProcessed.value : qqProcessed.text)
 
-                    // Procesar libras
-                    const lbsProcessed = processNumericText(lbsText.replace('lbs', '').trim())
-                    rowData.push(lbsProcessed.text)
-                    cellValues.push(lbsProcessed.value)
+                        // Procesar libras
+                        const lbsProcessed = processNumericText(lbsText.replace('lbs', '').trim())
+                        rowData.push(lbsProcessed.isNumeric ? lbsProcessed.value : lbsProcessed.text)
+                    }
                 } else {
-                    // Para celdas normales
-                    const processed = processNumericText(cell.textContent)
-                    rowData.push(processed.text)
-                    cellValues.push(processed.value)
+                    // Para celdas normales - ignorar las que contienen "Acciones"
+                    if (headerRow[rowData.length] !== "Acciones") { 
+                        const cellText = cell.textContent.trim();
+                        const processed = processNumericText(cellText)
+                        rowData.push(processed.isNumeric ? processed.value : processed.text)
+                    }
                 }
             })
 
             data.push(rowData)
-            // También guardamos los valores numéricos para usarlos más tarde
-            row.processedValues = cellValues
         })
 
         // Crear la hoja de cálculo
         const ws = XLSX.utils.aoa_to_sheet(data)
 
-        // Aplicar formato a números
+        // Aplicar formato a números y definir estilos
         for (let r = 1; r < data.length; r++) {
-            let cellIndex = 0
-
             for (let c = 0; c < data[r].length; c++) {
                 const cellRef = XLSX.utils.encode_cell({ r, c })
-                if (!ws[cellRef]) continue
+                if (!ws[cellRef]) continue;
 
-                const originalText = data[r][c]
-                const headerText = data[0][c] || ''
-
-                // Intentar convertir a número
-                const numberMatch = originalText.match(/[-+]?[\d.,]+/)
-                if (numberMatch) {
-                    const numStr = numberMatch[0]
-                    // Convertir a número para Excel
-                    let numValue
-
-                    // Si tiene puntos como separadores de miles y coma como decimal
-                    if (/\d{1,3}(?:\.\d{3})+(?:,\d+)?/.test(numStr)) {
-                        numValue = parseFloat(numStr.replace(/\./g, '').replace(',', '.'))
-                    } else {
-                        // Si no, asumimos que es un formato simple (puede tener coma como decimal)
-                        numValue = parseFloat(numStr.replace(',', '.'))
-                    }
-
-                    if (!isNaN(numValue)) {
-                        ws[cellRef].v = numValue
-                        ws[cellRef].t = 'n'
-
-                        // Aplicar formato según tipo de columna
-                        if (headerText.includes('%')) {
-                            ws[cellRef].z = '0.00%'
-                            // Si es porcentaje y ya tiene el símbolo %
-                            if (originalText.includes('%')) {
-                                ws[cellRef].v = numValue / 100
-                            }
-                        } else if (headerText.includes('Ton')) {
-                            ws[cellRef].z = '#,##0.00'
-                        } else if (headerText.includes('Quintales')) {
-                            ws[cellRef].z = '#,##0.00'
-                        } else if (headerText.includes('Libras')) {
-                            ws[cellRef].z = '#,##0'
-                        } else if (headerText.includes('Kg')) {
-                            ws[cellRef].z = '#,##0'
-                        } else if (headerText.includes('Cam. Falt.')) {
-                            ws[cellRef].z = '#,##0.00'
-                        } else if (headerText.includes('Placas')) {
-                            ws[cellRef].z = '0'
-                        } else {
-                            ws[cellRef].z = '#,##0.00'
+                const cellValue = data[r][c];
+                
+                // Skip empty cells
+                if (cellValue === '' || cellValue === undefined || cellValue === null) {
+                    continue;
+                }
+                
+                // Solo aplicar formato numérico a valores numéricos
+                if (typeof cellValue === 'number') {
+                    ws[cellRef].t = 'n';
+                    
+                    // Aplicar formato según tipo de columna
+                    const columnType = columnTypes[c];
+                    if (columnType === 'percentage') {
+                        ws[cellRef].z = '0.00%';
+                        // Si el valor es > 1 y es porcentaje, convertirlo a decimal
+                        if (cellValue > 1) {
+                            ws[cellRef].v = cellValue / 100;
                         }
+                    } else if (columnType === 'quintales') {
+                        ws[cellRef].z = '#,##0.00';
+                    } else if (columnType === 'libras') {
+                        ws[cellRef].z = '#,##0';
+                    } else if (columnType === 'weight') {
+                        ws[cellRef].z = '#,##0.00';
+                    } else {
+                        ws[cellRef].z = '#,##0.00';
                     }
                 }
 
                 // Alinear celdas
-                if (!ws[cellRef].s) ws[cellRef].s = {}
+                if (!ws[cellRef].s) ws[cellRef].s = {};
 
                 if (c === 0) {
                     // Primera columna (Empresa) - alineación izquierda
-                    ws[cellRef].s.alignment = { horizontal: 'left' }
+                    ws[cellRef].s.alignment = { horizontal: 'left' };
                 } else {
                     // Otras columnas - alineación derecha
-                    ws[cellRef].s.alignment = { horizontal: 'right' }
+                    ws[cellRef].s.alignment = { horizontal: 'right' };
                 }
 
                 // Encabezados en negrita
                 if (r === 0) {
-                    ws[cellRef].s.font = { bold: true }
+                    ws[cellRef].s.font = { bold: true };
                 }
-
-                cellIndex++
             }
         }
 
-        // Configurar anchos de columna
-        ws['!cols'] = headerRow.map((header, index) => {
-            // Determinar el ancho máximo para cada columna
-            let maxChars = header.length
-
-            for (let r = 1; r < data.length; r++) {
-                if (data[r][index]) {
-                    maxChars = Math.max(maxChars, String(data[r][index]).length)
-                }
-            }
-
-            // Ajustar ancho según el tipo de columna
-            if (index === 0) {
-                // Columna Empresa
-                return { wch: Math.max(30, maxChars) }
-            } else if (header.includes('Quintales') || header.includes('Libras')) {
-                return { wch: Math.max(18, maxChars) }
-            } else if (header.includes('%')) {
-                return { wch: Math.max(12, maxChars) }
-            } else {
-                return { wch: Math.max(15, maxChars) }
-            }
-        })
+        // Usar un cálculo mejorado de anchos de columna
+        ws['!cols'] = calculateColumnWidths(data);
 
         // Añadir la hoja al libro
         XLSX.utils.book_append_sheet(wb, ws, 'Resumen')

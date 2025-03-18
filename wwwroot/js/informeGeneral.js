@@ -47,98 +47,188 @@ $(document).ready(function () {
 
         const wb = XLSX.utils.book_new()
         const ws_data = []
-
-        const headerRow = [
-            'Empresa',
-            'Req. (Kg)',
-            'Req. (Ton)',
-            'Desc. (Kg)',
-            'Falt. (Kg)',
-            'Falt. (Ton)',
-            'Cam. Falt.',
-            'Placas',
-            '% Desc.',
-        ]
+        
+        // Verificar si las columnas de conversión están visibles
+        const showingMetric = !document.querySelector('.unit-toggle-columns.visible')
+        
+        // Construir encabezados dinámicamente en base a columnas visibles
+        const headerCells = table.querySelectorAll('thead th')
+        const headerRow = []
+        const skipColumns = []
+        const columnTypes = [] // Para determinar el formato de cada columna
+        
+        headerCells.forEach((cell, index) => {
+            // Si la columna es una columna de toggle de unidades y están ocultas, la saltamos
+            if (cell.classList.contains('unit-toggle-columns') && !cell.classList.contains('visible')) {
+                skipColumns.push(index)
+                return
+            }
+            
+            const headerText = cell.innerText.trim()
+            headerRow.push(headerText)
+            
+            // Determinar el tipo de columna para aplicar formato correcto después
+            if (headerText.includes('%')) {
+                columnTypes.push('percentage')
+            } else if (headerText.includes('Req.') || headerText.includes('Desc.') || 
+                      headerText.includes('Falt.') || headerText.includes('Kg') || headerText.includes('Ton')) {
+                columnTypes.push('weight')
+            } else if (headerText.includes('Cam. Falt.')) {
+                columnTypes.push('camion')
+            } else if (headerText.includes('Placas')) {
+                columnTypes.push('placas')
+            } else {
+                columnTypes.push('text')
+            }
+        })
+        
         ws_data.push(headerRow)
+        
+        // Inicializar array para anchos de columna
+        const columnWidths = headerRow.map(header => Math.max(10, header.length * 1.2))
 
+        // Procesar filas teniendo en cuenta columnas ocultas
         const rows = table.querySelectorAll('tbody tr')
         for (let i = 0; i < rows.length; i++) {
             const row_data = []
             const cells = rows[i].querySelectorAll('td')
+            let visibleColIdx = 0
 
-            row_data.push(cells[0].innerText.trim()) // Empresa
-            row_data.push(cells[1].innerText.trim()) // Req. (Kg)
-            row_data.push(cells[2].innerText.trim()) // Req. (Ton)
-            row_data.push(cells[3].innerText.trim()) // Desc. (Kg)
-            row_data.push(cells[5].innerText.trim()) // Falt. (Kg)
-            row_data.push(cells[6].innerText.trim()) // Falt. (Ton)
-            row_data.push(cells[8].innerText.trim()) // Cam. Falt.
-            row_data.push(cells[9].innerText.trim()) // Placas
-            row_data.push(cells[10].innerText.trim()) // % Desc.
+            for (let j = 0; j < cells.length; j++) {
+                // Saltarse columnas ocultas
+                if (skipColumns.includes(j)) continue;
+                
+                const cellText = cells[j].innerText.trim()
+                row_data.push(cellText)
+                
+                // Actualizar ancho de columna
+                columnWidths[visibleColIdx] = Math.max(
+                    columnWidths[visibleColIdx], 
+                    cellText.length * 1.1
+                )
+                visibleColIdx++
+            }
 
             ws_data.push(row_data)
         }
 
+        // Procesar pie de tabla si existe
         const footerCells = table.querySelectorAll('tfoot tr:first-child td')
         if (footerCells.length > 0) {
             const footerRow = []
-            footerRow.push(footerCells[0].innerText.trim()) // Total
-            footerRow.push(footerCells[1].innerText.trim()) // Req. (Kg)
-            footerRow.push(footerCells[2].innerText.trim()) // Req. (Ton)
-            footerRow.push(footerCells[3].innerText.trim()) // Desc. (Kg)
-            footerRow.push(footerCells[5].innerText.trim()) // Falt. (Kg)
-            footerRow.push(footerCells[6].innerText.trim()) // Falt. (Ton)
-            footerRow.push(footerCells[8].innerText.trim()) // Cam. Falt.
-            footerRow.push(footerCells[9].innerText.trim()) // Placas
-            footerRow.push(footerCells[10].innerText.trim()) // % Desc.
+            let visibleColIdx = 0
+            
+            for (let j = 0; j < footerCells.length; j++) {
+                // Saltarse columnas ocultas
+                if (skipColumns.includes(j)) continue;
+                
+                const cellText = footerCells[j].innerText.trim()
+                footerRow.push(cellText)
+                
+                // Actualizar ancho de columna
+                columnWidths[visibleColIdx] = Math.max(
+                    columnWidths[visibleColIdx], 
+                    cellText.length * 1.1
+                )
+                visibleColIdx++
+            }
+            
             ws_data.push(footerRow)
         }
 
         const ws = XLSX.utils.aoa_to_sheet(ws_data)
+        
+        // Mejorar la función para extraer números
+        function extractNumber(text) {
+            if (!text || text === '-') return null;
+            
+            // Limpiar el texto para obtener solo números
+            let numStr = text.replace(/[^\d.,\-]/g, '');
+            
+            // Si está vacío después de limpiar, no es un número
+            if (numStr === '') return null;
+            
+            // Caso especial para números europeos (1.234,56)
+            if (numStr.includes('.') && numStr.includes(',')) {
+                return parseFloat(numStr.replace(/\./g, '').replace(',', '.'));
+            } else if (numStr.includes(',')) {
+                return parseFloat(numStr.replace(',', '.'));
+            } else {
+                return parseFloat(numStr);
+            }
+        }
+        
+        // Formatear números y aplicar estilos
         for (let i = 1; i < ws_data.length; i++) {
-            for (let j = 1; j < ws_data[i].length; j++) {
+            for (let j = 0; j < ws_data[i].length; j++) {
                 const cellAddress = XLSX.utils.encode_cell({ r: i, c: j })
                 const cellValue = ws_data[i][j]
-
-                if (typeof cellValue === 'string') {
-                    const isPercentage = cellValue.includes('%')
-
-                    if (isPercentage) {
-                        const numericValue = parseFloat(cellValue.replace(/[^\d.,\-]/g, '')) / 100
-                        ws[cellAddress] = {
-                            v: numericValue,
-                            t: 'n',
-                            z: '0.00%',
+                
+                // Omitir celdas vacías
+                if (!cellValue || cellValue === '-') continue;
+                
+                // Determinar si es un número y extraerlo
+                const numValue = extractNumber(cellValue);
+                
+                if (numValue !== null) {
+                    ws[cellAddress] = {
+                        v: numValue,
+                        t: 'n'
+                    };
+                    
+                    // Aplicar formato según el tipo de columna
+                    const colType = columnTypes[j];
+                    
+                    if (colType === 'percentage') {
+                        ws[cellAddress].z = '0.00%';
+                        // Convertir a decimal si es porcentaje
+                        if (numValue > 1 && cellValue.includes('%')) {
+                            ws[cellAddress].v = numValue / 100;
                         }
+                    } else if (colType === 'weight') {
+                        ws[cellAddress].z = '#,##0.00';
+                    } else if (colType === 'camion') {
+                        // Formato para mostrar 2 decimales en camiones faltantes
+                        ws[cellAddress].z = '#,##0.00';
+                    } else if (colType === 'placas') {
+                        // Para placas, enteros sin decimales
+                        ws[cellAddress].z = '0';
                     } else {
-                        let rawValue = cellValue
-                            .replace(/[^\d.,\-]/g, '')
-                            .replace(/\./g, '')
-                            .replace(',', '.')
-
-                        if (!isNaN(rawValue) && rawValue.length > 0) {
-                            ws[cellAddress] = {
-                                v: parseFloat(rawValue),
-                                t: 'n',
-                                z: '@',
-                            }
-                        }
+                        // Valor por defecto para otros tipos numéricos
+                        ws[cellAddress].z = '#,##0.00';
                     }
+                    
+                    // Agregar alineación
+                    if (!ws[cellAddress].s) ws[cellAddress].s = {};
+                    ws[cellAddress].s.alignment = { horizontal: j === 0 ? 'left' : 'right' };
                 }
             }
         }
 
-        ws['!cols'] = [
-            { width: 30 }, // Empresa
-            { width: 12 }, // Req. (Kg)
-            { width: 10 }, // Req. (Ton)
-            { width: 12 }, // Desc. (Kg)
-            { width: 12 }, // Falt. (Kg)
-            { width: 10 }, // Falt. (Ton)
-            { width: 10 }, // Cam. Falt.
-            { width: 8 }, // Placas
-            { width: 10 }, // % Desc.
-        ]
+        // Aplicar estilos a encabezados
+        for (let j = 0; j < headerRow.length; j++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: 0, c: j })
+            if (!ws[cellAddress].s) ws[cellAddress].s = {};
+            ws[cellAddress].s.font = { bold: true };
+            ws[cellAddress].s.alignment = { horizontal: 'center' };
+        }
+
+        // Aplicar anchos de columna optimizados
+        ws['!cols'] = columnWidths.map((width, index) => {
+            // Ajustar según el tipo de columna
+            if (index === 0) {
+                // Columna de empresa
+                return { wch: Math.max(25, width) };
+            } else if (columnTypes[index] === 'percentage') {
+                return { wch: Math.min(12, width) };
+            } else if (columnTypes[index] === 'weight') {
+                return { wch: Math.min(15, width) };
+            } else if (columnTypes[index] === 'placas') {
+                return { wch: Math.min(10, width) };
+            } else {
+                return { wch: Math.min(Math.max(8, width), 20) };
+            }
+        });
 
         XLSX.utils.book_append_sheet(wb, ws, 'Informe General')
         XLSX.writeFile(wb, filename + '.xlsx')

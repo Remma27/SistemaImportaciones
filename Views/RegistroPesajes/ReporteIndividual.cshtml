@@ -223,16 +223,4 @@
     <script src="~/js/registroPesajes.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <script src="~/js/reporteIndividual.js"></script>
-    <script>
-        $(document).ready(function () {
-            $('#btnExportarExcel').prop('disabled', false).removeClass('disabled');
-
-            setTimeout(function () {
-                if ($('#btnExportarExcel').prop('disabled')) {
-                    console.warn('El botón sigue deshabilitado después de inicialización');
-                    $('#btnExportarExcel').prop('disabled', false).removeClass('disabled');
-                }
-            }, 500);
-        });
-    </script>
 }

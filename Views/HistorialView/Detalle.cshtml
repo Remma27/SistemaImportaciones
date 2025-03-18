@@ -1,0 +1,293 @@
+@model HistorialViewModel
+@{
+    ViewData["Title"] = "Detalle de Historial";
+    
+    string GetOperacionNombre(string tipoOperacion)
+    {
+        switch (tipoOperacion.ToUpper())
+        {
+            case "CREAR": return "Creación";
+            case "ANTES_EDITAR": return "Antes de Editar";
+            case "DESPUES_EDITAR": return "Después de Editar";
+            case "ELIMINAR": return "Eliminación";
+            case "LOGIN": return "Inicio de Sesión";
+            case "LOGOUT": return "Cierre de Sesión";
+            default: return tipoOperacion;
+        }
+    }
+    
+    string GetBadgeClass(string tipoOperacion)
+    {
+        string badgeClass = "";
+        switch (tipoOperacion.ToUpper())
+        {
+            case "CREAR":
+                badgeClass = "badge-crear";
+                break;
+            case "ANTES_EDITAR":
+                badgeClass = "badge-antes-editar";
+                break;
+            case "DESPUES_EDITAR":
+                badgeClass = "badge-despues-editar";
+                break;
+            case "ELIMINAR":
+                badgeClass = "badge-eliminar";
+                break;
+            case "LOGIN":
+                badgeClass = "badge-login";
+                break;
+            case "LOGOUT":
+                badgeClass = "badge-logout";
+                break;
+            default:
+                badgeClass = "badge bg-secondary";
+                break;
+        }
+        return badgeClass;
+    }
+    
+    string GetIconForOperacion(string tipoOperacion)
+    {
+        switch (tipoOperacion.ToUpper())
+        {
+            case "CREAR": return "fas fa-plus-circle";
+            case "ANTES_EDITAR": return "fas fa-edit";
+            case "DESPUES_EDITAR": return "fas fa-check-circle";
+            case "ELIMINAR": return "fas fa-trash-alt";
+            case "LOGIN": return "fas fa-sign-in-alt";
+            case "LOGOUT": return "fas fa-sign-out-alt";
+            default: return "fas fa-info-circle";
+        }
+    }
+    
+    // Helper para determinar si es el usuario del sistema
+    bool EsUsuarioSistema() => Model.UsuarioId == 1;
+}
+
+<link rel="stylesheet" href="~/css/historial.css" asp-append-version="true" />
+
+<div class="container-fluid detail-container">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Inicio</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Index">Historial</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Registro #@Model.Id</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card detail-card">
+                <div class="card-header detail-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                        <h4 class="mb-0">
+                            <i class="@GetIconForOperacion(Model.TipoOperacion) me-2"></i> 
+                            Detalle de la Operación: <span class="@GetBadgeClass(Model.TipoOperacion)">@GetOperacionNombre(Model.TipoOperacion)</span>
+                        </h4>
+                        <span class="badge bg-light text-dark mt-2 mt-md-0">ID: @Model.Id</span>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Información General -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="detail-section h-100">
+                                <h5 class="mb-3"><i class="fas fa-tags me-2"></i>Información General</h5>
+                                <div class="row mb-2">
+                                    <div class="col-5 info-label">ID de Registro:</div>
+                                    <div class="col-7 info-value">@Model.Id</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 info-label">Tabla:</div>
+                                    <div class="col-7 info-value">
+                                        <span class="badge bg-light text-dark">@Model.Tabla</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 info-label">Tipo de Operación:</div>
+                                    <div class="col-7 info-value">
+                                        <span class="@GetBadgeClass(Model.TipoOperacion)">
+                                            @GetOperacionNombre(Model.TipoOperacion)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 info-label">Fecha:</div>
+                                    <div class="col-7 info-value">
+                                        <i class="far fa-calendar-alt me-1"></i> 
+                                        @Model.FechaHora.ToString("dd/MM/yyyy")
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-5 info-label">Hora:</div>
+                                    <div class="col-7 info-value">
+                                        <i class="far fa-clock me-1"></i> 
+                                        @Model.FechaHora.ToString("HH:mm:ss")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información de Usuario -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="detail-section h-100">
+                                <h5 class="mb-3"><i class="fas fa-user me-2"></i>Información de Usuario</h5>
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-light rounded-circle p-3 me-3">
+                                        @if (EsUsuarioSistema())
+                                        {
+                                            <i class="fas fa-cogs fa-2x text-secondary"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-user-circle fa-2x text-primary"></i>
+                                        }
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">@(EsUsuarioSistema() ? "Sistema" : Model.NombreUsuario)</h6>
+                                        <small class="text-muted">ID: @Model.UsuarioId</small>
+                                    </div>
+                                </div>
+                                <p class="text-muted mb-0 small">
+                                    @if (EsUsuarioSistema())
+                                    {
+                                        <span>Operación ejecutada automáticamente por el sistema el @Model.FechaHora.ToString("dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES")).</span>
+                                    }
+                                    else
+                                    {
+                                        <span>El usuario realizó esta operación el @Model.FechaHora.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES")).</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="detail-section h-100">
+                                <h5 class="mb-3"><i class="fas fa-clipboard me-2"></i>Descripción</h5>
+                                @if (!string.IsNullOrEmpty(Model.Descripcion))
+                                {
+                                    <div class="alert alert-light border mb-0">
+                                        <p class="mb-0">@Model.Descripcion</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-light border mb-0">
+                                        <p class="text-muted mb-0">No se proporcionó una descripción para esta operación</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Datos JSON -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                        <h5 class="mb-0"><i class="fas fa-code me-2"></i>Datos (JSON)</h5>
+                                        <div class="mt-2 mt-md-0">
+                                            <a asp-action="VerJSON" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-external-link-alt me-1"></i>Ver en pantalla completa
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <pre id="jsonContent" class="json-preview">@Model.DatosJSON</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if (Model.TipoOperacion.ToUpper() == "DESPUES_EDITAR")
+                    {
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info d-flex">
+                                    <div class="me-3 fs-4">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h5>Registro de edición</h5>
+                                        <p class="mb-0">Este registro muestra el <strong>estado después de una edición</strong>. 
+                                        Para ver qué cambios se realizaron, puedes buscar el registro de "Antes de Editar" con la misma hora y tabla.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.TipoOperacion.ToUpper() == "ANTES_EDITAR")
+                    {
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-warning d-flex">
+                                    <div class="me-3 fs-4">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div>
+                                        <h5>Registro de edición</h5>
+                                        <p class="mb-0">Este registro muestra el <strong>estado antes de una edición</strong>. 
+                                        Para ver los cambios realizados, busca el registro "Después de Editar" con la misma hora y tabla.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <div class="card-footer bg-light d-flex justify-content-center flex-wrap">
+                    <a asp-action="Index" class="btn btn-secondary me-2 mb-2 mb-md-0 action-btn">
+                        <i class="fas fa-arrow-left me-2"></i> Volver al listado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Función para formatear y colorear el JSON si es posible
+        $(document).ready(function() {
+            try {
+                const jsonContent = document.getElementById('jsonContent').textContent;
+                const jsonObj = JSON.parse(jsonContent);
+                const formattedJson = JSON.stringify(jsonObj, null, 2);
+                document.getElementById('jsonContent').textContent = formattedJson;
+            } catch (e) {
+                console.log('No se pudo formatear el JSON:', e);
+            }
+        });
+        
+        // Función para copiar JSON al portapapeles
+        function copyJsonToClipboard() {
+            const jsonContent = document.getElementById('jsonContent').textContent;
+            navigator.clipboard.writeText(jsonContent)
+                .then(() => {
+                    // Mostrar mensaje de éxito
+                    const toast = document.createElement('div');
+                    toast.className = 'position-fixed bottom-0 end-0 p-3 m-3 bg-success text-white rounded';
+                    toast.style.zIndex = '9999';
+                    toast.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>¡JSON copiado al portapapeles!</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 2000);
+                })
+                .catch(err => {
+                    console.error('Error al copiar: ', err);
+                });
+        }
+    </script>
+}

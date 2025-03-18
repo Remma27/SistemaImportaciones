@@ -1,5 +1,4 @@
 using dotenv.net;
-using dotenv.net.Utilities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Authorization;
@@ -24,6 +23,10 @@ using System.Text;
 using MySqlConnector;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
 using Microsoft.AspNetCore.Authentication;
+using API.Services;
+using Serilog;
+using HistorialService = Sistema_de_Gestion_de_Importaciones.Services.HistorialService;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -184,6 +187,9 @@ builder.Services.AddLogging(logging =>
     }
 });
 
+// Add this to your existing logging configuration
+builder.Logging.AddFile("Logs/app-{Date}.log", LogLevel.Information);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -266,6 +272,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<HistorialService>();
 
 builder.Services.AddTransient<CookieDelegatingHandler>();
 
@@ -360,6 +367,16 @@ builder.Services.AddScoped<IMovimientoService>(sp =>
     return new MovimientoService(httpClient, configuration, logger, memoryCache);
 });
 
+builder.Services.AddTransient<API.Services.HistorialService>();
+
+builder.Services.AddScoped<IHistorialService>(sp =>
+{
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<HistorialService>>();
+    return new HistorialService(httpClient, configuration, logger);
+});
+
 builder.Services.AddHsts(options =>
 {
     options.Preload = true;
@@ -396,28 +413,37 @@ else
     app.UseHsts();
 }
 
-var securityHeadersPolicy = new SecurityHeadersPolicy();
-
+// Reordenados los middleware en el orden correcto
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseMiddleware<AuthDebugMiddleware>();
+// Agregar este middleware justo después de la autorización
+app.Use(async (context, next) =>
+{
+    // Extraer el userId del header si viene de una solicitud API-a-API
+    if (context.Request.Headers.TryGetValue("X-UserId", out var userIdValue) && !string.IsNullOrEmpty(userIdValue))
+    {
+        string userId = userIdValue.ToString();
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId)
+        };
 
+        var identity = new ClaimsIdentity(claims, "ApiKey");
+        context.User.AddIdentity(identity);
+        
+        app.Logger.LogDebug("Usuario autenticado desde header X-UserId: {UserId}", userId);
+    }
+
+    await next();
+});
+
+// Solo dejamos los middleware esenciales
 app.UseMiddleware<SessionExpirationMiddleware>();
-
 app.UseMiddleware<ApiLoggingMiddleware>();
-app.UseMiddleware<RequestSanitizationMiddleware>();
-app.UseMiddleware<SecurityHeadersMiddleware>(securityHeadersPolicy);
-app.UseMiddleware<CspFixMiddleware>();
-
-app.UseMiddleware<ApiErrorHandlingMiddleware>();
-app.UseMiddleware<AuthorizationExceptionMiddleware>();
 
 app.MapControllerRoute(
     name: "mvc",

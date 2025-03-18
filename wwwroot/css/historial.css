@@ -30,11 +30,10 @@
 
 /* Estilos para la tabla de historial */
 .historial-table {
-    width: 100%;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    min-width: 800px; /* Asegura un ancho mínimo para que se active el scroll horizontal */
+    width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0;
 }
 
 .historial-table thead th {
@@ -100,48 +99,49 @@
 
 /* Nuevos estilos de etiquetas de operación mejoradas */
 .operacion-tag {
-    display: flex;
+    display: inline-flex !important;
     align-items: center;
-    padding: 6px 8px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    white-space: nowrap;
-    max-width: 100%;
-    color: white;
     justify-content: center;
-    width: auto;
-    min-width: 80px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 5px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    white-space: nowrap;
 }
 
 .operacion-crear {
-    background-color: #28a745;
+    background-color: #198754;
+    color: white;
 }
 
 .operacion-antes-editar {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: #fd7e14;
+    color: white;
 }
 
 .operacion-despues-editar {
-    background-color: #17a2b8;
+    background-color: #0dcaf0;
+    color: white;
 }
 
 .operacion-eliminar {
     background-color: #dc3545;
+    color: white;
 }
 
 .operacion-login {
     background-color: #6f42c1;
+    color: white;
 }
 
 .operacion-logout {
-    background-color: #6c757d;
+    background-color: #495057;
+    color: white;
 }
 
 .operacion-otro {
     background-color: #6c757d;
+    color: white;
 }
 
 /* Estilos para nombre de tabla */
@@ -586,4 +586,243 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         margin-left: 0;
         width: 100%;
     }
+}
+
+/* Mejoras específicas para la visualización en pantallas medianas */
+@media (min-width: 769px) and (max-width: 992px) {
+    /* Ajustes específicos para pantallas medianas (tablets) */
+    .historial-table {
+        min-width: 750px; /* Ancho mínimo más pequeño para tablets */
+    }
+    
+    .historial-table thead th {
+        font-size: 0.8rem;
+        padding: 10px 8px;
+    }
+    
+    .historial-table tbody td {
+        font-size: 0.85rem;
+        padding: 8px 6px;
+    }
+    
+    /* Hacer las tags de operación más compactas pero mantener el texto */
+    .operacion-tag {
+        padding: 4px 6px;
+        min-width: 70px;
+        font-size: 0.75rem;
+    }
+    
+    .operacion-text {
+        display: inline-block;
+        font-size: 0.75rem;
+    }
+    
+    .operacion-tag i {
+        font-size: 0.8rem;
+        margin-right: 3px;
+    }
+    
+    /* Ajustar espaciado para hacer más compacto */
+    .table-name {
+        padding: 3px 6px;
+        font-size: 0.8rem;
+        max-width: 90px;
+    }
+    
+    .descripcion-cell {
+        max-width: 180px; /* Limitar ancho para evitar desbordamiento */
+    }
+    
+    .fecha-container {
+        font-size: 0.8rem;
+    }
+    
+    /* Mejorar la distribución de columnas */
+    .historial-table tbody td[data-label="ID"] {
+        max-width: 40px;
+    }
+    
+    .historial-table tbody td[data-label="Usuario"] {
+        max-width: 100px;
+    }
+    
+    .historial-table tbody td[data-label="Tabla"] {
+        max-width: 100px;
+    }
+    
+    .historial-table tbody td[data-label="Operación"] {
+        min-width: 80px;
+    }
+    
+    /* Fix para el scrolling horizontal al filtrar */
+    .card-body {
+        overflow-x: auto;
+    }
+}
+
+/* Mejorar contraste de las etiquetas para mayor legibilidad */
+.operacion-tag.operacion-crear {
+    background-color: #198754; /* Verde más oscuro */
+}
+
+.operacion-tag.operacion-antes-editar {
+    background-color: #fd7e14; /* Naranja más oscuro */
+    color: #fff; /* Texto blanco para mejor contraste */
+}
+
+.operacion-tag.operacion-despues-editar {
+    background-color: #0dcaf0; /* Azul más brillante */
+}
+
+/* Specific table improvements for all screen sizes */
+.historial-table {
+    width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 0;
+}
+
+/* Force smaller font size and tighter spacing for medium screens */
+@media (max-width: 1199px) {
+    .historial-table {
+        font-size: 0.8rem;
+    }
+    
+    .historial-table th,
+    .historial-table td {
+        padding: 6px 4px !important;
+    }
+    
+    .operacion-tag {
+        min-width: 30px !important;
+        padding: 4px !important;
+    }
+    
+    .operacion-text {
+        display: none !important;
+    }
+    
+    .table-name {
+        max-width: 60px !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+    }
+    
+    .descripcion-cell {
+        max-width: 120px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .fecha-container {
+        font-size: 0.75rem !important;
+    }
+    
+    .fecha-container div {
+        white-space: nowrap;
+    }
+}
+
+/* Complete mobile transformation - vertical cards instead of table */
+@media (max-width: 767px) {
+    .historial-table thead {
+        display: none;
+    }
+    
+    .historial-table, 
+    .historial-table tbody, 
+    .historial-table tr {
+        display: block;
+        width: 100%;
+    }
+    
+    .historial-table tr {
+        margin-bottom: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+    }
+    
+    .historial-table td {
+        display: flex;
+        text-align: left;
+        padding: 8px 15px !important;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .historial-table td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        width: 40%;
+        margin-right: 10px;
+    }
+    
+    .historial-table td:last-child {
+        border-bottom: none;
+    }
+    
+    .table-name, 
+    .descripcion-cell {
+        max-width: 100% !important;
+    }
+    
+    .operacion-text {
+        display: inline-block !important;
+    }
+    
+    .operacion-tag {
+        min-width: auto !important;
+        width: auto !important;
+    }
+}
+
+/* Fix for DataTables controls on small screens */
+@media (max-width: 767px) {
+    div.dataTables_wrapper div.dataTables_length,
+    div.dataTables_wrapper div.dataTables_filter,
+    div.dataTables_wrapper div.dataTables_info,
+    div.dataTables_wrapper div.dataTables_paginate {
+        text-align: left !important;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    
+    div.dataTables_wrapper div.dataTables_filter input {
+        width: 80%;
+        margin-left: 0 !important;
+    }
+}
+
+/* Make sure operation tags are visible on all screen sizes */
+.operacion-tag {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    white-space: nowrap;
+}
+
+.operacion-tag i {
+    margin-right: 6px;
+    font-size: 1rem;
+}
+
+/* Improved colors with better contrast */
+.operacion-crear { background-color: #198754; color: white; }
+.operacion-antes-editar { background-color: #fd7e14; color: white; }
+.operacion-despues-editar { background-color: #0dcaf0; color: white; }
+.operacion-eliminar { background-color: #dc3545; color: white; }
+.operacion-login { background-color: #6f42c1; color: white; }
+.operacion-logout { background-color: #495057; color: white; }
+.operacion-otro { background-color: #6c757d; color: white; }
+
+/* Fix DataTables responsive layout issues */
+.dataTables_scroll {
+    overflow-x: auto !important;
 }

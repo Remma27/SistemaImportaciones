@@ -249,7 +249,7 @@
                                                 <div class="position-relative">
                                                     <div class="small text-muted mb-1">Requerido</div>
                                                     <div class="fw-bold fs-4 mb-1">@totalKilosRequeridos.ToString("N0") Kg</div>
-                                                    <div class="small text-primary">
+                                                    <div class="small text-primary unit-toggle-element" style="display: none;">
                                                         @((totalKilosRequeridos * 2.20462M).ToString("N0")) lbs | 
                                                         @((totalKilosRequeridos / 45.359237M).ToString("N2")) qq
                                                     </div>
@@ -265,7 +265,7 @@
                                                 <div class="position-relative">
                                                     <div class="small text-muted mb-1">Descargado</div>
                                                     <div class="fw-bold fs-4 mb-1">@descargaTotal.ToString("N0") Kg</div>
-                                                    <div class="small text-primary">
+                                                    <div class="small text-primary unit-toggle-element" style="display: none;">
                                                         @((descargaTotal * 2.20462M).ToString("N0")) lbs | 
                                                         @((descargaTotal / 45.359237M).ToString("N2")) qq
                                                     </div>
@@ -287,9 +287,10 @@
                                                     </div>
                                                     <div class="fw-bold fs-4 mb-1 @(esSobrante || esFaltante ? "text-white" : "")">
                                                         @(esSobrante ? "+" : esFaltante ? "-" : "")@Math.Abs(diferenciaTotal).ToString("N0") Kg
-                                                    </div>
-                                                    <div class="mt-1 small @(esSobrante || esFaltante ? "text-white" : "")">
-                                                        (@Math.Abs(porcentajeFaltanteSobrante).ToString("N2")%)
+                                                        <div class="mt-1 small @(esSobrante || esFaltante ? "text-white" : "") unit-toggle-element" style="display: none;">
+                                                            @(esSobrante ? "+" : esFaltante ? "-" : "")@Math.Abs(diferenciaTotal * 2.20462M).ToString("N0") lbs | 
+                                                            @(esSobrante ? "+" : esFaltante ? "-" : "")@Math.Abs(diferenciaTotal / 45.359237M).ToString("N2") qq
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -341,18 +342,31 @@
                                                     <div class="mt-3 small text-muted">
                                                         <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
                                                             <span>Capacidad:</span>
-                                                            <span class="fw-bold">@escotilla.CapacidadKg.ToString("N0") Kg</span>
+                                                            <span class="fw-bold">@escotilla.CapacidadKg.ToString("N0") Kg
+                                                                <span class="unit-toggle-element d-block small text-muted" style="display: none;">
+                                                                    @((escotilla.CapacidadKg * 2.20462M).ToString("N0")) lbs | 
+                                                                    @((escotilla.CapacidadKg / 45.359237M).ToString("N2")) qq
+                                                                </span>
+                                                            </span>
                                                         </div>
                                                         <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
                                                             <span>Descargado:</span>
                                                             <span class="fw-bold" style="color: @donutColor">
                                                                 @escotilla.DescargaRealKg.ToString("N0") Kg
+                                                                <span class="unit-toggle-element d-block small" style="display: none;">
+                                                                    @((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs | 
+                                                                    @((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq
+                                                                </span>
                                                             </span>
                                                         </div>
                                                         <div class="d-flex justify-content-between">
                                                             <span>Diferencia:</span>
                                                             <span class="fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Azul : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
                                                                 @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0") Kg
+                                                                <span class="unit-toggle-element d-block small" style="display: none;">
+                                                                    @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg * 2.20462M).ToString("N0")) lbs | 
+                                                                    @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg / 45.359237M).ToString("N2")) qq
+                                                                </span>
                                                             </span>
                                                         </div>
                                                     </div>
@@ -465,22 +479,441 @@
             });
         }
 
+        /*
         document.getElementById('btnToggleUnidad')?.addEventListener('click', function() {
             const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
             const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
         
             unitToggleElements.forEach(el => {
-                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                if (el.style.display === 'none' || el.style.display === '') {
+                    $(el).fadeIn(300); // Usando jQuery para una animación suave
+                } else {
+                    $(el).fadeOut(300);
+                }
             });
         
             unitToggleRows.forEach(row => {
-                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+                if (row.style.display === 'none' || row.style.display === '') {
+                    $(row).fadeIn(300);
+                } else {
+                    $(row).fadeOut(300);
+                }
+            });
+
+            // Opcional: actualizar atributo del botón para controlar estado
+            const isShowing = this.getAttribute('data-showing') === 'true';
+            this.setAttribute('data-showing', !isShowing);
+        });
+        */
+    });
+</script>
+<script>
+    // Sincronizar con el estado global del toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        // Asegurarse que todos los elementos están ocultos inicialmente
+        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
+        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        // Ocultar todo por defecto
+        unitToggleElements.forEach(el => { el.style.display = 'none'; });
+        unitToggleRows.forEach(row => { el.style.display = 'none'; });
+        
+        // Verificar si ya se inicializó el toggle en otro lugar
+        setTimeout(function() {
+            // Si el estado global indica mostrar unidades alternativas
+            if (window.showingMetric === false) {
+                unitToggleElements.forEach(el => {
+                    $(el).fadeIn(300);
+                });
+                
+                unitToggleRows.forEach(row => {
+                    $(row).fadeIn(300);
+                });
+            }
+        }, 300);
+        
+        // Escuchar eventos globales de cambio de unidades
+        window.addEventListener('unitToggleChanged', function(e) {
+            const showAlternative = e.detail.showAlternative;
+            
+            unitToggleElements.forEach(el => {
+                if (showAlternative) {
+                    $(el).fadeIn(300);
+                } else {
+                    $(el).fadeOut(300);
+                }
+            });
+            
+            unitToggleRows.forEach(row => {
+                if (showAlternative) {
+                    $(row).fadeIn(300);
+                } else {
+                    $(row).fadeOut(300);
+                }
             });
         });
     });
-    </script>
+</script>
+<script>
+    // Función para asegurar que todas las cards de escotillas respondan al toggle
+    function verificarElementosToggle() {
+        // Verificar elementos en las cards de escotillas
+        const elementosEscotilla = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log('Elementos toggle en escotillas encontrados:', elementosEscotilla.length);
+        
+        // Si no hay elementos o son pocos, verificar la estructura
+        if (elementosEscotilla.length < 10) {
+            // Buscar elementos que podrían necesitar la clase unit-toggle-element
+            const posiblesElementosToggle = document.querySelectorAll('.escotilla-card span:contains("lbs"), .escotilla-card span:contains("qq")');
+            console.log('Posibles elementos que necesitan clase toggle:', posiblesElementosToggle.length);
+        }
+        
+        // Verificar filas de tabla toggle
+        const filasToggle = document.querySelectorAll('.unit-toggle-row');
+        console.log('Filas con toggle encontradas:', filasToggle.length);
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ejecutar verificación después de que todo esté cargado
+        setTimeout(verificarElementosToggle, 1000);
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Asegurarse que todos los elementos estén ocultos inicialmente
+        const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
+        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        // Ocultar todo por defecto
+        unitToggleElements.forEach(el => { el.style.display = 'none'; });
+        unitToggleRows.forEach(row => { row.style.display = 'none'; });
+        
+        // Escuchar eventos globales de cambio de unidades desde registroPesajes.js
+        window.addEventListener('unitToggleChanged', function(e) {
+            const showAlternative = e.detail.showAlternative;
+            
+            // Aplicar a los elementos de este componente
+            unitToggleElements.forEach(el => {
+                if (showAlternative) {
+                    $(el).fadeIn(300);
+                } else {
+                    $(el).fadeOut(300);
+                }
+            });
+            
+            unitToggleRows.forEach(row => {
+                if (showAlternative) {
+                    $(row).fadeIn(300);
+                } else {
+                    $(row).fadeOut(300);
+                }
+            });
+        });
+        
+        // Verificar estado inicial después de cargar
+        setTimeout(function() {
+            if (window.showingMetric === false) {
+                unitToggleElements.forEach(el => {
+                    $(el).show();
+                });
+                
+                unitToggleRows.forEach(row => {
+                    $(row).show();
+                });
+            }
+            
+            // Ejecutar verificación después de que todo esté cargado
+            verificarElementosToggle();
+        }, 300);
+    });
 
-    <style>
+    // Función para asegurar que todas las cards de escotillas respondan al toggle
+    function verificarElementosToggle() {
+        // Verificar elementos en las cards de escotillas
+        const elementosEscotilla = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log('Elementos toggle en escotillas encontrados:', elementosEscotilla.length);
+        
+        // Verificar filas de tabla toggle
+        const filasToggle = document.querySelectorAll('.unit-toggle-row');
+        console.log('Filas con toggle encontradas:', filasToggle.length);
+        
+        // Forzar actualización de visualización para las cards de escotillas si es necesario
+        if (window.showingMetric === false) {
+            elementosEscotilla.forEach(el => {
+                el.style.display = 'block';
+            });
+        }
+    }
+</script>
+<script>
+    // Diagnóstico para verificar si las unidades se muestran correctamente
+    function diagnosticarToggleUnidades() {
+        console.group("Diagnóstico de toggle de unidades");
+        console.log("showingMetric global:", window.showingMetric);
+        
+        const elementosToggle = document.querySelectorAll('.unit-toggle-element');
+        const elementosToggleVisibles = Array.from(elementosToggle).filter(el => 
+            el.style.display !== 'none' && getComputedStyle(el).display !== 'none');
+        
+        console.log("Elementos con clase unit-toggle-element:", elementosToggle.length);
+        console.log("Elementos visibles:", elementosToggleVisibles.length);
+        
+        // Verificar elementos específicos
+        const escotillaToggleElements = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log("Elementos en escotillas:", escotillaToggleElements.length);
+        console.log("Elementos visibles en escotillas:", 
+            Array.from(escotillaToggleElements).filter(el => 
+                el.style.display !== 'none' && getComputedStyle(el).display !== 'none').length);
+        
+        console.groupEnd();
+    }
+    
+    // Ejecutar diagnóstico después de la carga inicial y cada vez que cambia el estado
+    setTimeout(diagnosticarToggleUnidades, 1000);
+    window.addEventListener('unitToggleChanged', function() {
+        setTimeout(diagnosticarToggleUnidades, 500);
+    });
+</script>
+<script>
+    // Función mejorada para diagnosticar y corregir problemas de visualización de unidades
+    function diagnosticarToggleUnidades(forceUpdate = false) {
+        console.group("Diagnóstico y corrección de toggle de unidades");
+        
+        // Leer valor directamente del localStorage para asegurarnos que es el más actualizado
+        const savedMetricState = localStorage.getItem('showingMetric');
+        
+        // Si no hay valor en localStorage o es indefinido, forzar a true (métrico)
+        if (savedMetricState === null || typeof savedMetricState === 'undefined') {
+            localStorage.setItem('showingMetric', 'true');
+            window.showingMetric = true;
+        } else {
+            // Actualizar variable global para reflejar el valor en localStorage
+            window.showingMetric = savedMetricState === 'true';
+        }
+        
+        const showAlternative = window.showingMetric === false;
+        console.log("Estado actual: showingMetric =", window.showingMetric);
+        console.log("Estado en localStorage =", savedMetricState);
+        console.log("Mostrando unidades alternativas:", showAlternative);
+        
+        // Seleccionar todos los elementos de toggle en este componente
+        const toggleElements = document.querySelectorAll('.unit-toggle-element');
+        const toggleRows = document.querySelectorAll('.unit-toggle-row');
+        
+        console.log("Total elementos toggle encontrados:", toggleElements.length);
+        console.log("Total filas toggle encontradas:", toggleRows.length);
+        
+        // Aplicar visibilidad directamente basada en el estado global
+        toggleElements.forEach(el => {
+            const currentDisplay = getComputedStyle(el).display;
+            const shouldBeVisible = showAlternative;
+            
+            if (shouldBeVisible && (currentDisplay === 'none' || forceUpdate)) {
+                console.log("Corrigiendo elemento que debería estar visible");
+                el.style.display = 'block';
+                el.classList.add('show');
+            } else if (!shouldBeVisible && (currentDisplay !== 'none' || forceUpdate)) {
+                console.log("Ocultando elemento que no debería estar visible");
+                el.style.display = 'none';
+                el.classList.remove('show');
+            }
+        });
+        
+        // Misma lógica para filas
+        toggleRows.forEach(row => {
+            const currentDisplay = getComputedStyle(row).display;
+            const shouldBeVisible = showAlternative;
+            
+            if (shouldBeVisible && (currentDisplay === 'none' || forceUpdate)) {
+                row.style.display = 'table-row'; // Mostrar como fila de tabla
+                row.classList.add('show');
+            } else if (!shouldBeVisible && (currentDisplay !== 'none' || forceUpdate)) {
+                row.style.display = 'none';
+                row.classList.remove('show');
+            }
+        });
+        
+        // Verificar específicamente elementos en cards de escotillas
+        const escotillaElements = document.querySelectorAll('.escotilla-card .unit-toggle-element');
+        console.log("Elementos en escotillas:", escotillaElements.length);
+        
+        escotillaElements.forEach(el => {
+            if (showAlternative) {
+                el.style.display = 'block';
+                el.classList.add('show');
+            } else {
+                el.style.display = 'none';
+                el.classList.remove('show');
+            }
+        });
+        
+        console.groupEnd();
+        
+        // Retornar estado para validación
+        return { 
+            updated: true,
+            showAlternative: showAlternative
+        };
+    }
+    
+    // Ejecutar diagnóstico y corrección en varios momentos clave
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verificar si hay un parámetro URL para resetear el estado
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('resetMetricToggle')) {
+            localStorage.setItem('showingMetric', 'true');
+            window.showingMetric = true;
+        }
+        
+        // 1. Al cargar la página inicialmente
+        setTimeout(() => diagnosticarToggleUnidades(true), 500);
+        
+        // 2. Cada vez que cambia el estado del toggle
+        window.addEventListener('unitToggleChanged', function(e) {
+            console.log("Evento unitToggleChanged detectado:", e.detail);
+            setTimeout(() => diagnosticarToggleUnidades(true), 100);
+        });
+        
+        // 3. Verificar periódicamente para asegurar consistencia
+        setInterval(() => {
+            // Comprobar el localStorage directamente para detectar cambios
+            const savedMetricState = localStorage.getItem('showingMetric');
+            const currentShowingMetric = window.showingMetric;
+            
+            if ((savedMetricState === 'true' && currentShowingMetric === false) || 
+                (savedMetricState === 'false' && currentShowingMetric === true)) {
+                console.warn("Estado inconsistente entre localStorage y variable global. Corrigiendo...");
+                diagnosticarToggleUnidades(true);
+            }
+            
+            const showAlternative = window.showingMetric === false;
+            const toggleElements = document.querySelectorAll('.unit-toggle-element');
+            const visibleCount = Array.from(toggleElements).filter(el => 
+                getComputedStyle(el).display !== 'none').length;
+                
+            // Si hay inconsistencia, corregir
+            if ((showAlternative && visibleCount === 0) || 
+                (!showAlternative && visibleCount > 0)) {
+                console.warn("Detectada inconsistencia en visibilidad, corrigiendo...");
+                diagnosticarToggleUnidades(true);
+            }
+        }, 2000);
+        
+        // Agregar evento beforeunload para verificar que no queden estados inconsistentes
+        window.addEventListener('beforeunload', function() {
+            // Asegurarse que localStorage y window.showingMetric están sincronizados
+            localStorage.setItem('showingMetric', window.showingMetric.toString());
+        });
+    });
+    
+    // Verificación inmediata del estado actual
+    (function() {
+        const savedMetricState = localStorage.getItem('showingMetric');
+        if (typeof savedMetricState !== 'undefined' && savedMetricState !== null) {
+            console.log("Estado inicial en localStorage:", savedMetricState);
+            window.showingMetric = savedMetricState === 'true';
+            diagnosticarToggleUnidades(true);
+        } else {
+            console.log("showingMetric no está definido en localStorage, inicializando a true");
+            localStorage.setItem('showingMetric', 'true');
+            window.showingMetric = true;
+        }
+    })();
+</script>
+
+<style>
+    /* Asegurar que los elementos toggle se muestren correctamente cuando están activos */
+    .unit-toggle-element.show {
+        display: block !important;
+    }
+    
+    /* Asegurar que las filas toggle se muestren correctamente cuando están activas */
+    tr.unit-toggle-row.show {
+        display: table-row !important;
+    }
+    
+    /* Estilos específicos para elementos en cards de escotillas */
+    .escotilla-card .unit-toggle-element.show {
+        display: block !important;
+        margin-top: 3px;
+    }
+    
+    /* Fijar altura mínima para las cards de escotilla para consistencia */
+    .escotilla-card {
+        min-height: 380px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Hacer que el contenedor de gráficos tenga altura fija */
+    .donut-chart-container {
+        height: 160px;
+        margin-bottom: 1rem;
+        flex-shrink: 0; /* Evitar que se comprima */
+    }
+    
+    /* Hacer que los datos de la card se expandan para llenar el espacio restante */
+    .escotilla-card .mt-3.small.text-muted {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    /* Asegurar que todas las secciones de información tienen el mismo alto */
+    .escotilla-card .d-flex.justify-content-between {
+        min-height: 2.5rem; /* Altura mínima para cada línea */
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+<style>
+    /* Estilos existentes para el donut chart... */
+    .donut-chart-container {
+        position: relative;
+        margin: auto;
+        width: 160px;
+        height: 160px;
+    }
+    
+    /* Modificación para hacer las cards de escotilla más uniformes */
+    .col-md-6.col-lg-2.text-center {
+        display: flex; /* Usar flexbox para igualar alturas */
+    }
+    
+    .col-md-6.col-lg-2.text-center > div {
+        width: 100%; /* Asegurar que la card ocupe todo el ancho */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Hacer que todas las cards tengan la misma altura basada en la más alta */
+    .escotilla-card {
+        height: 100%;
+        min-height: 380px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* La sección de detalles crece para llenar el espacio disponible */
+    .escotilla-card .mt-3.small.text-muted {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Los separadores deben tener margen consistente */
+    .escotilla-card .d-flex.justify-content-between {
+        padding: 0.5rem 0;
+    }
+    
+    /* Resto de estilos existentes... */
+    .donut-chart-container canvas {
+        position: relative;
+        z-index: 1;
+    }
+    
     .donut-chart-container {
         position: relative;
         margin: auto;
@@ -553,6 +986,51 @@
         z-index: 1;
         color: #000;
         text-shadow: 0px 0px 3px rgba(255,255,255,0.9);
+    }
+    
+    /* Nuevos estilos para unidades de medida */
+    .unit-toggle-element {
+        display: none; /* Inicialmente oculto */
+        margin-top: 3px;
+        padding-top: 2px;
+        border-top: 1px dotted rgba(0,0,0,0.1);
+        transition: opacity 0.3s ease;
+    }
+    
+    /* Estilos específicos para tarjetas */
+    .escotilla-card .unit-toggle-element {
+        font-size: 0.75rem !important;
+        color: inherit;
+        opacity: 0.85;
+        line-height: 1.2;
+    }
+    
+    /* Para métricas */
+    .metric-box .unit-toggle-element {
+        font-size: 0.8rem !important;
+        line-height: 1.3;
+    }
+    
+    /* Para elementos con fondo de color */
+    .bg-primary .unit-toggle-element,
+    .bg-success .unit-toggle-element,
+    .bg-danger .unit-toggle-element,
+    [style*="background-color"] .unit-toggle-element {
+        border-top-color: rgba(255,255,255,0.2);
+    }
+
+    /* Nuevos estilos para unidades de medida - asegurar que están ocultos por defecto */
+    .unit-toggle-element {
+        display: none !important; /* Inicialmente oculto con !important para evitar conflictos */
+        margin-top: 3px;
+        padding-top: 2px;
+        border-top: 1px dotted rgba(0,0,0,0.1);
+        transition: opacity 0.3s ease;
+    }
+    
+    /* Cuando se muestra explícitamente */
+    .unit-toggle-element.show {
+        display: block !important;
     }
     </style>
             }

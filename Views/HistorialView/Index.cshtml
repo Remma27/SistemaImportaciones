@@ -1,9 +1,11 @@
 @model HistorialResponseViewModel
 @{
     ViewData["Title"] = "Historial del Sistema";
+    ViewData["FullWidth"] = true; // Use full width container
 }
 
 <link rel="stylesheet" href="~/css/historial.css" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
 
 <div class="container-fluid historial-container">
     <!-- Título y breadcrumbs -->
@@ -86,7 +88,7 @@
         </div>
     </div>
 
-    <!-- Tabla de Historial -->
+    <!-- Tabla de Historial - Simplified for better responsiveness -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -102,19 +104,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-body p-0 p-md-3">
-                    <div class="alert alert-info d-md-none mb-2">
-                        <small><i class="fas fa-info-circle me-1"></i> Haz clic en una fila para ver detalles</small>
+                <div class="card-body">
+                    <div class="alert alert-info d-md-none mb-3">
+                        Desliza horizontalmente para ver toda la información
                     </div>
+                    
+                    <!-- Use native scrolling instead of DataTables responsive -->
                     <div class="table-responsive">
-                        <table id="tablaHistorial" class="table table-striped table-hover historial-table w-100">
+                        <table id="tablaHistorial" class="table table-striped table-hover table-sm nowrap" width="100%">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Usuario</th>
                                     <th>Tabla</th>
                                     <th>Operación</th>
-                                    <th>Fecha y Hora</th>
+                                    <th>Fecha</th>
                                     <th>Descripción</th>
                                 </tr>
                             </thead>
@@ -137,27 +141,27 @@
                                             case "ANTES_EDITAR":
                                                 badgeClass = "operacion-antes-editar";
                                                 operacionIcon = "fas fa-edit";
-                                                operacionText = "Antes Editar";
+                                                operacionText = "Antes";
                                                 break;
                                             case "DESPUES_EDITAR":
                                                 badgeClass = "operacion-despues-editar";
                                                 operacionIcon = "fas fa-check-circle";
-                                                operacionText = "Después Editar";
+                                                operacionText = "Después";
                                                 break;
                                             case "ELIMINAR":
                                                 badgeClass = "operacion-eliminar";
                                                 operacionIcon = "fas fa-trash-alt";
-                                                operacionText = "Eliminación";
+                                                operacionText = "Eliminar";
                                                 break;
                                             case "LOGIN":
                                                 badgeClass = "operacion-login";
                                                 operacionIcon = "fas fa-sign-in-alt";
-                                                operacionText = "Inicio Sesión";
+                                                operacionText = "Login";
                                                 break;
                                             case "LOGOUT":
                                                 badgeClass = "operacion-logout";
                                                 operacionIcon = "fas fa-sign-out-alt";
-                                                operacionText = "Cierre Sesión";
+                                                operacionText = "Logout";
                                                 break;
                                             default:
                                                 badgeClass = "operacion-otro";
@@ -170,37 +174,28 @@
                                             data-usuario="@registro.UsuarioId"
                                             data-id="@registro.Id"
                                             class="registro-fila">
-                                            <td data-label="ID" class="align-middle">@registro.Id</td>
-                                            <td data-label="Usuario" class="align-middle">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-user-circle me-2 text-secondary"></i>
-                                                    <span>@(registro.UsuarioId == 1 ? "Sistema" : registro.NombreUsuario)</span>
-                                                </div>
+                                            <td data-label="ID">@registro.Id</td>
+                                            <td data-label="Usuario">
+                                                <span class="d-inline-block text-truncate" style="max-width: 150px;">
+                                                    <i class="fas fa-user-circle me-1 text-secondary"></i>
+                                                    @(registro.UsuarioId == 1 ? "Sistema" : registro.NombreUsuario)
+                                                </span>
                                             </td>
-                                            <td data-label="Tabla" class="align-middle">
-                                                <div class="table-badge-container">
-                                                    <span class="table-name">@registro.Tabla</span>
-                                                </div>
+                                            <td data-label="Tabla">
+                                                <span class="table-name">@registro.Tabla</span>
                                             </td>
-                                            <td data-label="Operación" class="align-middle">
-                                                <div class="operacion-tag @badgeClass">
-                                                    <i class="@operacionIcon" aria-hidden="true"></i>
+                                            <td data-label="Operación">
+                                                <span class="operacion-tag @badgeClass">
+                                                    <i class="@operacionIcon"></i>
                                                     <span class="operacion-text">@operacionText</span>
-                                                </div>
+                                                </span>
                                             </td>
-                                            <td data-label="Fecha y Hora" class="align-middle">
-                                                <div class="fecha-container">
-                                                    <div>
-                                                        <i class="far fa-calendar-alt me-1 text-secondary"></i>
-                                                        @registro.FechaHora.ToString("dd/MM/yyyy")
-                                                    </div>
-                                                    <div>
-                                                        <i class="far fa-clock me-1 text-secondary"></i>
-                                                        @registro.FechaHora.ToString("HH:mm:ss")
-                                                    </div>
-                                                </div>
+                                            <td data-label="Fecha y Hora">
+                                                <span>@registro.FechaHora.ToString("dd/MM/yy HH:mm")</span>
                                             </td>
-                                            <td data-label="Descripción" class="align-middle descripcion-cell">@registro.Descripcion</td>
+                                            <td data-label="Descripción">
+                                                <span class="descripcion-cell">@registro.Descripcion</span>
+                                            </td>
                                         </tr>
                                     }
                                 }
@@ -225,45 +220,41 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Limpiar almacenamiento de DataTables para evitar problemas con filtros anteriores
+            // Limpiar almacenamiento anterior
             localStorage.removeItem('DataTables_tablaHistorial_/HistorialView/Index');
             sessionStorage.removeItem('DataTables_tablaHistorial_/HistorialView/Index');
             
-            // Verificar datos antes de inicializar
-            
-            // Inicializar DataTable con opciones corregidas
+            // Inicializar DataTable con mejor configuración para tablets
             var table = $('#tablaHistorial').DataTable({
-                "destroy": true, // Destruir cualquier instancia previa
-                "retrieve": false, // No recuperar una tabla existente
+                "destroy": true,
                 "paging": true,
-                "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
-                "pageLength": 100, // Mostrar 100 registros por página
-                "searching": true,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "pageLength": 25,
                 "ordering": true,
+                "order": [[0, "desc"]],
+                "searching": true,
                 "info": true,
                 "autoWidth": false,
-                "responsive": {
-                    details: {
-                        type: 'column',
-                        target: 'tr'
-                    }
-                },
+                "scrollX": true, // Habilitar scroll horizontal en lugar de responsive
                 "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+                    "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json",
+                    "emptyTable": "No hay registros disponibles",
+                    "zeroRecords": "No se encontraron registros coincidentes"
                 },
-                "order": [[0, "desc"]], // Ordenar por ID descendente por defecto
-                "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
-                "stateSave": false, // No guardar estado para evitar filtros previos
-                "initComplete": function() {
-                    console.log("DataTables inicializado. Registros visibles:", this.api().rows({page:'current'}).count());
-                    console.log("DataTables total:", this.api().rows().count());
-                }
+                "dom": '<"row"<"col-sm-6"l><"col-sm-6"f>><"table-responsive"rt><"row"<"col-sm-6"i><"col-sm-6"p>>',
+                "stateSave": false,
+                "columnDefs": [
+                    { "width": "5%", targets: 0 },
+                    { "width": "15%", targets: 1 },
+                    { "width": "15%", targets: 2 },
+                    { "width": "10%", targets: 3 },
+                    { "width": "10%", targets: 4 },
+                    { "width": "45%", targets: 5 }
+                ]
             });
-            
-            // Eliminar cualquier filtro que pueda haberse aplicado
-            table.search('').columns().search('').draw();
             
             // Mejorar la experiencia al hacer clic en una fila
             $('#tablaHistorial tbody').on('click', 'tr', function() {
@@ -276,16 +267,15 @@
             // CSS para indicar que las filas son clickeables
             $('#tablaHistorial tbody tr').css('cursor', 'pointer');
             
-            // Filtros dinámicos con limpieza adecuada
+            // Filtros dinámicos personalizados
             $('#filtroTabla, #filtroOperacion, #filtroUsuario').on('change', function() {
                 applyFilters();
             });
             
             $('#limpiarFiltros').on('click', function() {
-                // Limpiar todos los filtros
                 $('#filtroTabla, #filtroOperacion, #filtroUsuario').val('');
                 $.fn.dataTable.ext.search.pop();
-                table.search('').columns().search('').draw();
+                table.search('').draw();
             });
             
             function applyFilters() {
@@ -293,11 +283,10 @@
                 var operacion = $('#filtroOperacion').val();
                 var usuario = $('#filtroUsuario').val();
                 
-                // Limpiar cualquier filtro previo
+                // Limpiar filtros anteriores
                 $.fn.dataTable.ext.search.pop();
                 
                 if (tabla || operacion || usuario) {
-                    // Método de filtrado sin excluir ningún ID
                     $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
                         var row = $(table.row(dataIndex).node());
                         
@@ -310,33 +299,21 @@
                 }
                 
                 table.draw();
-                console.log("Después de filtrar, registros visibles:", table.rows({search:'applied'}).count());
             }
             
-            // Mejorar la visualización de DataTables
-            $('.dataTables_wrapper .dataTables_length select').addClass('form-select form-select-sm');
-            $('.dataTables_wrapper .dataTables_filter input').addClass('form-control form-control-sm');
+            // Mejorar los controles de DataTables
+            $('.dataTables_filter input').addClass('form-control form-control-sm');
+            $('.dataTables_length select').addClass('form-select form-select-sm');
             
-            // Mejorar la visualización en dispositivos móviles
-            function checkResponsiveDisplay() {
-                if (window.innerWidth < 768) {
-                    $('.dataTables_filter input').attr('placeholder', 'Buscar...');
-                    
-                    // Ajustar la descripción para dispositivos móviles
-                    $('.descripcion-cell').each(function() {
-                        var text = $(this).text();
-                        if (text.length > 50) {
-                            $(this).text(text.substring(0, 50) + '...');
-                        }
-                    });
-                }
-            }
-            
-            // Ejecutar al cargar y cuando se redimensiona la ventana
-            checkResponsiveDisplay();
+            // Auto-redimensionar la tabla cuando cambia el tamaño de la ventana
             $(window).resize(function() {
-                checkResponsiveDisplay();
+                table.columns.adjust();
             });
+            
+            // Ajustar columnas después de un pequeño delay
+            setTimeout(function() {
+                table.columns.adjust();
+            }, 200);
         });
     </script>
 }

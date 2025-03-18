@@ -800,28 +800,47 @@
 <!-- Reemplazar scripts previos de sincronización por esta versión unificada -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Verificar si jQuery está disponible
+        const hasJQuery = typeof jQuery !== 'undefined';
+        
         // Manejo unificado para todos los elementos togglables
         const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
         const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
         
         // Función para aplicar estado actual
         function aplicarEstadoUnidades(showAlternative) {
-            unitToggleElements.forEach(el => {
+            unitToggleElements.forEach(function(element) {
                 if (showAlternative) {
-                    el.style.display = 'block';
-                    el.classList.add('show');
+                    if (hasJQuery) {
+                        jQuery(element).fadeIn(300);
+                    } else {
+                        element.style.display = 'block';
+                    }
+                    element.classList.add('show');
                 } else {
-                    el.style.display = 'none';
-                    el.classList.remove('show');
+                    if (hasJQuery) {
+                        jQuery(element).fadeOut(300);
+                    } else {
+                        element.style.display = 'none';
+                    }
+                    element.classList.remove('show');
                 }
             });
             
-            unitToggleRows.forEach(row => {
+            unitToggleRows.forEach(function(row) {
                 if (showAlternative) {
-                    row.style.display = 'table-row';
+                    if (hasJQuery) {
+                        jQuery(row).fadeIn(300);
+                    } else {
+                        row.style.display = 'table-row';
+                    }
                     row.classList.add('show');
                 } else {
-                    row.style.display = 'none';
+                    if (hasJQuery) {
+                        jQuery(row).fadeOut(300);
+                    } else {
+                        row.style.display = 'none';
+                    }
                     row.classList.remove('show');
                 }
             });
@@ -847,84 +866,144 @@
             }
         });
     });
-    
-    // Eliminar verificaciones periódicas que pueden causar problemas
-    // El código anterior que usaba setInterval ha sido removido
 </script>
 
-<!-- Añadir script de emergencia para reconexión con el sistema global -->
+<!-- Script para corregir problema de jQuery en Azure -->
 <script>
-    // Script de emergencia para reconectar con el sistema global si se pierde la sincronización
+    // Función para verificar si jQuery está disponible
+    function checkjQuery() {
+        return typeof jQuery !== 'undefined';
+    }
+    
+    // Script para corregir error "el is not defined" en línea 914
     document.addEventListener('DOMContentLoaded', function() {
-        const btnToggleUnidadGlobal = document.getElementById('btnToggleUnidad');
+        // Corregir línea problemática que usa el en lugar de row
+        const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
+        unitToggleRows.forEach(function(row) {
+            row.style.display = 'none';
+        });
         
-        // Si existe un botón global de unidades, usarlo como fuente de verdad
-        if (btnToggleUnidadGlobal) {
-            btnToggleUnidadGlobal.addEventListener('click', function() {
-                // Forzar actualización después de un corto retraso
-                setTimeout(function() {
-                    try {
-                        // Leer el estado actual del sistema desde localStorage
-                        const savedMetricState = localStorage.getItem('showingMetric');
-                        const showAlternative = savedMetricState === 'false';
-                        
-                        // Aplicar a todos los elementos toggle en este componente
-                        document.querySelectorAll('.unit-toggle-element').forEach(el => {
-                            el.style.display = showAlternative ? 'block' : 'none';
-                            if (showAlternative) el.classList.add('show');
-                            else el.classList.remove('show');
-                        });
-                        
-                        document.querySelectorAll('.unit-toggle-row').forEach(row => {
-                            row.style.display = showAlternative ? 'table-row' : 'none';
-                            if (showAlternative) row.classList.add('show');
-                            else row.classList.remove('show');
-                        });
-                    } catch (error) {
-                        console.warn("Error en recuperación de emergencia:", error);
-                    }
-                }, 300);
-            });
-        }
+        // Verificar y sincronizar estado de unidades correctamente
+        setTimeout(function() {
+            try {
+                let savedMetricState = 'true';
+                try {
+                    savedMetricState = localStorage.getItem('showingMetric');
+                    if (savedMetricState === null) savedMetricState = 'true';
+                } catch (e) {
+                    console.warn("Error accediendo a localStorage:", e);
+                }
+                
+                const showAlternative = savedMetricState === 'false';
+                const elements = document.querySelectorAll('.unit-toggle-element');
+                const rows = document.querySelectorAll('.unit-toggle-row');
+                
+                elements.forEach(function(element) {
+                    element.style.display = showAlternative ? 'block' : 'none';
+                    if (showAlternative) element.classList.add('show');
+                    else element.classList.remove('show');
+                });
+                
+                rows.forEach(function(row) {
+                    row.style.display = showAlternative ? 'table-row' : 'none';
+                    if (showAlternative) row.classList.add('show');
+                    else row.classList.remove('show');
+                });
+                
+                window.showingMetric = savedMetricState === 'true';
+            } catch (error) {
+                console.warn("Error en sincronización inicial:", error);
+            }
+        }, 800);
     });
 </script>
 
+<!-- Script específico para entornos Azure -->
 <script>
-    // Script específico para entornos de producción (Azure)
-    (function() {
-        const isProduction = window.location.hostname !== 'localhost' && 
-                            window.location.hostname !== '127.0.0.1';
+    // Detectar si estamos en ambiente de producción (Azure)
+    document.addEventListener('DOMContentLoaded', function() {
+        const isAzure = window.location.hostname.includes('azure') || 
+                       window.location.hostname.includes('azurewebsites');
         
-        if (isProduction) {
-            // En entornos de producción, añadir retardo adicional para asegurar sincronización
-            setTimeout(function() {
+        if (isAzure) {
+            console.log("Detectado entorno Azure - aplicando fixes específicos");
+            
+            // Crear jQuery si no existe (fallback)
+            if (typeof jQuery === 'undefined') {
+                console.warn("jQuery no detectado en Azure. Creando placeholders para evitar errores.");
+                
+                // Crear un placeholder simple de jQuery para evitar errores
+                window.$ = window.jQuery = function(selector) {
+                    const elements = document.querySelectorAll(selector);
+                    return {
+                        fadeIn: function() { 
+                            elements.forEach(el => { el.style.display = 'block'; });
+                            return this;
+                        },
+                        fadeOut: function() { 
+                            elements.forEach(el => { el.style.display = 'none'; });
+                            return this;
+                        },
+                        show: function() { 
+                            elements.forEach(el => { el.style.display = 'block'; });
+                            return this;
+                        },
+                        hide: function() { 
+                            elements.forEach(el => { el.style.display = 'none'; });
+                            return this;
+                        }
+                    };
+                };
+            }
+            
+            // Función de fallback para toggle de unidades (sin animaciones)
+            window.toggleUnitDisplay = function(showAlternative) {
+                const elements = document.querySelectorAll('.unit-toggle-element');
+                const rows = document.querySelectorAll('.unit-toggle-row');
+                
+                elements.forEach(function(el) {
+                    el.style.display = showAlternative ? 'block' : 'none';
+                    if (showAlternative) el.classList.add('show');
+                    else el.classList.remove('show');
+                });
+                
+                rows.forEach(function(row) {
+                    row.style.display = showAlternative ? 'table-row' : 'none';
+                    if (showAlternative) row.classList.add('show');
+                    else row.classList.remove('show');
+                });
+            };
+            
+            // Revisar periódicamente el estado para mantener sincronización
+            let azureCheckInterval = setInterval(function() {
                 try {
-                    // Verificar si estamos correctamente sincronizados
                     const savedMetricState = localStorage.getItem('showingMetric');
+                    if (savedMetricState === null) return;
+                    
                     const showAlternative = savedMetricState === 'false';
-                    const visibleCount = Array.from(document.querySelectorAll('.unit-toggle-element'))
-                        .filter(el => getComputedStyle(el).display !== 'none').length;
+                    const elements = document.querySelectorAll('.unit-toggle-element');
+                    const visibleCount = Array.from(elements).filter(el => 
+                        el.style.display !== 'none' && getComputedStyle(el).display !== 'none').length;
                     
                     // Detectar desincronización
-                    const estaDesincronizado = (showAlternative && visibleCount === 0) || 
-                                             (!showAlternative && visibleCount > 0);
+                    const desincronizado = (showAlternative && visibleCount === 0) || 
+                                         (!showAlternative && visibleCount > 0);
                     
-                    if (estaDesincronizado) {
-                        console.log("Detectada desincronización en producción, corrigiendo...");
-                        document.querySelectorAll('.unit-toggle-element').forEach(el => {
-                            el.style.display = showAlternative ? 'block' : 'none';
-                        });
-                        
-                        document.querySelectorAll('.unit-toggle-row').forEach(row => {
-                            row.style.display = showAlternative ? 'table-row' : 'none';
-                        });
+                    if (desincronizado) {
+                        console.log("Corrigiendo estado de elementos toggle en Azure");
+                        window.toggleUnitDisplay(showAlternative);
                     }
-                } catch (error) {
-                    console.warn("Error en verificación para entorno de producción:", error);
+                } catch (e) {
+                    console.warn("Error en verificación periódica:", e);
                 }
-            }, 1000);
+            }, 1500);
+            
+            // Limpiar intervalo después de 10 segundos para evitar sobrecarga
+            setTimeout(function() {
+                clearInterval(azureCheckInterval);
+            }, 10000);
         }
-    })();
+    });
 </script>
 
 <!-- ...existing script and style tags... -->

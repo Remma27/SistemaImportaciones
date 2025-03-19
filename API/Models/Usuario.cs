@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API.Models
 {
@@ -16,5 +17,9 @@ namespace API.Models
         public DateTime? fecha_creacion { get; set; }
         public DateTime? ultimo_acceso { get; set; }
         public bool? activo { get; set; }
+        public int? rol_id { get; set; }
+
+        [ForeignKey("rol_id")]
+        public virtual Rol? Rol { get; set; }
     }
 }

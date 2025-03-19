@@ -1,0 +1,172 @@
+@model IEnumerable<API.Models.Usuario>
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+}
+
+<link rel="stylesheet" href="~/css/gestion-usuarios.css" asp-append-version="true" />
+
+<div class="container-fluid px-4">
+    <div class="dashboard-header shadow-sm rounded mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-users-cog me-2"></i> Gestión de Usuarios</h1>
+            <a asp-action="Create" class="btn btn-light">
+                <i class="fas fa-user-plus me-1"></i> Nuevo Usuario
+            </a>
+        </div>
+    </div>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Home">Inicio</a></li>
+            <li class="breadcrumb-item active">Gestión de Usuarios</li>
+        </ol>
+    </nav>
+
+    <div class="card user-management-card mb-4">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0"><i class="fas fa-users me-2 text-primary"></i> Lista de Usuarios</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body" style="overflow: visible !important;">
+            <div class="table-responsive" style="overflow: visible !important;">
+                <table class="table table-hover align-middle" id="datatablesUsers">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Último Acceso</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.id</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2 text-primary">
+                                            <i class="fas fa-user-circle fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@item.nombre</div>
+                                            <small class="text-muted">@item.email</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary role-badge">@(item.Rol?.nombre ?? "Sin rol")</span>
+                                </td>
+                                <td>
+                                    @if (item.activo == true)
+                                    {
+                                        <span class="badge bg-success status-badge">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger status-badge">Inactivo</span>
+                                    }
+                                </td>
+                                <td>@(item.ultimo_acceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</td>
+                                <td class="text-center position-relative">
+                                    <div class="dropdown action-dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Acciones
+                                        </button>
+                                        <ul class="dropdown-menu shadow">
+                                            <li>
+                                                <a class="dropdown-item" asp-action="Details" asp-route-id="@item.id">
+                                                    <i class="fas fa-info-circle text-info"></i> Ver Detalles
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" asp-action="Edit" asp-route-id="@item.id">
+                                                    <i class="fas fa-edit text-primary"></i> Editar
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" asp-action="AsignarRol" asp-route-id="@item.id">
+                                                    <i class="fas fa-user-tag text-warning"></i> Asignar Rol
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item" asp-action="CambiarPassword" asp-route-id="@item.id">
+                                                    <i class="fas fa-key text-dark"></i> Cambiar Contraseña
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" asp-action="ToggleActivo" asp-route-id="@item.id">
+                                                    @if (item.activo == true)
+                                                    {
+                                                        <i class="fas fa-ban text-secondary"></i> <span>Desactivar</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fas fa-check text-success"></i> <span>Activar</span>
+                                                    }
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@item.id">
+                                                    <i class="fas fa-trash"></i> Eliminar
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Inicializar DataTable con opciones mínimas
+            $('#datatablesUsers').DataTable({
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+                },
+                order: [[0, 'asc']]
+            });
+            
+            // SOLUCIÓN SIMPLE Y DIRECTA PARA DROPDOWNS
+            
+            // Eliminar cualquier evento existente
+            $(document).off('click', '.dropdown-toggle');
+            $('.dropdown-menu').removeClass('show');
+            
+            // Manejar clicks en botones dropdown mediante Bootstrap nativo
+            var dropdownElementList = document.querySelectorAll('.dropdown-toggle');
+            dropdownElementList.forEach(function(element) {
+                // Eliminar cualquier instancia previa
+                var dropdownInstance = bootstrap.Dropdown.getInstance(element);
+                if (dropdownInstance) {
+                    dropdownInstance.dispose();
+                }
+                
+                // Crear nueva instancia sin opciones personalizadas
+                new bootstrap.Dropdown(element);
+            });
+            
+            // Eliminar cualquier estilo inline que pueda causar problemas
+            setTimeout(function() {
+                $('.dropdown-menu').removeAttr('style');
+                $('.dropdown-toggle').removeAttr('style');
+                $('.dropdown').removeAttr('style');
+            }, 500);
+        });
+    </script>
+}

@@ -1,0 +1,125 @@
+@model API.Models.Usuario
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
+
+<link rel="stylesheet" href="~/css/gestion-usuarios.css" asp-append-version="true" />
+
+<div class="container-fluid px-4">
+    <div class="dashboard-header shadow-sm rounded mb-4">
+        <h1><i class="fas fa-user-plus me-2"></i> Nuevo Usuario</h1>
+    </div>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Home">Inicio</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Gestión de Usuarios</a></li>
+            <li class="breadcrumb-item active">Crear Usuario</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card user-management-card mb-4 form-card">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-user-plus text-primary me-2"></i> Datos del Nuevo Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" class="fade-in">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <input type="hidden" asp-for="id" value="0" />
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-floating input-with-icon">
+                                    <i class="fas fa-user-circle"></i>
+                                    <input asp-for="nombre" class="form-control" placeholder="Nombre completo" required />
+                                    <label asp-for="nombre">Nombre Completo</label>
+                                    <span asp-validation-for="nombre" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-floating input-with-icon">
+                                    <i class="fas fa-envelope"></i>
+                                    <input asp-for="email" class="form-control" type="email" placeholder="Email" required />
+                                    <label asp-for="email">Email</label>
+                                    <span asp-validation-for="email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-floating input-with-icon">
+                                    <i class="fas fa-key"></i>
+                                    <input asp-for="password_hash" class="form-control" type="password" placeholder="Contraseña" required />
+                                    <label asp-for="password_hash">Contraseña</label>
+                                    <span asp-validation-for="password_hash" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    @{
+                                        // Garantizar un valor no nullable para el checkbox
+                                        bool isActive = Model?.activo.HasValue == true ? Model.activo.Value : true;
+                                    }
+                                    <input type="checkbox" id="activo" name="activo" class="form-check-input" value="true" checked />
+                                    <label for="activo" class="form-check-label">Usuario Activo</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mobile-stack">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Guardar Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card user-management-card sidebar-nav">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i> Información</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading"><i class="fas fa-lightbulb me-1"></i> Al crear un usuario nuevo:</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Se le asignará el rol "Operador" por defecto</li>
+                            <li>El usuario podrá acceder inmediatamente si está activo</li>
+                            <li>Podrá modificar su rol después mediante "Asignar Rol"</li>
+                        </ul>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mt-3">
+                        <h6><i class="fas fa-shield-alt me-1"></i> Recomendaciones de seguridad:</h6>
+                        <ul class="ps-3 small text-muted">
+                            <li>Use contraseñas de al menos 8 caracteres</li>
+                            <li>Incluya letras mayúsculas y minúsculas</li>
+                            <li>Incluya números y símbolos especiales</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

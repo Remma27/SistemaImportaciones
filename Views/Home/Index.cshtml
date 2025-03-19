@@ -124,19 +124,48 @@
                                         <span>Informe General</span>
                                     </a>
                                 </li>
-                                <!-- Nueva opción para Historial -->
-                                <li class="list-group-item">
-                                    <a href="@Url.Action("Index", "HistorialView")"
-                                        class="d-flex align-items-center text-dark text-decoration-none menu-link">
-                                        <i class="fas fa-history me-3 text-success"></i>
-                                        <span>Historial del Sistema</span>
-                                    </a>
-                                </li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        
+        <!-- Administration Card - Solo visible para administradores -->
+        @if (User.IsInRole("Administrador"))
+        {
+            <div class="col-12 col-md-10 col-lg-7 mb-5">
+                <div class="card shadow">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Administración
+                        </h5>
+                    </div>
+                    <div class="card-body py-4">
+                        <div class="row">
+                            <div class="col-12">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="@Url.Action("Index", "GestionUsuarios")"
+                                            class="d-flex align-items-center text-dark text-decoration-none menu-link">
+                                            <i class="fas fa-users-cog me-3 text-danger"></i>
+                                            <span>Gestión de Usuarios</span>
+                                        </a>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <a href="@Url.Action("Index", "HistorialView")"
+                                            class="d-flex align-items-center text-dark text-decoration-none menu-link">
+                                            <i class="fas fa-history me-3 text-danger"></i>
+                                            <span>Historial del Sistema</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 </div>

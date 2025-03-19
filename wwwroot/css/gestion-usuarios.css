@@ -1,0 +1,530 @@
+/* Estilos base para tarjetas de usuario - manteniendo solo lo esencial */
+.user-management-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+/* Estilos para el dropdown específicamente en la tabla de usuarios */
+#datatablesUsers .action-dropdown {
+    position: relative;
+}
+
+#datatablesUsers .dropdown-menu {
+    position: absolute !important;
+    right: 0;
+    left: auto !important;
+    min-width: 200px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+/* Animar la aparición del dropdown */
+@keyframes fadeInMenu {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#datatablesUsers .dropdown-menu.show {
+    animation: fadeInMenu 0.2s ease forwards;
+}
+
+/* Estilos para los elementos del dropdown */
+.action-dropdown .dropdown-item i {
+    width: 20px;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.action-dropdown .dropdown-divider {
+    margin: 0.3rem 0;
+}
+
+/* Badges con diseño moderno */
+.role-badge, .status-badge {
+    font-weight: 500;
+    border-radius: 20px;
+    padding: 0.4em 0.8em;
+}
+
+.status-badge {
+    width: 80px;
+    text-align: center;
+}
+
+/* Mejoras en diseño responsivo */
+.mobile-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Mantener los estilos del header dashboard sin afectar al header principal */
+.dashboard-header {
+    background: linear-gradient(135deg, #1a3a70 0%, #2d6bdf 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* Estilos para formularios */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    color: #6c757d;
+}
+
+.input-with-icon input {
+    padding-left: 35px;
+}
+
+/* Animación básica */
+.fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilos para avatares */
+.avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    background: #0d6efd;
+}
+
+/* Asegurar que la tabla tenga overflow visible - SOLO para datatablesUsers */
+#datatablesUsers_wrapper {
+    overflow: visible !important;
+}
+
+.table-responsive {
+    overflow-x: auto !important;
+}
+
+/* Fix para el sidebar */
+.sidebar-nav {
+    position: relative;
+}
+
+/* Estilos adicionales para arreglar los botones de acción */
+.action-dropdown {
+    position: relative !important;
+    display: inline-block !important;
+}
+
+/* Hacer que el botón de dropdown sea realmente clicable */
+.action-dropdown .dropdown-toggle {
+    cursor: pointer;
+    position: relative;
+    z-index: 5;
+}
+
+/* Asegurar que el menú desplegable aparezca */
+.action-dropdown .dropdown-menu.show {
+    display: block !important;
+    position: absolute !important;
+    z-index: 1000 !important;
+    top: 100% !important;
+    left: auto !important;
+    right: 0 !important;
+    transform: none !important;
+    min-width: 10rem;
+}
+
+/* Prevenir que DataTables capture eventos o que haga overflow hidden */
+.dataTables_wrapper {
+    overflow: visible !important;
+}
+
+.dataTable {
+    overflow: visible !important;
+}
+
+/* Asegurar que la celda que contiene el dropdown tiene position */
+.table td:last-child {
+    position: relative;
+}
+
+/* Fix para dispositivos móviles */
+@media (max-width: 767.98px) {
+    .action-dropdown .dropdown-menu.show {
+        left: auto !important;
+        right: 0 !important;
+        width: auto !important; 
+        min-width: 10rem !important;
+    }
+}
+
+/* CORRECCIÓN ESPECÍFICA PARA DROPDOWN DE ACCIONES */
+/* Estos estilos sobreescriben cualquier otro estilo que pueda interferir */
+
+/* Estilo básico para el contenedor del dropdown */
+.action-dropdown {
+    position: relative !important;
+    display: inline-block !important;
+}
+
+/* Hacer que el botón sea clicable */
+.action-dropdown .dropdown-toggle {
+    cursor: pointer !important;
+    z-index: 5 !important;
+}
+
+/* Asegurar que el menú dropdown aparezca correctamente */
+.action-dropdown .dropdown-menu {
+    position: absolute !important;
+    top: 100% !important;
+    right: 0 !important;
+    left: auto !important;
+    z-index: 9999 !important;
+    float: left !important;
+    min-width: 10rem !important;
+    padding: 0.5rem 0 !important;
+    margin: 0.125rem 0 0 !important;
+    font-size: 1rem !important;
+    color: #212529 !important;
+    text-align: left !important;
+    list-style: none !important;
+    background-color: #fff !important;
+    background-clip: padding-box !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    border-radius: 0.25rem !important;
+}
+
+/* Clase show específica para mostrar el dropdown */
+.action-dropdown .dropdown-menu.show {
+    display: block !important;
+}
+
+/* Eliminar cualquier transformación que pueda estar causando problemas */
+#datatablesUsers .dropdown-menu,
+#datatablesUsers .dropdown-menu.show {
+    transform: none !important;
+}
+
+/* Asegurarse de que la tabla tenga overflow visible */
+.table-responsive,
+.dataTables_wrapper,
+.card,
+.card-body {
+    overflow: visible !important;
+}
+
+/* Estilo para las filas de la tabla para asegurar que el dropdown se muestre por encima */
+#datatablesUsers tr {
+    position: relative !important;
+}
+
+/* Ajustes para dispositivos móviles */
+@media (max-width: 767.98px) {
+    .action-dropdown .dropdown-menu {
+        width: auto !important;
+        min-width: 10rem !important;
+        right: 0 !important;
+        left: auto !important;
+    }
+}
+
+/* Resetear todos los estilos relacionados con dropdowns */
+.dropdown, .dropdown-menu, .dropdown-toggle {
+    all: revert;
+}
+
+/* Estilos básicos para la tabla y las tarjetas, manteniendo lo mínimo necesario */
+.user-management-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #1a3a70 0%, #2d6bdf 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* Eliminar cualquier regla que afecte al overflow */
+.table, .table-responsive, .card, .card-body, .dataTables_wrapper {
+    overflow: visible !important;
+}
+
+/* Estilo mínimo para badges */
+.role-badge, .status-badge {
+    font-weight: 500;
+    border-radius: 20px;
+    padding: 0.4em 0.8em;
+}
+
+.status-badge {
+    width: 80px;
+    text-align: center;
+}
+
+/* SOLUCIÓN SIMPLIFICADA PARA DROPDOWN */
+.dropdown {
+    position: relative !important;
+}
+
+.dropdown-toggle::after {
+    display: inline-block;
+    margin-left: .255em;
+    vertical-align: .255em;
+    content: "";
+    border-top: .3em solid;
+    border-right: .3em solid transparent;
+    border-bottom: 0;
+    border-left: .3em solid transparent;
+}
+
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 1060 !important;
+    display: none;
+    min-width: 10rem;
+    padding: 0.5rem 0;
+    text-align: left;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 0.25rem;
+}
+
+.dropdown-menu.show {
+    display: block !important;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    clear: both;
+    text-align: inherit;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+}
+
+/* Limpieza completa del CSS para empezar fresco */
+/* Estilos básicos para tarjetas y headers que no afectan el dropdown */
+.user-management-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #1a3a70 0%, #2d6bdf 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* Badges y estilos de elementos secundarios */
+.role-badge, .status-badge {
+    font-weight: 500;
+    border-radius: 20px;
+    padding: 0.4em 0.8em;
+}
+
+.status-badge {
+    width: 80px;
+    text-align: center;
+}
+
+/* Estilos para formularios */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    color: #6c757d;
+}
+
+.input-with-icon input {
+    padding-left: 35px;
+}
+
+/* Animaciones y utilidades */
+.fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mejoras en diseño responsivo */
+.mobile-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Avatar circular */
+.avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    background: #0d6efd;
+}
+
+/* SOLUCIÓN DEFINITIVA PARA DROPDOWNS */
+/* Estos estilos están separados para no interferir con el resto */
+
+/* 1. El botón de acciones debe verse bien */
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    background-color: transparent;
+    font-weight: normal;
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* 2. Asegurar que el contenedor de la tabla tenga posición adecuada */
+.table-responsive {
+    position: relative !important;
+    overflow: visible !important;
+    /* Añadir padding inferior para los dropdowns de las últimas filas */
+    padding-bottom: 100px !important;
+    margin-bottom: 20px !important;
+}
+
+/* 3. La celda que contiene los dropdowns necesita posición relativa */
+.table td:last-child {
+    position: relative !important;
+}
+
+/* 4. El dropdown en sí mismo */
+.dropdown {
+    position: relative !important;
+}
+
+/* 5. El menú dropdown debe aparecer encima de todo */
+.dropdown-menu {
+    position: absolute !important;
+    right: 0 !important;
+    left: auto !important;
+    z-index: 1060 !important;
+    min-width: 200px !important;
+    padding: 0.5rem 0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15) !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+/* 6. Para los dropdowns en las últimas filas, hacerlos aparecer hacia arriba */
+.table tr:nth-last-child(-n+3) .dropdown-menu {
+    bottom: 100% !important;
+    top: auto !important;
+}
+
+/* 7. Mejorar la apariencia del botón dropdown */
+.dropdown-toggle {
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* 8. Estilos para los elementos del dropdown */
+.dropdown-item {
+    padding: 0.6rem 1rem !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.dropdown-item i {
+    width: 20px !important;
+    margin-right: 10px !important;
+    text-align: center !important;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(13, 110, 253, 0.075) !important;
+    transform: translateX(5px) !important;
+}
+
+.dropdown-divider {
+    margin: 0.3rem 0 !important;
+}
+
+/* 9. Animación para el dropdown */
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-menu.show {
+    display: block !important;
+    animation: fadeInDropdown 0.2s ease-out !important;
+}
+
+/* 10. Asegurar que la tarjeta y su cuerpo no interfieran */
+.card, .card-body {
+    overflow: visible !important;
+}
+
+/* 11. Ajustes para móviles */
+@media (max-width: 767.98px) {
+    .dropdown-menu {
+        min-width: 180px !important;
+    }
+    
+    /* En móviles, siempre mostrar hacia arriba para evitar problemas */
+    .table .dropdown-menu {
+        bottom: 100% !important;
+        top: auto !important;
+    }
+}

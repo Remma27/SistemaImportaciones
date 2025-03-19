@@ -17,6 +17,11 @@ namespace API.Data
         public DbSet<Movimiento> Movimientos { get; set; }
         public DbSet<Unidad> Unidades { get; set; }
         public DbSet<HistorialCambios> HistorialCambios { get; set; }
+        
+        // Añadir los nuevos DbSets
+        public DbSet<Rol> Roles { get; set; }
+        public DbSet<Permiso> Permisos { get; set; }
+        public DbSet<RolPermiso> RolPermisos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

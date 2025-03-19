@@ -1,0 +1,158 @@
+@model Sistema_de_Gestion_de_Importaciones.ViewModels.AsignarRolViewModel
+@{
+    ViewData["Title"] = "Asignar Rol";
+    var usuario = ViewBag.Usuario as API.Models.Usuario;
+    var rolesList = ViewBag.Roles as SelectList;
+}
+
+<link rel="stylesheet" href="~/css/gestion-usuarios.css" asp-append-version="true" />
+
+<div class="container-fluid px-4">
+    <div class="dashboard-header shadow-sm rounded mb-4">
+        <h1><i class="fas fa-user-tag me-2"></i> Asignar Rol a Usuario</h1>
+    </div>
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/Home">Inicio</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Gestión de Usuarios</a></li>
+            <li class="breadcrumb-item active">Asignar Rol</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card user-management-card mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-user-tag text-warning me-2"></i> Asignar Rol a Usuario</h5>
+                </div>
+                <div class="card-body">
+                    @if (usuario != null)
+                    {
+                        <div class="mb-4 bg-light p-3 rounded fade-in">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="avatar-circle me-3">
+                                    <span>@(usuario.nombre?.Substring(0, 1).ToUpper() ?? "U")</span>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">@usuario.nombre</h5>
+                                    <p class="mb-0 text-muted">@usuario.email</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="me-2 fw-bold">Rol Actual:</span>
+                                <span class="badge bg-primary role-badge">@(usuario.Rol?.nombre ?? "Sin rol")</span>
+                            </div>
+                        </div>
+
+                        <form asp-action="AsignarRol" method="post" class="fade-in">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                            <input type="hidden" asp-for="UsuarioId" value="@usuario.id" />
+
+                            <div class="mb-4">
+                                <label asp-for="RolId" class="form-label fw-bold">Seleccione el Nuevo Rol</label>
+                                
+                                @if (rolesList != null && rolesList.Count() > 0)
+                                {
+                                    <select asp-for="RolId" asp-items="rolesList" class="form-select select-role" required>
+                                        <option value="">-- Seleccione un Rol --</option>
+                                    </select>
+                                }
+                                else
+                                {
+                                    <!-- Opciones de respaldo en caso de no cargar los roles -->
+                                    <select asp-for="RolId" class="form-select select-role" required>
+                                        <option value="">-- Seleccione un Rol --</option>
+                                        <option value="1">Administrador</option>
+                                        <option value="2">Operador</option>
+                                        <option value="3">Usuario</option>
+                                    </select>
+                                    <div class="text-danger mt-2">
+                                        <i class="fas fa-exclamation-triangle"></i> 
+                                        No se pudieron cargar los roles desde el servidor. Se muestran roles por defecto.
+                                    </div>
+                                }
+                                
+                                <span asp-validation-for="RolId" class="text-danger"></span>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4 mobile-stack">
+                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i> Volver
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-check me-1"></i> Guardar Asignación
+                                </button>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No se encontró información del usuario. Por favor, vuelva a la página de usuarios.
+                        </div>
+                        <a asp-action="Index" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-1"></i> Volver a la lista de usuarios
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card user-management-card sidebar-nav">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-info-circle text-primary me-2"></i> Información sobre Roles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Asignar un rol define los permisos y capacidades que tendrá el usuario dentro del sistema.
+                    </div>
+
+                    <h6 class="fw-bold mb-3"><i class="fas fa-shield-alt me-2"></i>Roles Disponibles</h6>
+
+                    <div class="card mb-3 border-primary shadow-sm">
+                        <div class="card-body py-3">
+                            <h6 class="card-title fw-bold mb-1">Administrador</h6>
+                            <p class="card-text small mb-0">Acceso completo a todos los módulos y funciones del sistema.</p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-success shadow-sm">
+                        <div class="card-body py-3">
+                            <h6 class="card-title fw-bold mb-1">Operador</h6>
+                            <p class="card-text small mb-0">Acceso a funciones operativas pero no administrativas.</p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3 border-info shadow-sm">
+                        <div class="card-body py-3">
+                            <h6 class="card-title fw-bold mb-1">Usuario</h6>
+                            <p class="card-text small mb-0">Acceso básico de solo lectura a la mayoría de los módulos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Verificar si hay roles cargados
+            var roleCount = $('select.select-role option').length - 1; // Restamos el placeholder
+            console.log('Roles cargados: ' + roleCount);
+            
+            // Asegurar que se seleccione el rol actual del usuario si existe
+            var currentRolId = @(usuario?.rol_id ?? 0);
+            if (currentRolId > 0) {
+                $('select.select-role').val(currentRolId);
+                console.log('Rol seleccionado: ' + currentRolId);
+            }
+        });
+    </script>
+}

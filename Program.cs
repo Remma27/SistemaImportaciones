@@ -208,6 +208,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
 
+        // Configuración adicional para asegurar que los roles funcionen
+        options.Cookie.MaxAge = TimeSpan.FromHours(8);
+        
         options.Events.OnValidatePrincipal = async context =>
         {
             if (context.Properties.ExpiresUtc.HasValue &&
@@ -215,6 +218,32 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             {
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+
+            // Asegurarse de que los roles estén presentes en el principal
+            var principal = context.Principal;
+            if (principal?.Identity?.IsAuthenticated == true)
+            {
+                if (!principal.Claims.Any(c => c.Type == ClaimTypes.Role))
+                {
+                    // Si por alguna razón no hay claim de rol, obtener el usuario de la BD
+                    var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int id))
+                    {
+                        using var scope = context.HttpContext.RequestServices.CreateScope();
+                        var dbContext = scope.ServiceProvider.GetRequiredService<ApiContext>();
+                        var usuario = await dbContext.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.id == id);
+                        if (usuario?.Rol != null)
+                        {
+                            var rolNombre = usuario.Rol.nombre;
+                            var identity = (ClaimsIdentity)principal.Identity!;
+                            identity.AddClaim(new Claim(ClaimTypes.Role, rolNombre));
+                            
+                            // No rechazar el principal porque lo hemos actualizado
+                            return;
+                        }
+                    }
+                }
             }
         };
 
@@ -288,7 +317,7 @@ builder.Services.AddHttpClient("API", (sp, client) =>
     client.BaseAddress = new Uri(apiUrl);
     client.Timeout = TimeSpan.FromSeconds(60);
     client.DefaultRequestHeaders.Accept.Clear();
-    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
     Console.WriteLine($"Configured API client with base URL: {apiUrl}");
 })
@@ -298,7 +327,7 @@ builder.Services.AddHttpClient("API", (sp, client) =>
     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
     AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
     UseCookies = true,
-    CookieContainer = new System.Net.CookieContainer()
+    CookieContainer = new CookieContainer()
 });
 
 builder.Services.AddScoped<IImportacionService>(sp =>
@@ -377,6 +406,9 @@ builder.Services.AddScoped<IHistorialService>(sp =>
     return new HistorialService(httpClient, configuration, logger);
 });
 
+// Registrar el servicio de roles y permisos
+builder.Services.AddScoped<RolPermisoService>();
+
 builder.Services.AddHsts(options =>
 {
     options.Preload = true;
@@ -399,6 +431,9 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "X-CSRF-TOKEN";
 });
 
+// Después de registrar otros servicios, agregar el CustomRoleHandler
+builder.Services.AddSingleton<IAuthorizationHandler, API.Handlers.CustomRoleHandler>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -418,7 +453,14 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+
+// Corregir el espacio de nombres para el middleware
+app.UseMiddleware<RoleDebugMiddleware>();
+
 app.UseAuthorization();
+
+// Quitar o comentar esta línea si existe
+// app.UseRoleUpdate();
 
 // Agregar este middleware justo después de la autorización
 app.Use(async (context, next) =>

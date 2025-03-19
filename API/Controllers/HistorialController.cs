@@ -25,6 +25,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
         public async Task<IActionResult> GetAll()
         {
             try
@@ -84,6 +85,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
         public async Task<IActionResult> GetById(int id)
         {
             try
@@ -134,6 +136,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
         public async Task<IActionResult> GetTablasDisponibles()
         {
             try

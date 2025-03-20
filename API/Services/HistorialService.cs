@@ -21,6 +21,21 @@ namespace API.Services
             _logger = logger;
         }
 
+        // Helper method to get Costa Rica current time
+        private DateTime GetCostaRicaTime()
+        {
+            try
+            {
+                var costaRicaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central America Standard Time");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, costaRicaTimeZone);
+            }
+            catch (Exception)
+            {
+                // Fallback: Costa Rica is UTC-6, so manually adjust if timezone not found
+                return DateTime.UtcNow.AddHours(-6);
+            }
+        }
+
         public void GuardarHistorial(string operacion, object entidad, string tabla, string? descripcion = null)
         {
             try
@@ -78,7 +93,7 @@ namespace API.Services
                     Tabla = tabla,
                     TipoOperacion = operacion,
                     DatosJSON = jsonData,
-                    FechaHora = DateTime.Now,
+                    FechaHora = GetCostaRicaTime(), // Updated to use Costa Rica time
                     Descripcion = descripcion
                     // Se eliminó la propiedad IPAddress
                 };

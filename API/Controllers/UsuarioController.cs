@@ -31,6 +31,21 @@ namespace API.Controllers
             _rolPermisoService = rolPermisoService;
         }
 
+        // Helper method to get Costa Rica current time
+        private DateTime GetCostaRicaTime()
+        {
+            try
+            {
+                var costaRicaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central America Standard Time");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, costaRicaTimeZone);
+            }
+            catch (Exception)
+            {
+                // Fallback: Costa Rica is UTC-6, so manually adjust if timezone not found
+                return DateTime.UtcNow.AddHours(-6);
+            }
+        }
+
         // Endpoint para crear un nuevo Usuario
         [HttpPost]
         [Authorize(Roles = "Administrador")]
@@ -391,14 +406,14 @@ namespace API.Controllers
                 {
                     _historialService.GuardarHistorial(
                         "LOGIN_FALLIDO", 
-                        new { UserId = usuario.id, Email = usuario.email, Time = DateTime.Now, Motivo = "Usuario inactivo" }, 
+                        new { UserId = usuario.id, Email = usuario.email, Time = GetCostaRicaTime(), Motivo = "Usuario inactivo" }, 
                         "Autenticación", 
                         $"Intento de inicio de sesión rechazado: {usuario.email} (Usuario inactivo)"
                     );
                     return BadRequest(new { message = "Su cuenta está desactivada. Contacte al administrador." });
                 }
 
-                usuario.ultimo_acceso = DateTime.Now;
+                usuario.ultimo_acceso = GetCostaRicaTime();
                 await _context.SaveChangesAsync();
 
                 // Determinar el rol del usuario de forma explícita
@@ -520,7 +535,7 @@ namespace API.Controllers
                 };
                 
                 _historialService.GuardarHistorial("LOGIN", 
-                    new { UserId = usuario.id, Email = usuario.email, Time = DateTime.Now, Rol = rolNombre }, 
+                    new { UserId = usuario.id, Email = usuario.email, Time = GetCostaRicaTime(), Rol = rolNombre }, 
                     "Autenticación", 
                     $"Inicio de sesión: {usuario.email} con rol {rolNombre}");
 
@@ -560,7 +575,7 @@ namespace API.Controllers
                 }
                 
                 // Registrar historial de logout
-                _historialService.GuardarHistorial("LOGOUT", new { UserId = userId, Email = userEmail, Time = DateTime.Now }, 
+                _historialService.GuardarHistorial("LOGOUT", new { UserId = userId, Email = userEmail, Time = GetCostaRicaTime() }, 
                     "Autenticación", $"Cierre de sesión: {userEmail}");
             }
             

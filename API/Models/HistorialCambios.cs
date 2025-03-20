@@ -29,7 +29,7 @@ namespace API.Models
         
         [Required]
         [Column("fecha_hora")]
-        public DateTime FechaHora { get; set; } = DateTime.Now;
+        public DateTime FechaHora { get; set; } // Removed default DateTime.Now
         
         [Column("descripcion")]
         public string? Descripcion { get; set; }

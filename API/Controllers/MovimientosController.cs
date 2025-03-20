@@ -72,6 +72,21 @@ namespace API.Controllers
             }
         }
 
+        // Helper method to get Costa Rica current time
+        private DateTime GetCostaRicaTime()
+        {
+            try
+            {
+                var costaRicaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central America Standard Time");
+                return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, costaRicaTimeZone);
+            }
+            catch (Exception)
+            {
+                // Fallback: Costa Rica is UTC-6, so manually adjust if timezone not found
+                return DateTime.UtcNow.AddHours(-6);
+            }
+        }
+
         // Endpoint para crear un nuevo Movimiento
         [HttpPost]
         [Consumes("application/json")]
@@ -90,13 +105,13 @@ namespace API.Controllers
                     return BadRequest("El id debe ser 0 para crear un nuevo movimiento.");
                 }
 
-                // Always set the system timestamp for new records
-                movimiento.fechahorasistema = DateTime.Now;
+                // Always set the system timestamp for new records with Costa Rica time
+                movimiento.fechahorasistema = GetCostaRicaTime();
 
                 // Ensure fechahora is set if not provided
                 if (movimiento.fechahora == default)
                 {
-                    movimiento.fechahora = DateTime.Now;
+                    movimiento.fechahora = GetCostaRicaTime();
                 }
 
                 if (!ModelState.IsValid)

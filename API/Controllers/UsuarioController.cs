@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace API.Controllers
 {
@@ -34,65 +36,90 @@ namespace API.Controllers
         [Authorize(Roles = "Administrador")]
         public JsonResult Create(Usuario usuario)
         {
-            if (usuario.id != 0)
+            try
             {
-                return new JsonResult(BadRequest("El id debe ser 0 para crear un nuevo usuario."));
-            }
-
-            var usuarioExistente = _context.Usuarios.FirstOrDefault(u => u.email == usuario.email);
-            if (usuarioExistente != null)
-            {
-                return new JsonResult(BadRequest("El email ya está registrado."));
-            }
-
-            if (usuario.password_hash != null)
-            {
-                // Guarda una copia del password original para no guardarlo en historial
-                string passwordOriginal = usuario.password_hash;
-                usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
-                
-                // Verificar si se proporcionó un rol_id, si no, asignar rol por defecto (Operador)
-                if (!usuario.rol_id.HasValue)
+                if (usuario.id != 0)
                 {
-                    var rolOperador = _context.Roles.FirstOrDefault(r => r.nombre == "Operador");
-                    if (rolOperador != null)
-                    {
-                        usuario.rol_id = rolOperador.id;
-                    }
+                    return new JsonResult(BadRequest("El id debe ser 0 para crear un nuevo usuario."));
                 }
-                
-                _context.Usuarios.Add(usuario);
-                _context.SaveChanges();
-                
-                // Obtener el nombre del rol para el historial
-                string rolNombre = "Sin rol";
-                if (usuario.rol_id.HasValue)
+
+                var usuarioExistente = _context.Usuarios.FirstOrDefault(u => u.email == usuario.email);
+                if (usuarioExistente != null)
                 {
-                    var rol = _context.Roles.Find(usuario.rol_id.Value);
-                    if (rol != null)
-                    {
-                        rolNombre = rol.nombre;
-                    }
+                    return new JsonResult(BadRequest("El email ya está registrado."));
                 }
-                
-                // Crear una copia para el historial sin el password
-                var usuarioParaHistorial = new { 
-                    Id = usuario.id,
-                    Nombre = usuario.nombre,
-                    Email = usuario.email,
-                    Activo = usuario.activo,
-                    Rol = rolNombre
-                };
-                
-                // Registrar en historial
-                _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {usuario.email} con rol {rolNombre}");
+
+                if (usuario.password_hash != null)
+                {
+                    // Guarda una copia del password original para no guardarlo en historial
+                    string passwordOriginal = usuario.password_hash;
+                    usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
+                    
+                    // Verificar si se proporcionó un rol_id, si no, asignar rol por defecto (Operador)
+                    if (!usuario.rol_id.HasValue)
+                    {
+                        var rolOperador = _context.Roles.FirstOrDefault(r => r.nombre == "Operador");
+                        if (rolOperador != null)
+                        {
+                            usuario.rol_id = rolOperador.id;
+                        }
+                    }
+                    
+                    _context.Usuarios.Add(usuario);
+                    _context.SaveChanges();
+                    
+                    // Configurar opciones de serialización para prevenir referencias circulares
+                    var jsonOptions = new JsonSerializerOptions
+                    {
+                        ReferenceHandler = ReferenceHandler.Preserve,
+                        MaxDepth = 64,
+                        WriteIndented = true
+                    };
+                    
+                    // Obtener el nombre del rol para el historial
+                    string rolNombre = "Sin rol";
+                    if (usuario.rol_id.HasValue)
+                    {
+                        var rol = _context.Roles.Find(usuario.rol_id.Value);
+                        if (rol != null)
+                        {
+                            rolNombre = rol.nombre;
+                        }
+                    }
+                    
+                    // Crear una copia para el historial sin el password
+                    var usuarioParaHistorial = new { 
+                        Id = usuario.id,
+                        Nombre = usuario.nombre,
+                        Email = usuario.email,
+                        Activo = usuario.activo,
+                        Rol = rolNombre
+                    };
+                    
+                    // Registrar en historial
+                    _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {usuario.email} con rol {rolNombre}");
+                    
+                    // Crear un DTO para la respuesta sin referencias circulares
+                    var usuarioResponse = new {
+                        usuario.id,
+                        usuario.nombre,
+                        usuario.email,
+                        usuario.activo,
+                        usuario.fecha_creacion,
+                        rol = new { id = usuario.rol_id, nombre = rolNombre }
+                    };
+                    
+                    return new JsonResult(Ok(usuarioResponse));
+                }
+                else
+                {
+                    return new JsonResult(BadRequest("La contraseña no puede estar vacía."));
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return new JsonResult(BadRequest("La contraseña no puede estar vacía."));
+                return new JsonResult(StatusCode(500, new { message = $"Error al crear el usuario: {ex.Message}" }));
             }
-            
-            return new JsonResult(Ok(usuario));
         }
 
         // Endpoint para editar un Usuario existente
@@ -100,72 +127,83 @@ namespace API.Controllers
         [Authorize(Roles = "Administrador")]
         public JsonResult Edit(Usuario usuario)
         {
-            if (usuario.id == 0)
+            try 
             {
-                return new JsonResult(BadRequest("Debe proporcionar un id válido para editar un usuario."));
-            }
-            
-            var usuarioInDb = _context.Usuarios.Find(usuario.id);
-            if (usuarioInDb == null)
-            {
-                return new JsonResult(NotFound());
-            }
+                // Validaciones básicas
+                if (usuario.id == 0)
+                {
+                    return new JsonResult(BadRequest("Debe proporcionar un id válido para editar un usuario."));
+                }
+                
+                // Buscar usuario existente
+                var usuarioInDb = _context.Usuarios.Find(usuario.id);
+                if (usuarioInDb == null)
+                {
+                    return new JsonResult(NotFound(new { message = $"Usuario con ID {usuario.id} no encontrado" }));
+                }
 
-            // Crear una copia para el historial sin el password
-            var usuarioAnteriorParaHistorial = new Usuario
-            {
-                id = usuarioInDb.id,
-                nombre = usuarioInDb.nombre,
-                email = usuarioInDb.email,
-                password_hash = "[PROTEGIDO]",
-                fecha_creacion = usuarioInDb.fecha_creacion,
-                ultimo_acceso = usuarioInDb.ultimo_acceso,
-                activo = usuarioInDb.activo
-            };
-            
-            // Registrar estado anterior claramente
-            _historialService.GuardarHistorial(
-                "ANTES_EDITAR", 
-                usuarioAnteriorParaHistorial, 
-                "Usuarios", 
-                $"Estado anterior de usuario {usuarioInDb.email} (ID: {usuarioInDb.id})"
-            );
-            
-            // Si se proporciona un nueva contraseña, hasheala
-            if (!string.IsNullOrEmpty(usuario.password_hash) && !usuario.password_hash.StartsWith("$2a$"))
-            {
-                usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
+                // Registrar estado anterior para historial
+                _historialService.GuardarHistorial(
+                    "ANTES_EDITAR", 
+                    new { 
+                        Id = usuarioInDb.id,
+                        Nombre = usuarioInDb.nombre,
+                        Email = usuarioInDb.email,
+                        Activo = usuarioInDb.activo,
+                        RolId = usuarioInDb.rol_id
+                    }, 
+                    "Usuarios", 
+                    $"Estado anterior de usuario {usuarioInDb.email} (ID: {usuarioInDb.id})"
+                );
+                
+                // IMPORTANTE: Preservar el password_hash existente
+                // Solo actualizamos los campos que se permiten editar desde la gestión de usuarios
+                usuarioInDb.nombre = usuario.nombre;
+                usuarioInDb.email = usuario.email;
+                usuarioInDb.activo = usuario.activo;
+                
+                // Solo actualizar rol si viene especificado
+                if (usuario.rol_id.HasValue)
+                {
+                    usuarioInDb.rol_id = usuario.rol_id;
+                }
+                
+                // NO tocar el password_hash, dejamos el existente
+                
+                // Guardar cambios
+                _context.SaveChanges();
+                
+                // Registrar estado nuevo para historial
+                _historialService.GuardarHistorial(
+                    "DESPUES_EDITAR", 
+                    new { 
+                        Id = usuarioInDb.id,
+                        Nombre = usuarioInDb.nombre,
+                        Email = usuarioInDb.email,
+                        Activo = usuarioInDb.activo,
+                        RolId = usuarioInDb.rol_id
+                    }, 
+                    "Usuarios", 
+                    $"Estado nuevo de usuario {usuarioInDb.email} (ID: {usuarioInDb.id})"
+                );
+                
+                // Crear un DTO para la respuesta sin referencias circulares
+                var usuarioResponse = new {
+                    usuarioInDb.id,
+                    usuarioInDb.nombre,
+                    usuarioInDb.email,
+                    usuarioInDb.activo,
+                    usuarioInDb.fecha_creacion,
+                    usuarioInDb.ultimo_acceso,
+                    rol_id = usuarioInDb.rol_id
+                };
+                
+                return new JsonResult(Ok(usuarioResponse));
             }
-            else
+            catch (Exception ex)
             {
-                // Mantener la contraseña existente si no se proporciona una nueva
-                usuario.password_hash = usuarioInDb.password_hash;
+                return new JsonResult(StatusCode(500, new { message = $"Error al actualizar el usuario: {ex.Message}" }));
             }
-
-            _context.Entry(usuarioInDb).CurrentValues.SetValues(usuario);
-            _context.SaveChanges();
-            
-            // Crear una copia para el historial sin el password
-            var usuarioNuevoParaHistorial = new Usuario
-            {
-                id = usuario.id,
-                nombre = usuario.nombre,
-                email = usuario.email,
-                password_hash = "[PROTEGIDO]",
-                fecha_creacion = usuario.fecha_creacion,
-                ultimo_acceso = usuario.ultimo_acceso,
-                activo = usuario.activo
-            };
-            
-            // Registrar estado nuevo claramente
-            _historialService.GuardarHistorial(
-                "DESPUES_EDITAR", 
-                usuarioNuevoParaHistorial, 
-                "Usuarios", 
-                $"Estado nuevo de usuario {usuario.email} (ID: {usuario.id})"
-            );
-            
-            return new JsonResult(Ok(usuario));
         }
 
         [HttpGet]
@@ -261,57 +299,74 @@ namespace API.Controllers
         [AllowAnonymous]
         public JsonResult Registrar(Usuario model)
         {
-            var usuario = _context.Usuarios.FirstOrDefault(u => u.email == model.email);
-            if (usuario != null)
+            try 
             {
-                return new JsonResult(BadRequest("El email ya está registrado."));
-            }
+                var usuario = _context.Usuarios.FirstOrDefault(u => u.email == model.email);
+                if (usuario != null)
+                {
+                    return new JsonResult(BadRequest("El email ya está registrado."));
+                }
 
-            if (model.password_hash != null)
-            {
-                // Guarda una copia del password original para no guardarlo en historial
-                string passwordOriginal = model.password_hash;
-                model.password_hash = _passwordHashService.HashPassword(model.password_hash);
-                
-                // Asignar rol por defecto (Operador) para usuarios registrados
-                var rolOperador = _context.Roles.FirstOrDefault(r => r.nombre == "Operador");
-                if (rolOperador != null)
+                if (model.password_hash != null)
                 {
-                    model.rol_id = rolOperador.id;
-                }
-                
-                _context.Usuarios.Add(model);
-                _context.SaveChanges();
-                
-                // Obtener el nombre del rol para el historial
-                string rolNombre = "Sin rol";
-                if (model.rol_id.HasValue)
-                {
-                    var rol = _context.Roles.Find(model.rol_id.Value);
-                    if (rol != null)
+                    // Guarda una copia del password original para no guardarlo en historial
+                    string passwordOriginal = model.password_hash;
+                    model.password_hash = _passwordHashService.HashPassword(model.password_hash);
+                    
+                    // Asignar rol por defecto (Operador) para usuarios registrados
+                    var rolOperador = _context.Roles.FirstOrDefault(r => r.nombre == "Operador");
+                    if (rolOperador != null)
                     {
-                        rolNombre = rol.nombre;
+                        model.rol_id = rolOperador.id;
                     }
+                    
+                    _context.Usuarios.Add(model);
+                    _context.SaveChanges();
+                    
+                    // Obtener el nombre del rol para el historial
+                    string rolNombre = "Sin rol";
+                    if (model.rol_id.HasValue)
+                    {
+                        var rol = _context.Roles.Find(model.rol_id.Value);
+                        if (rol != null)
+                        {
+                            rolNombre = rol.nombre;
+                        }
+                    }
+                    
+                    // Crear una copia para el historial sin el password
+                    var usuarioParaHistorial = new { 
+                        Id = model.id,
+                        Nombre = model.nombre,
+                        Email = model.email,
+                        Activo = model.activo,
+                        Rol = rolNombre
+                    };
+                    
+                    // Registrar en historial con usuario del sistema (ya que estamos en un endpoint no autenticado)
+                    _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {model.email} con rol {rolNombre}");
+                    
+                    // Crear un DTO para la respuesta sin referencias circulares
+                    var usuarioResponse = new {
+                        model.id,
+                        model.nombre,
+                        model.email,
+                        model.activo,
+                        model.fecha_creacion,
+                        rol = new { id = model.rol_id, nombre = rolNombre }
+                    };
+                    
+                    return new JsonResult(Ok(usuarioResponse));
                 }
-                
-                // Crear una copia para el historial sin el password
-                var usuarioParaHistorial = new { 
-                    Id = model.id,
-                    Nombre = model.nombre,
-                    Email = model.email,
-                    Activo = model.activo,
-                    Rol = rolNombre
-                };
-                
-                // Registrar en historial con usuario del sistema (ya que estamos en un endpoint no autenticado)
-                _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {model.email} con rol {rolNombre}");
+                else
+                {
+                    return new JsonResult(BadRequest("La contraseña no puede estar vacía."));
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return new JsonResult(BadRequest("La contraseña no puede estar vacía."));
+                return new JsonResult(StatusCode(500, new { message = $"Error al registrar el usuario: {ex.Message}" }));
             }
-            
-            return new JsonResult(Ok(model));
         }
 
         [HttpPost]
@@ -329,6 +384,18 @@ namespace API.Controllers
                     !_passwordHashService.VerifyPassword(model.Password, usuario.password_hash))
                 {
                     return BadRequest(new { message = "Credenciales inválidas" });
+                }
+
+                // Verificar si el usuario está inactivo
+                if (usuario.activo != true)
+                {
+                    _historialService.GuardarHistorial(
+                        "LOGIN_FALLIDO", 
+                        new { UserId = usuario.id, Email = usuario.email, Time = DateTime.Now, Motivo = "Usuario inactivo" }, 
+                        "Autenticación", 
+                        $"Intento de inicio de sesión rechazado: {usuario.email} (Usuario inactivo)"
+                    );
+                    return BadRequest(new { message = "Su cuenta está desactivada. Contacte al administrador." });
                 }
 
                 usuario.ultimo_acceso = DateTime.Now;
@@ -510,39 +577,6 @@ namespace API.Controllers
             });
         }
 
-        // Nuevo endpoint para asignar rol a usuario
-        [HttpPost("AsignarRol")]
-        [Authorize(Roles = "Administrador")] // Solo administradores pueden asignar roles
-        public async Task<IActionResult> AsignarRol([FromBody] AsignarRolViewModel model)
-        {
-            try
-            {
-                var usuario = await _context.Usuarios.FindAsync(model.UsuarioId);
-                if (usuario == null)
-                    return NotFound(new { message = "Usuario no encontrado" });
-
-                var rol = await _context.Roles.FindAsync(model.RolId);
-                if (rol == null)
-                    return NotFound(new { message = "Rol no encontrado" });
-
-                usuario.rol_id = rol.id;
-                await _context.SaveChangesAsync();
-
-                _historialService.GuardarHistorial(
-                    "ASIGNAR_ROL",
-                    new { UsuarioId = usuario.id, RolId = rol.id, RolNombre = rol.nombre },
-                    "Usuarios",
-                    $"Asignación de rol '{rol.nombre}' al usuario '{usuario.email}'"
-                );
-
-                return Ok(new { message = "Rol asignado con éxito", usuario = new { id = usuario.id, nombre = usuario.nombre, email = usuario.email, rol = rol.nombre } });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", error = ex.Message });
-            }
-        }
-
         // Endpoint para obtener todos los roles
         [HttpGet("Roles")]
         [Authorize]
@@ -607,6 +641,54 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 return new JsonResult(StatusCode(500, new { message = "Error al cambiar estado del usuario", error = ex.Message }));
+            }
+        }
+
+        // Nuevo endpoint para asignar rol a usuario
+        [HttpPost]
+        [Authorize(Roles = "Administrador")] // Solo administradores pueden asignar roles
+        public JsonResult AsignarRol([FromBody] AsignarRolViewModel model)
+        {
+            try
+            {
+                if (model == null)
+                    return new JsonResult(BadRequest("Datos inválidos"));
+                    
+                Console.WriteLine($"[DEBUG-API] Recibida solicitud AsignarRol - UsuarioId: {model.UsuarioId}, RolId: {model.RolId}");
+                    
+                var usuario = _context.Usuarios.Find(model.UsuarioId);
+                if (usuario == null)
+                {
+                    Console.WriteLine($"[DEBUG-API] Usuario no encontrado: {model.UsuarioId}");
+                    return new JsonResult(NotFound(new { message = "Usuario no encontrado" }));
+                }
+
+                var rol = _context.Roles.Find(model.RolId);
+                if (rol == null)
+                {
+                    Console.WriteLine($"[DEBUG-API] Rol no encontrado: {model.RolId}");
+                    return new JsonResult(NotFound(new { message = "Rol no encontrado" }));
+                }
+
+                // Asignar rol y guardar cambios
+                usuario.rol_id = rol.id;
+                _context.SaveChanges();
+                
+                Console.WriteLine($"[DEBUG-API] Rol asignado correctamente - Usuario: {usuario.email}, Rol: {rol.nombre}");
+
+                _historialService.GuardarHistorial(
+                    "ASIGNAR_ROL",
+                    new { UsuarioId = usuario.id, RolId = rol.id, RolNombre = rol.nombre },
+                    "Usuarios",
+                    $"Asignación de rol '{rol.nombre}' al usuario '{usuario.email}'"
+                );
+
+                return new JsonResult(Ok(new { message = "Rol asignado con éxito", usuario = new { id = usuario.id, nombre = usuario.nombre, email = usuario.email, rol = rol.nombre } }));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DEBUG-API] Error en AsignarRol: {ex.Message}");
+                return new JsonResult(StatusCode(500, new { message = "Error interno del servidor", error = ex.Message }));
             }
         }
     }

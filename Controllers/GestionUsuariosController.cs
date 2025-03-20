@@ -70,11 +70,27 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    usuario.fecha_creacion = DateTime.Now;
-                    usuario.activo = true;
-                    await _usuarioService.CreateAsync(usuario);
-                    this.Success("Usuario creado correctamente");
-                    return RedirectToAction(nameof(Index));
+                    // En lugar de usar CreateAsync, usar RegistrarUsuarioAsync que sabemos que funciona
+                    var viewModel = new RegistroViewModel
+                    {
+                        Nombre = usuario.nombre ?? string.Empty,
+                        Email = usuario.email ?? string.Empty,
+                        Password = usuario.password_hash ?? string.Empty,
+                        ConfirmPassword = usuario.password_hash ?? string.Empty // Añadir ConfirmPassword para cumplir con el requisito
+                    };
+                    
+                    var result = await _usuarioService.RegistrarUsuarioAsync(viewModel);
+                    
+                    if (result.Success)
+                    {
+                        this.Success("Usuario creado correctamente");
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        this.Error($"Error al crear el usuario: {result.ErrorMessage}");
+                        ModelState.AddModelError("", result.ErrorMessage ?? "Error desconocido al crear el usuario");
+                    }
                 }
             }
             catch (Exception ex)
@@ -110,40 +126,88 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Usuario usuario)
         {
+            // Añadir registro exhaustivo para diagnosticar el problema
+            _logger.LogWarning("Iniciando edición de usuario {Id} - POST recibido con datos: {@Usuario}", id, usuario);
+            
             if (id != usuario.id)
             {
+                _logger.LogWarning("ID de usuario no coincide: recibido {Id} vs usuario.id {UsuarioId}", id, usuario.id);
                 this.Error("ID de usuario no coincide");
                 return RedirectToAction(nameof(Index));
             }
-
+            
             try
             {
-                if (ModelState.IsValid)
+                // Verificar el modelo sin ModelState
+                if (string.IsNullOrEmpty(usuario.nombre) || string.IsNullOrEmpty(usuario.email))
                 {
-                    // Obtener el usuario actual para preservar datos importantes
-                    var usuarioActual = await _usuarioService.GetByIdAsync(id);
-                    if (usuarioActual != null)
-                    {
-                        // Preservar valores que no deben cambiar en la edición básica
-                        usuario.password_hash = usuarioActual.password_hash; // Mantener contraseña actual
-                        usuario.rol_id = usuarioActual.rol_id; // Mantener rol actual
-                        usuario.fecha_creacion = usuarioActual.fecha_creacion; // Mantener fecha de creación
-                        usuario.ultimo_acceso = usuarioActual.ultimo_acceso; // Mantener último acceso
-                        
-                        _logger.LogInformation($"Actualizando usuario {id} - Email:{usuario.email}, Nombre:{usuario.nombre}, Rol:{usuario.rol_id}");
-                    }
-                    
-                    await _usuarioService.UpdateAsync(id, usuario);
-                    this.Success("Usuario actualizado correctamente");
+                    _logger.LogWarning("Datos inválidos: Nombre={Nombre}, Email={Email}", usuario.nombre, usuario.email);
+                    this.Error("Los campos nombre y email son obligatorios");
+                    return View(usuario);
+                }
+                
+                // Obtener el usuario actual para preservar datos importantes
+                var usuarioActual = await _usuarioService.GetByIdAsync(id);
+                if (usuarioActual == null)
+                {
+                    _logger.LogWarning("No se encontró el usuario con ID {Id} al intentar editarlo", id);
+                    this.Error("Usuario no encontrado");
                     return RedirectToAction(nameof(Index));
+                }
+                
+                _logger.LogInformation("Usuario actual encontrado: {@UsuarioActual}", new { 
+                    usuarioActual.id, 
+                    usuarioActual.nombre, 
+                    usuarioActual.email, 
+                    RolId = usuarioActual.rol_id
+                });
+                
+                // Preservar valores que no deben cambiar en la edición básica
+                usuario.password_hash = usuarioActual.password_hash; // Mantener contraseña actual
+                usuario.rol_id = usuarioActual.rol_id; // Mantener rol actual
+                usuario.fecha_creacion = usuarioActual.fecha_creacion; // Mantener fecha de creación
+                usuario.ultimo_acceso = usuarioActual.ultimo_acceso; // Mantener último acceso
+                
+                _logger.LogInformation("Preparado usuario para actualizar: {@Usuario}", new {
+                    usuario.id,
+                    usuario.nombre,
+                    usuario.email,
+                    usuario.activo,
+                    RolId = usuario.rol_id
+                });
+                
+                // Registrar datos a enviar
+                _logger.LogInformation("Enviando actualización para usuario {Id}: {Nombre}, {Email}, {Activo}", 
+                    id, usuario.nombre, usuario.email, usuario.activo);
+                
+                // USAR EL SERVICIO PARA ACTUALIZAR - con try/catch específico
+                try
+                {
+                    var usuarioActualizado = await _usuarioService.UpdateAsync(id, usuario);
+                    
+                    _logger.LogInformation("Usuario actualizado exitosamente. Datos devueltos: {@Usuario}", 
+                        new { usuarioActualizado.id, usuarioActualizado.nombre, usuarioActualizado.email });
+                    
+                    // Agregar mensaje de éxito y redireccionar
+                    this.Success("Usuario actualizado correctamente");
+                    
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception updateEx)
+                {
+                    _logger.LogError(updateEx, "Error específico al llamar UpdateAsync para usuario {Id}", id);
+                    this.Error($"Error al actualizar el usuario: {updateEx.Message}");
+                    ModelState.AddModelError("", $"Error al actualizar: {updateEx.Message}");
+                    return View(usuario);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar el usuario {Id}", id);
+                _logger.LogError(ex, "Error general al actualizar el usuario {Id}", id);
                 this.Error("Error al actualizar el usuario: " + ex.Message);
                 ModelState.AddModelError("", "Error al actualizar: " + ex.Message);
             }
+            
             return View(usuario);
         }
 
@@ -237,18 +301,45 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
+                // Añadir diagnóstico detallado
+                _logger.LogInformation("Iniciando asignación de rol - UsuarioId: {UsuarioId}, RolId: {RolId}", 
+                    viewModel.UsuarioId, viewModel.RolId);
+                
+                if (viewModel.UsuarioId <= 0)
+                {
+                    ModelState.AddModelError("", "ID de usuario inválido");
+                    _logger.LogWarning("ID de usuario inválido: {UsuarioId}", viewModel.UsuarioId);
+                }
+                
+                if (viewModel.RolId <= 0)
+                {
+                    ModelState.AddModelError("", "Debe seleccionar un rol válido");
+                    _logger.LogWarning("ID de rol inválido: {RolId}", viewModel.RolId);
+                }
+                
                 if (ModelState.IsValid)
                 {
+                    _logger.LogInformation("Modelo válido, llamando a AsignarRolAsync...");
                     var result = await _usuarioService.AsignarRolAsync(viewModel.UsuarioId, viewModel.RolId);
                     
                     if (result.Success)
                     {
+                        _logger.LogInformation("Rol asignado correctamente al usuario {UsuarioId}", viewModel.UsuarioId);
                         this.Success("Rol asignado correctamente");
                         return RedirectToAction(nameof(Index));
                     }
                     else
                     {
+                        _logger.LogWarning("Error al asignar rol: {ErrorMessage}", result.ErrorMessage);
                         this.Error($"Error al asignar el rol: {result.ErrorMessage}");
+                        ModelState.AddModelError("", $"Error al asignar el rol: {result.ErrorMessage}");
+                    }
+                }
+                else
+                {
+                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        _logger.LogWarning("Error de validación: {ErrorMessage}", error.ErrorMessage);
                     }
                 }
             }
@@ -263,7 +354,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var usuario = await _usuarioService.GetByIdAsync(viewModel.UsuarioId);
             var roles = await _usuarioService.GetRolesAsync();
             
-            ViewBag.Roles = new SelectList(roles, "id", "nombre", viewModel.RolId);
+            var selectListItems = roles.Select(r => new SelectListItem
+            {
+                Value = r.id.ToString(),
+                Text = r.nombre,
+                Selected = viewModel.RolId == r.id
+            }).ToList();
+            
+            ViewBag.Roles = new SelectList(selectListItems, "Value", "Text");
             ViewBag.Usuario = usuario;
             
             return View(viewModel);

@@ -62,16 +62,38 @@
                                 }
                                 else
                                 {
-                                    <!-- Opciones de respaldo en caso de no cargar los roles -->
                                     <select asp-for="RolId" class="form-select select-role" required>
                                         <option value="">-- Seleccione un Rol --</option>
-                                        <option value="1">Administrador</option>
-                                        <option value="2">Operador</option>
-                                        <option value="3">Usuario</option>
+                                        @if (usuario?.rol_id == 1)
+                                        {
+                                            <option value="1" selected>Administrador</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="1">Administrador</option>
+                                        }
+                                        
+                                        @if (usuario?.rol_id == 2)
+                                        {
+                                            <option value="2" selected>Operador</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="2">Operador</option>
+                                        }
+                                        
+                                        @if (usuario?.rol_id == 3)
+                                        {
+                                            <option value="3" selected>Usuario</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="3">Usuario</option>
+                                        }
                                     </select>
-                                    <div class="text-danger mt-2">
-                                        <i class="fas fa-exclamation-triangle"></i> 
-                                        No se pudieron cargar los roles desde el servidor. Se muestran roles por defecto.
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> 
+                                        No se pudieron cargar los roles desde el servidor. Se muestran roles predeterminados.
                                     </div>
                                 }
                                 
@@ -126,13 +148,6 @@
                         <div class="card-body py-3">
                             <h6 class="card-title fw-bold mb-1">Operador</h6>
                             <p class="card-text small mb-0">Acceso a funciones operativas pero no administrativas.</p>
-                        </div>
-                    </div>
-
-                    <div class="card mb-3 border-info shadow-sm">
-                        <div class="card-body py-3">
-                            <h6 class="card-title fw-bold mb-1">Usuario</h6>
-                            <p class="card-text small mb-0">Acceso básico de solo lectura a la mayoría de los módulos.</p>
                         </div>
                     </div>
                 </div>

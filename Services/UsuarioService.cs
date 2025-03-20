@@ -479,19 +479,90 @@ namespace SistemaDeGestionDeImportaciones.Services
             {
                 _logger?.LogInformation("Changing password for user {UserId}", usuarioId);
                 
+                if (string.IsNullOrEmpty(newPassword))
+                {
+                    _logger?.LogWarning("Attempted to change password with empty password for user {UserId}", usuarioId);
+                    return new OperationResult { Success = false, Message = "La contraseña no puede estar vacía" };
+                }
+                
                 var model = new 
                 {
                     UsuarioId = usuarioId, 
                     NewPassword = newPassword
                 };
                 
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/CambiarPassword", model);
-                var content = await response.Content.ReadAsStringAsync();
+                _logger?.LogDebug("Sending password change request for user {UserId} to API", usuarioId);
+                
+                // Log the API endpoint we're calling
+                string endpoint = $"{_apiUrl}/CambiarPassword";
+                _logger?.LogInformation("Calling API endpoint: {Endpoint}", endpoint);
+                
+                // Add more detailed request logging
+                try
+                {
+                    string requestJson = System.Text.Json.JsonSerializer.Serialize(model);
+                    _logger?.LogDebug("Request payload: {RequestJson}", requestJson);
+                }
+                catch (Exception logEx)
+                {
+                    _logger?.LogWarning("Could not serialize request for logging: {ErrorMessage}", logEx.Message);
+                }
+
+                // Make the request with error handling
+                HttpResponseMessage response;
+                try
+                {
+                    response = await _httpClient.PostAsJsonAsync(endpoint, model);
+                }
+                catch (Exception httpEx)
+                {
+                    _logger?.LogError(httpEx, "HTTP exception when calling password change endpoint");
+                    return new OperationResult { 
+                        Success = false, 
+                        Message = $"Error de comunicación con el servidor: {httpEx.Message}" 
+                    };
+                }
+                
+                // Read content even if unsuccessful for better diagnostics
+                string content;
+                try
+                {
+                    content = await response.Content.ReadAsStringAsync();
+                    _logger?.LogDebug("Password change response status: {StatusCode}, content: {Content}", 
+                        response.StatusCode, 
+                        content.Length > 100 ? content.Substring(0, 100) + "..." : content);
+                }
+                catch (Exception readEx)
+                {
+                    _logger?.LogError(readEx, "Error reading response content");
+                    content = $"Error al leer respuesta: {readEx.Message}";
+                }
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger?.LogError("Password change error: {StatusCode}, {Content}", response.StatusCode, content);
-                    return new OperationResult { Success = false, Message = $"Error al cambiar contraseña: {content}" };
+                    string errorMessage = $"Error al cambiar contraseña (Código: {(int)response.StatusCode})";
+                    
+                    if (!string.IsNullOrEmpty(content))
+                    {
+                        // Try to parse possible JSON error message
+                        try
+                        {
+                            using var document = JsonDocument.Parse(content);
+                            if (document.RootElement.TryGetProperty("message", out var messageElement))
+                            {
+                                errorMessage = messageElement.GetString() ?? errorMessage;
+                            }
+                        }
+                        catch (Exception jsonEx)
+                        {
+                            _logger?.LogWarning(jsonEx, "Failed to parse error response as JSON");
+                            // If not valid JSON, use content as is
+                            errorMessage += ": " + content;
+                        }
+                    }
+                    
+                    return new OperationResult { Success = false, Message = errorMessage };
                 }
                 
                 return new OperationResult { Success = true, Message = "Contraseña cambiada correctamente" };
@@ -509,7 +580,7 @@ namespace SistemaDeGestionDeImportaciones.Services
             {
                 _logger?.LogInformation("Getting roles list");
                 
-                var response = await _httpClient.GetAsync($"{_apiUrl}/Roles");
+                var response = await _httpClient.GetAsync("api/Rol/GetAll");
                 
                 if (!response.IsSuccessStatusCode)
                 {

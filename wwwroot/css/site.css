@@ -45,6 +45,7 @@ body {
 
 .table-responsive {
     scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
 }
 
 .table-responsive::-webkit-scrollbar {
@@ -62,4 +63,76 @@ body {
 
 .table-container th {
     white-space: nowrap;
+}
+
+/* Mobile dropdown animations */
+@keyframes slideUpFromBottom {
+    from { transform: none; }
+    to { transform: none; }
+}
+
+@keyframes slideDownToBottom {
+    from { transform: none; }
+    to { transform: none; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 1; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 1; }
+}
+
+/* Fix Bootstrap dropdown display issues */
+.dropdown-menu {
+    margin: 0;
+    display: none;
+    /* Remove transitions that might cause glitches */
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+/* Ensure no animations interfere with dropdowns */
+.dropdown, .dropup, .dropend, .dropstart,
+.dropdown-toggle, .dropdown-item {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Remove animation keyframes that might interfere */
+@keyframes fadeIn {
+    from { opacity: 1; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 1; }
+}
+
+/* Remove any interfering animations */
+.dropdown, .dropup, .dropend, .dropstart {
+    position: relative;
+}
+
+/* Reset Bootstrap dropdown animations */
+.dropdown-menu {
+    margin: 0;
+    display: none;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown, .dropup, .dropend, .dropstart {
+    position: relative;
 }

@@ -259,16 +259,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Obtener roles directamente y crear el SelectList manualmente
                 var roles = await _usuarioService.GetRolesAsync();
-                _logger.LogInformation($"[ROLES] Obtenidos {roles.Count} roles para el usuario {id}");
                 
-                foreach (var rol in roles)
-                {
-                    _logger.LogInformation($"Rol obtenido: ID={rol.id}, Nombre={rol.nombre}");
-                }
-                
-                // Crear SelectList manual con los roles obtenidos
                 var selectListItems = roles.Select(r => new SelectListItem
                 {
                     Value = r.id.ToString(),
@@ -401,20 +393,70 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Modelo inválido al cambiar contraseña para usuario {Id}. Errores: {@Errors}",
+                    viewModel.UsuarioId,
+                    ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 return View(viewModel);
             }
 
             try
             {
+                _logger.LogInformation("Intentando cambiar contraseña para usuario ID: {UserId}", viewModel.UsuarioId);
+                
+                // Validaciones adicionales
+                if (string.IsNullOrEmpty(viewModel.Password))
+                {
+                    _logger.LogWarning("Contraseña vacía al intentar cambiar para usuario {Id}", viewModel.UsuarioId);
+                    this.Error("La contraseña no puede estar vacía");
+                    return View(viewModel);
+                }
+                
+                if (viewModel.Password != viewModel.ConfirmPassword)
+                {
+                    _logger.LogWarning("Las contraseñas no coinciden al cambiar para usuario {Id}", viewModel.UsuarioId);
+                    this.Error("Las contraseñas no coinciden");
+                    return View(viewModel);
+                }
+                
+                // Verificar requisitos mínimos de contraseña
+                if (viewModel.Password.Length < 6)
+                {
+                    _logger.LogWarning("Contraseña demasiado corta ({Length}) para usuario {Id}", 
+                        viewModel.Password.Length, viewModel.UsuarioId);
+                    this.Error("La contraseña debe tener al menos 6 caracteres");
+                    return View(viewModel);
+                }
+                
+                // Verificar que el usuario exista antes de intentar cambiar la contraseña
+                var usuario = await _usuarioService.GetByIdAsync(viewModel.UsuarioId);
+                if (usuario == null)
+                {
+                    _logger.LogWarning("Intento de cambiar contraseña para usuario inexistente: {Id}", viewModel.UsuarioId);
+                    this.Error("Usuario no encontrado");
+                    return RedirectToAction(nameof(Index));
+                }
+                
+                // Antes de la llamada - loguear información
+                _logger.LogInformation("Llamando a CambiarPasswordAsync para usuario {Id}, longitud de contraseña: {Length}", 
+                    viewModel.UsuarioId, viewModel.Password.Length);
+                    
                 var result = await _usuarioService.CambiarPasswordAsync(viewModel.UsuarioId, viewModel.Password);
+                
+                // Después de la llamada - loguear resultado
+                _logger.LogInformation("Resultado de CambiarPasswordAsync para usuario {Id}: Success={Success}, Message={Message}", 
+                    viewModel.UsuarioId, result.Success, result.Message);
                 
                 if (result.Success)
                 {
+                    _logger.LogInformation("Contraseña cambiada exitosamente para usuario {Id}", viewModel.UsuarioId);
                     this.Success("Contraseña cambiada correctamente");
                     return RedirectToAction(nameof(Index));
                 }
                 
-                this.Error($"Error al cambiar la contraseña: {result.ErrorMessage}");
+                _logger.LogWarning("Error al cambiar contraseña (desde el servicio): {Error}", result.ErrorMessage);
+                this.Error(string.IsNullOrEmpty(result.ErrorMessage) 
+                    ? "Error desconocido al cambiar la contraseña" 
+                    : $"Error al cambiar la contraseña: {result.ErrorMessage}");
                 return View(viewModel);
             }
             catch (Exception ex)

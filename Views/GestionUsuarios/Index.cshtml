@@ -6,70 +6,35 @@
 <link rel="stylesheet" href="~/css/gestion-usuarios.css" asp-append-version="true" />
 
 <div class="container-fluid px-4">
-    <div class="dashboard-header shadow-sm rounded mb-4">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <h1><i class="fas fa-users-cog me-2"></i> Gestión de Usuarios</h1>
-            <div class="d-flex gap-2">
-                <a asp-action="Create" class="btn btn-light">
-                    <i class="fas fa-user-plus me-1"></i> Nuevo Usuario
+    <div class="card user-management-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+            <h5 class="mb-0">Gestión de Usuarios</h5>
+            <div class="mt-2 mt-md-0">
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Nuevo Usuario
                 </a>
             </div>
         </div>
-    </div>
-
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="/Home">Inicio</a></li>
-            <li class="breadcrumb-item active">Gestión de Usuarios</li>
-        </ol>
-    </nav>
-
-    <div class="card user-management-card mb-4">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <h5 class="mb-0"><i class="fas fa-users me-2 text-primary"></i> Lista de Usuarios</h5>
-                <div class="d-flex gap-2">
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-search"></i>
-                        </span>
-                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar usuario...">
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="card-body">
-            <div class="table-responsive" style="overflow: visible !important;">
+            <div class="table-responsive">
                 <table class="table table-hover align-middle" id="datatablesUsers">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Usuario</th>
-                            <th>Rol</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th class="d-none d-md-table-cell">Rol</th>
                             <th>Estado</th>
-                            <th>Último Acceso</th>
-                            <th class="text-center">Acciones</th>
+                            <th class="d-none d-md-table-cell">Último Acceso</th>
+                            <th class="text-center actions-column">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td>@item.id</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="me-2 text-primary">
-                                            <i class="fas fa-user-circle fa-lg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold">@item.nombre</div>
-                                            <small class="text-muted">@item.email</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-primary role-badge">@(item.Rol?.nombre ?? "Sin rol")</span>
-                                </td>
+                                <td class="fw-medium">@item.nombre</td>
+                                <td>@item.email</td>
+                                <td class="d-none d-md-table-cell">@(item.Rol?.nombre ?? "Sin rol")</td>
                                 <td>
                                     @if (item.activo == true)
                                     {
@@ -80,10 +45,10 @@
                                         <span class="badge bg-danger status-badge">Inactivo</span>
                                     }
                                 </td>
-                                <td>@(item.ultimo_acceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</td>
-                                <td class="text-center position-relative">
+                                <td class="d-none d-md-table-cell">@(item.ultimo_acceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")</td>
+                                <td class="text-center position-relative actions-column">
                                     <div class="dropdown action-dropdown">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button">
                                             Acciones
                                         </button>
                                         <ul class="dropdown-menu shadow">
@@ -141,7 +106,7 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Inicializar DataTable con configuración mejorada
+            // Inicialización de DataTable
             var table = $('#datatablesUsers').DataTable({
                 responsive: true,
                 language: {
@@ -151,14 +116,223 @@
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
                 columnDefs: [
-                    { responsivePriority: 1, targets: [1, -1] }, // Email y Acciones siempre visibles
-                    { responsivePriority: 2, targets: [2, 3] }  // Rol y Estado segunda prioridad
+                    { responsivePriority: 1, targets: [0] },      // Nombre siempre visible
+                    { responsivePriority: 1, targets: [-1] },     // Acciones siempre visible
+                    { responsivePriority: 2, targets: [1, 3] },   // Email y Estado segunda prioridad
+                    { responsivePriority: 3, targets: [2, 4] },   // Rol y Último acceso tercera prioridad
+                    { className: "actions-column", targets: -1 },  // Clase para columna de acciones
+                    { "orderable": false, targets: [-1] }          // Columna de acciones no ordenable
                 ]
             });
-
-            // Búsqueda en tiempo real
-            $('#searchInput').on('keyup', function() {
-                table.search(this.value).draw();
+            
+            // Variable global para controlar el dropdown activo
+            var activeButtonId = null;
+            var $activeBackdrop = null;
+            var $activeMenu = null;
+            
+            // Implementación de los dropdowns
+            $('.dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                var $button = $(this);
+                
+                // Asignar ID único si no tiene uno
+                var buttonId = $button.attr('id');
+                if (!buttonId) {
+                    buttonId = 'btn_' + Math.random().toString(36).substr(2, 9);
+                    $button.attr('id', buttonId);
+                }
+                
+                // Verificar si este botón ya tiene un dropdown abierto
+                var isOpen = activeButtonId === buttonId;
+                
+                // Cerrar todos los dropdowns abiertos
+                if ($activeMenu) {
+                    $activeMenu.remove();
+                    $activeMenu = null;
+                }
+                
+                if ($activeBackdrop) {
+                    $activeBackdrop.remove();
+                    $activeBackdrop = null;
+                }
+                
+                $('body').css('overflow', '');
+                
+                // Si ya estaba abierto, solo resetear el estado y terminar
+                if (isOpen) {
+                    activeButtonId = null;
+                    return;
+                }
+                
+                // Actualizar botón activo
+                activeButtonId = buttonId;
+                
+                var $menu = $button.next('.dropdown-menu');
+                
+                // Crear un clon del menú para posicionarlo correctamente
+                var $clonedMenu = $menu.clone();
+                $clonedMenu.addClass('fixed-dropdown');
+                $activeMenu = $clonedMenu; // Guardar referencia para cerrar después
+                
+                // Determinar la posición exacta del botón
+                var buttonPos = $button[0].getBoundingClientRect();
+                var $row = $button.closest('tr');
+                var rowIndex = $row.index();
+                var isFirstTwoRows = rowIndex < 2;
+                
+                // Replicar eventos en los elementos del menú clonado
+                $clonedMenu.find('a').each(function() {
+                    var $a = $(this);
+                    var href = $a.attr('href');
+                    
+                    $a.on('click', function(e) {
+                        // Evitar que el evento se propague al documento
+                        e.stopPropagation();
+                        
+                        if (href && href !== '#') {
+                            window.location.href = href;
+                            return false;
+                        }
+                    });
+                });
+                
+                // Crear backdrop con evento de cierre consistente
+                var $backdrop = $('<div class="dropdown-backdrop"></div>');
+                $activeBackdrop = $backdrop; // Guardar referencia
+                
+                // Posicionar y mostrar el dropdown según el tamaño de pantalla
+                if (window.innerWidth <= 576) {
+                    // En móviles: mostrar como bottom sheet
+                    
+                    // Añadir backdrop primero
+                    $('body').append($backdrop);
+                    
+                    // Configurar el menú para móviles
+                    $clonedMenu.css({
+                        'position': 'fixed',
+                        'bottom': '0',
+                        'left': '0',
+                        'right': '0',
+                        'width': '100%',
+                        'max-height': '85vh',
+                        'overflow-y': 'auto',
+                        'border-radius': '1rem 1rem 0 0',
+                        'z-index': '9999',
+                        'padding-bottom': '1rem',
+                        'background-color': '#fff'
+                    });
+                    
+                    // Añadir el menú al body
+                    $('body').append($clonedMenu);
+                    
+                    // Mostrar backdrop con animación
+                    setTimeout(function() {
+                        $backdrop.addClass('show');
+                        $('body').css('overflow', 'hidden');
+                    }, 10);
+                    
+                } else {
+                    // Para desktop/tablet: posicionar según la fila
+                    var menuWidth = 220;
+                    var windowHeight = window.innerHeight;
+                    var windowWidth = window.innerWidth;
+                    var leftPos = Math.min(buttonPos.left, windowWidth - menuWidth - 10);
+                    
+                    // Configuración común
+                    var commonCss = {
+                        'position': 'fixed',
+                        'width': menuWidth + 'px',
+                        'overflow-y': 'auto',
+                        'z-index': '9999',
+                        'background-color': '#fff'
+                    };
+                    
+                    if (isFirstTwoRows) {
+                        // Para las primeras dos filas: mostrar debajo
+                        $clonedMenu.css($.extend({}, commonCss, {
+                            'top': (buttonPos.bottom + window.scrollY) + 'px',
+                            'left': leftPos + 'px',
+                            'max-height': (windowHeight - buttonPos.bottom - 10) + 'px'
+                        }));
+                    } else {
+                        // Para el resto: mostrar encima
+                        $clonedMenu.css($.extend({}, commonCss, {
+                            'bottom': (windowHeight - buttonPos.top + window.scrollY) + 'px',
+                            'left': leftPos + 'px',
+                            'max-height': (buttonPos.top - 10) + 'px'
+                        }));
+                    }
+                    
+                    $('body').append($clonedMenu);
+                    $('body').append($backdrop);
+                    $backdrop.css('opacity', '0'); // Invisible en desktop
+                    $backdrop.addClass('show');
+                }
+                
+                // Evento unificado para cerrar al hacer clic en el backdrop
+                $backdrop.on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Cerrar dropdown y limpiar referencias
+                    if ($activeMenu) {
+                        $activeMenu.remove();
+                        $activeMenu = null;
+                    }
+                    
+                    if ($activeBackdrop) {
+                        $activeBackdrop.removeClass('show');
+                        setTimeout(function() {
+                            $activeBackdrop.remove();
+                            $activeBackdrop = null;
+                        }, 200);
+                    }
+                    
+                    $('body').css('overflow', '');
+                    activeButtonId = null;
+                });
+                
+                // Evento para cerrar al hacer clic en el mismo botón
+                $button.one('click.close-dropdown', function() {
+                    setTimeout(function() {
+                        if (activeButtonId === buttonId) {
+                            // Simular clic en el backdrop para cerrar
+                            $backdrop.trigger('click');
+                        }
+                    }, 50);
+                });
+            });
+            
+            // Cerrar dropdowns al hacer scroll o resize (con mecanismo unificado)
+            function closeAllDropdowns() {
+                if ($activeMenu) {
+                    $activeMenu.remove();
+                    $activeMenu = null;
+                }
+                
+                if ($activeBackdrop) {
+                    $activeBackdrop.removeClass('show');
+                    setTimeout(function() {
+                        $activeBackdrop.remove();
+                        $activeBackdrop = null;
+                    }, 200);
+                }
+                
+                $('body').css('overflow', '');
+                activeButtonId = null;
+            }
+            
+            $('.table-responsive, .dataTables_scrollBody').on('scroll', closeAllDropdowns);
+            $(window).on('resize', closeAllDropdowns);
+            
+            // Asegurar que se cierren los dropdowns al hacer clic fuera
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.dropdown-toggle').length && 
+                    !$(e.target).closest('.fixed-dropdown').length) {
+                    closeAllDropdowns();
+                }
             });
         });
     </script>

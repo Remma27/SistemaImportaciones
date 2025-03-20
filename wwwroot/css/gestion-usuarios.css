@@ -505,3 +505,227 @@
 .fade-in {
     animation: fadeIn var(--transition-speed) ease-out forwards;
 }
+
+/* User Management styles with responsive improvements */
+
+/* Card styling */
+.user-management-card {
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    overflow: hidden;
+}
+
+/* Status badge styling */
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+}
+
+/* Dropdown styling improvements */
+.action-dropdown .dropdown-menu {
+    min-width: 200px;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.action-dropdown .dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.action-dropdown .dropdown-item i {
+    width: 20px;
+    text-align: center;
+    margin-right: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.action-dropdown .dropdown-divider {
+    margin: 0.25rem 0;
+}
+
+/* Animation for dropdown */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .action-dropdown .btn {
+        padding: 0.375rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .table td, .table th {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+/* Mobile specific styles */
+@media (max-width: 767.98px) {
+    .action-dropdown .dropdown-menu {
+        position: fixed !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 90%;
+        max-width: 300px;
+        bottom: 10px;
+        top: auto !important;
+        right: auto !important;
+        animation: slideUp 0.3s ease-in-out;
+        box-shadow: 0 -0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border-radius: 1rem 1rem 0 0;
+        padding-bottom: 1rem;
+    }
+    
+    .action-dropdown .dropdown-item {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+    
+    .action-dropdown .dropdown-item i {
+        font-size: 1rem;
+        width: 24px;
+    }
+    
+    .dropdown-backdrop {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+    }
+    
+    /* For very small screens */
+    @media (max-width: 575.98px) {
+        .action-dropdown .dropdown-menu {
+            width: 100%;
+            max-width: none;
+            border-radius: 1rem 1rem 0 0;
+        }
+    }
+    
+    @keyframes slideUp {
+        from { transform: translate(-50%, 100%); }
+        to { transform: translate(-50%, 0); }
+    }
+}
+
+/* DataTables responsive improvements */
+.dataTables_wrapper .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+@media (max-width: 767.98px) {
+    .dataTables_length, 
+    .dataTables_filter {
+        text-align: left;
+        margin-bottom: 1rem;
+    }
+    
+    .dataTables_filter input {
+        width: 100%;
+        margin-left: 0 !important;
+    }
+    
+    .dataTables_info, 
+    .dataTables_paginate {
+        text-align: center;
+        width: 100%;
+        margin-top: 1rem;
+    }
+}
+
+/* Ajustes para mejorar dropdown en dispositivos móviles */
+@media (max-width: 767.98px) {
+    .status-badge {
+        display: inline-block;
+        width: auto !important;
+        min-width: 60px !important;
+        max-width: 80px !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    /* En móviles - mejorar visualización de la tabla */
+    .table td {
+        padding: 0.5rem !important;
+    }
+}
+
+/* Estilos para dropdown fixed que siempre sea visible */
+.dropdown-menu.fixed-dropdown {
+    position: fixed !important;
+    z-index: 9999 !important;
+    border: 1px solid rgba(0,0,0,0.15) !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175) !important;
+    background-color: #fff !important;
+    padding: 0.5rem 0 !important;
+    display: block !important;
+    border-radius: 0.375rem !important;
+}
+
+/* Ajustes específicos para móviles */
+@media (max-width: 576px) {
+    .dropdown-menu.fixed-dropdown {
+        position: fixed !important;
+        width: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        max-height: 85vh !important;
+        overflow-y: auto !important;
+        border-radius: 1rem 1rem 0 0 !important;
+        padding-bottom: 1rem !important;
+        border: none !important;
+    }
+    
+    /* Indicador visual para móviles */
+    .dropdown-menu.fixed-dropdown::before {
+        content: "" !important;
+        height: 4px !important;
+        width: 36px !important;
+        background: #dee2e6 !important;
+        display: block !important;
+        margin: 8px auto !important;
+        border-radius: 2px !important;
+    }
+}
+
+/* Estilos para el backdrop */
+.dropdown-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-color: rgba(0,0,0,0.5) !important;
+    z-index: 9998 !important;
+    display: none !important;
+}
+
+.dropdown-backdrop.show {
+    display: block !important;
+}
+
+/* Corregir problemas de DataTables */
+.dataTables_wrapper {
+    position: static !important;
+}
+
+.table-responsive,
+.dataTables_scrollBody {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}

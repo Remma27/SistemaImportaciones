@@ -6,6 +6,7 @@ using API.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace API.Controllers
 {

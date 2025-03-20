@@ -704,5 +704,92 @@ namespace API.Controllers
                 return new JsonResult(StatusCode(500, new { message = "Error interno del servidor", error = ex.Message }));
             }
         }
+
+        [HttpPost]
+        [Authorize(Roles = "Administrador")]
+        public IActionResult CambiarPassword([FromBody] CambiarPasswordRequest model)
+        {
+            try
+            {
+                Console.WriteLine($"[DEBUG] Recibida petición de cambio de contraseña para usuario ID: {model.UsuarioId}");
+                
+                if (model == null || model.UsuarioId <= 0)
+                {
+                    Console.WriteLine("[ERROR] Datos de modelo inválidos o ID de usuario <= 0");
+                    return BadRequest(new { message = "Datos inválidos para cambiar contraseña" });
+                }
+
+                // Buscar el usuario
+                var usuario = _context.Usuarios.Find(model.UsuarioId);
+                if (usuario == null)
+                {
+                    Console.WriteLine($"[ERROR] No se encontró el usuario con ID: {model.UsuarioId}");
+                    return NotFound(new { message = $"No se encontró el usuario con ID {model.UsuarioId}" });
+                }
+
+                if (string.IsNullOrEmpty(model.NewPassword))
+                {
+                    Console.WriteLine("[ERROR] La nueva contraseña está vacía");
+                    return BadRequest(new { message = "La nueva contraseña no puede estar vacía" });
+                }
+
+                Console.WriteLine($"[DEBUG] Creando hash para nueva contraseña del usuario {usuario.email}");
+                
+                // Generar el hash de la nueva contraseña
+                string hashedPassword;
+                try
+                {
+                    hashedPassword = _passwordHashService.HashPassword(model.NewPassword);
+                }
+                catch (Exception hashEx)
+                {
+                    Console.WriteLine($"[ERROR] Error al generar hash de contraseña: {hashEx.Message}");
+                    return StatusCode(500, new { message = $"Error al procesar la contraseña: {hashEx.Message}" });
+                }
+
+                // Guardar el estado original para el historial
+                _historialService.GuardarHistorial(
+                    "ANTES_CAMBIAR_PASSWORD",
+                    new { Id = usuario.id, Nombre = usuario.nombre, Email = usuario.email },
+                    "Usuarios",
+                    $"Cambio de contraseña para usuario {usuario.email} (ID: {usuario.id})"
+                );
+
+                // Actualizar la contraseña
+                usuario.password_hash = hashedPassword;
+                _context.SaveChanges();
+
+                Console.WriteLine($"[DEBUG] Contraseña actualizada exitosamente para usuario {usuario.email}");
+
+                // Registrar en historial
+                _historialService.GuardarHistorial(
+                    "CAMBIAR_PASSWORD",
+                    new { Id = usuario.id, Nombre = usuario.nombre, Email = usuario.email },
+                    "Usuarios",
+                    $"Contraseña cambiada para usuario {usuario.email} (ID: {usuario.id})"
+                );
+
+                return Ok(new { message = "Contraseña actualizada correctamente" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Error al cambiar contraseña: {ex.Message}");
+                Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
+                
+                // Verificar si hay inner exception
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"[ERROR] Inner Exception: {ex.InnerException.Message}");
+                }
+                
+                return StatusCode(500, new { message = $"Error al cambiar la contraseña: {ex.Message}" });
+            }
+        }
+
+        public class CambiarPasswordRequest
+        {
+            public int UsuarioId { get; set; }
+            public string NewPassword { get; set; }
+        }
     }
 }

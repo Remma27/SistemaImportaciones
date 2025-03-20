@@ -251,6 +251,55 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Estilos de botones mejorados para acciones de formulario */
+.btn {
+    font-weight: 500;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    border: none;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background: linear-gradient(135deg, #1976D2 0%, #0D47A1 100%);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.btn-outline-dark {
+    border: 1px solid #343a40;
+    color: #343a40;
+}
+
+.btn-outline-dark:hover, .btn-outline-dark:focus {
+    background-color: #343a40;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-outline-secondary {
+    border: 1px solid #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline-secondary:hover, .btn-outline-secondary:focus {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Específicamente para pantallas pequeñas */
+@media (max-width: 767.98px) {
+    .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
+    }
+}
+
 /* Dropdown mejorado */
 .action-dropdown .dropdown-menu {
     border-radius: var(--border-radius);

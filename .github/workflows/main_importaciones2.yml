@@ -47,10 +47,13 @@ jobs:
             - name: Run tests
               run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
 
+            # Solo publicamos si es un push a main o un workflow_dispatch (no en PR)
             - name: dotnet publish
+              if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
               run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o "${{env.DOTNET_ROOT}}/myapp" --no-build
 
             - name: Upload artifact for deployment job
+              if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
               uses: actions/upload-artifact@v4
               with:
                   name: .net-app
@@ -60,7 +63,8 @@ jobs:
     deploy:
         runs-on: windows-latest
         needs: build
-        if: github.event_name != 'pull_request'
+        # Solo desplegamos si es un push a main o un workflow_dispatch (no en PR)
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         environment:
             name: 'Production'
             url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
@@ -79,14 +83,6 @@ jobs:
                   slot-name: 'Production'
                   package: .
                   publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4A79BCE99CFA40E096917F025D6C7C73 }}
-
-            - name: Post-deployment health check
-              run: |
-                  $statusCode = (Invoke-WebRequest -Uri "${{ steps.deploy-to-webapp.outputs.webapp-url }}" -UseBasicParsing).StatusCode
-                  if ($statusCode -ne 200) {
-                    Write-Error "Deployment verification failed. Status code: $statusCode"
-                    exit 1
-                  }
             
             - name: Post-deployment health check
               run: |

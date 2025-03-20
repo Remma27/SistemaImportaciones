@@ -461,7 +461,7 @@ namespace API.Controllers
                             }
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         // No bloquear el login si hay problemas con los permisos
                         
@@ -789,7 +789,7 @@ namespace API.Controllers
         public class CambiarPasswordRequest
         {
             public int UsuarioId { get; set; }
-            public string NewPassword { get; set; }
+            public string? NewPassword { get; set; }
         }
     }
 }

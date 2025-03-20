@@ -1,7 +1,7 @@
 /* Estilos base y variables */
 :root {
-    --primary-gradient: linear-gradient(135deg, #1a3a70 0%, #2d6bdf 100%);
-    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --primary-gradient: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     --border-radius: 10px;
     --transition-speed: 0.3s;
 }
@@ -31,6 +31,8 @@
     box-shadow: var(--card-shadow);
     transition: all var(--transition-speed);
     height: 100%;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .user-management-card:hover {
@@ -39,8 +41,8 @@
 }
 
 .user-management-card .card-header {
-    background-color: #fff;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     padding: 1rem 1.5rem;
 }
 
@@ -59,11 +61,14 @@
     font-weight: 600;
     border-bottom: 2px solid #dee2e6;
     white-space: nowrap;
+    color: #333;
 }
 
 #datatablesUsers tbody td {
     vertical-align: middle;
     padding: 1rem 0.75rem;
+    background-color: #ffffff;
+    color: #333;
 }
 
 /* Badges con mejor diseño */
@@ -77,6 +82,19 @@
     gap: 0.25rem;
 }
 
+.role-badge {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.status-badge.bg-success {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%) !important;
+}
+
+.status-badge.bg-danger {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+}
+
 /* Avatar y detalles de usuario */
 .user-details {
     display: flex;
@@ -85,8 +103,9 @@
 }
 
 .avatar-circle {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px; /* Asegura que el ancho mínimo sea igual */
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -95,27 +114,123 @@
     color: white;
     font-weight: 600;
     font-size: 1.25rem;
+    overflow: hidden;
 }
 
-/* Formularios mejorados */
+/* Avatar grande para detalles de usuario */
+.avatar-lg {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-gradient);
+    color: white;
+    font-weight: 600;
+    font-size: 2rem;
+    overflow: hidden;
+    margin-right: 1rem;
+}
+
+/* Formularios mejorados - corrección de labels e iconos */
 .form-floating {
     margin-bottom: 1.5rem;
-}
-
-.input-with-icon {
     position: relative;
 }
 
-.input-with-icon i {
+/* Contenedor del icono y el input */
+.form-floating .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Estilos del icono */
+.form-floating .input-with-icon i {
     position: absolute;
-    left: 1rem;
+    left: 15px;
     top: 50%;
     transform: translateY(-50%);
     color: #6c757d;
     z-index: 4;
+    font-size: 1rem;
+    pointer-events: none; /* Evita que el icono interfiera con el input */
 }
 
-.input-with-icon input {
+/* Ajustes del input */
+.form-floating .input-with-icon .form-control {
+    padding-left: 2.5rem !important; /* Espacio para el icono */
+    height: 3.5rem;
+}
+
+/* Ajustes del label */
+.form-floating .input-with-icon label {
+    padding-left: 2.5rem;
+    height: 3.5rem;
+    padding-top: 1rem;
+    color: #6c757d;
+}
+
+/* Animación del label cuando el input está enfocado o tiene contenido */
+.form-floating .input-with-icon .form-control:focus ~ label,
+.form-floating .input-with-icon .form-control:not(:placeholder-shown) ~ label {
+    transform: scale(0.85) translateY(-0.75rem) translateX(0.15rem);
+    background-color: white;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    height: auto;
+}
+
+/* Estado de foco del input */
+.form-floating .input-with-icon .form-control:focus {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
+}
+
+/* Corrección de formularios e inputs */
+.form-floating {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.form-floating > .form-control {
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > .form-control,
+.form-floating > .form-control-plaintext {
+    padding: 1rem 0.75rem;
+}
+
+.form-floating > label {
+    padding: 1rem 0.75rem;
+}
+
+/* Nuevo estilo para contenedor de input con icono */
+.input-icon-wrapper {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.input-icon-wrapper .form-floating {
+    margin-bottom: 0;
+}
+
+.input-icon-wrapper i {
+    position: absolute;
+    left: 0.875rem;
+    top: 1.25rem;
+    color: #6c757d;
+    z-index: 5;
+}
+
+.input-icon-wrapper .form-floating > .form-control {
+    padding-left: 2.5rem;
+}
+
+.input-icon-wrapper .form-floating > label {
     padding-left: 2.5rem;
 }
 
@@ -142,6 +257,8 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 0.5rem;
     min-width: 200px;
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .action-dropdown .dropdown-item {
@@ -151,11 +268,13 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: #333;
 }
 
 .action-dropdown .dropdown-item:hover {
     background-color: #f8f9fa;
     transform: translateX(5px);
+    color: #2196F3;
 }
 
 /* Mejoras responsivas */
@@ -201,6 +320,182 @@
     }
 }
 
+/* Mejoras responsivas actualizadas */
+@media (max-width: 991.98px) {
+    .dashboard-header {
+        padding: 1.25rem;
+    }
+
+    .user-management-card {
+        margin-bottom: 1rem;
+    }
+
+    .sidebar-nav {
+        margin-top: 1rem;
+    }
+
+    .form-card {
+        margin-bottom: 1.5rem;
+    }
+
+    .mobile-stack {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .mobile-stack > * {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 0.625rem;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .avatar-lg {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table-responsive {
+        margin: 0 -1rem;
+        padding: 0;
+        border-radius: 0;
+    }
+
+    #datatablesUsers {
+        font-size: 0.875rem;
+    }
+
+    #datatablesUsers td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .user-details {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+    }
+
+    .role-badge, .status-badge {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
+
+    .input-icon-wrapper {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-floating > label {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .container-fluid {
+        padding-right: 0.75rem;
+        padding-left: 0.75rem;
+    }
+
+    .dashboard-header {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .card {
+        border-radius: 0.5rem;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    .action-dropdown .dropdown-menu {
+        border-radius: 1rem 1rem 0 0;
+        padding: 1rem;
+    }
+
+    .action-dropdown .dropdown-item {
+        padding: 0.75rem;
+        font-size: 0.9375rem;
+    }
+
+    .form-floating {
+        margin-bottom: 1rem;
+    }
+
+    .alert {
+        padding: 0.75rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Mejoras para la tabla en modo responsivo */
+.table-responsive-stack {
+    @media (max-width: 767.98px) {
+        tr {
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.5rem 0;
+        }
+
+        td {
+            border: none;
+            padding: 0.25rem 0;
+        }
+
+        td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+    }
+}
+
+/* Mejoras para los formularios responsivos */
+.form-responsive {
+    @media (max-width: 767.98px) {
+        .row {
+            margin-right: -0.5rem;
+            margin-left: -0.5rem;
+        }
+
+        .col, [class*="col-"] {
+            padding-right: 0.5rem;
+            padding-left: 0.5rem;
+        }
+    }
+}
+
+/* Ajustes para la barra lateral en modo responsivo */
+.sidebar-nav {
+    @media (max-width: 991.98px) {
+        position: static;
+        width: 100%;
+        margin-top: 1rem;
+    }
+}
+
 /* Animaciones */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -209,40 +504,4 @@
 
 .fade-in {
     animation: fadeIn var(--transition-speed) ease-out forwards;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .user-management-card {
-        background-color: #2d3748;
-        color: #fff;
-    }
-    
-    .card-header {
-        background-color: #2d3748 !important;
-        border-bottom-color: #4a5568;
-    }
-    
-    #datatablesUsers thead th {
-        background-color: #2d3748;
-        color: #fff;
-    }
-    
-    .table {
-        color: #fff;
-    }
-    
-    .dropdown-menu {
-        background-color: #2d3748;
-        border-color: #4a5568;
-    }
-    
-    .dropdown-item {
-        color: #fff;
-    }
-    
-    .dropdown-item:hover {
-        background-color: #4a5568;
-        color: #fff;
-    }
 }

@@ -37,22 +37,23 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Edit" class="fade-in">
+                    <!-- Eliminar cualquier script actual y usar un formulario simple y directo -->
+                    <form method="post" action="/GestionUsuarios/Edit/@Model.id">
+                        @Html.AntiForgeryToken()
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                        <input type="hidden" asp-for="id" />
-                        <input type="hidden" asp-for="password_hash" />
-                        <input type="hidden" asp-for="fecha_creacion" />
-                        <input type="hidden" asp-for="ultimo_acceso" />
-                        <input type="hidden" asp-for="rol_id" />
+                        <input type="hidden" name="id" value="@Model.id" />
+                        <input type="hidden" name="password_hash" value="@Model.password_hash" />
+                        <input type="hidden" name="fecha_creacion" value="@Model.fecha_creacion?.ToString("o")" />
+                        <input type="hidden" name="ultimo_acceso" value="@Model.ultimo_acceso?.ToString("o")" />
+                        <input type="hidden" name="rol_id" value="@Model.rol_id" />
 
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="form-floating input-with-icon">
                                     <i class="fas fa-user-circle"></i>
-                                    <input asp-for="nombre" class="form-control" placeholder="Nombre completo" required />
-                                    <label asp-for="nombre">Nombre Completo</label>
-                                    <span asp-validation-for="nombre" class="text-danger"></span>
+                                    <input name="nombre" value="@Model.nombre" class="form-control" placeholder="Nombre completo" required />
+                                    <label for="nombre">Nombre Completo</label>
                                 </div>
                             </div>
                         </div>
@@ -61,9 +62,8 @@
                             <div class="col-12">
                                 <div class="form-floating input-with-icon">
                                     <i class="fas fa-envelope"></i>
-                                    <input asp-for="email" class="form-control" type="email" placeholder="Email" required />
-                                    <label asp-for="email">Email</label>
-                                    <span asp-validation-for="email" class="text-danger"></span>
+                                    <input name="email" value="@Model.email" class="form-control" type="email" placeholder="Email" required />
+                                    <label for="email">Email</label>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +128,8 @@
                                 <a asp-action="CambiarPassword" asp-route-id="@Model.id" class="btn btn-dark mb-2">
                                     <i class="fas fa-key me-1"></i> Cambiar Contraseña
                                 </a>
-                                <button type="submit" class="btn btn-primary mb-2">
+                                <!-- Simplificar el botón sin scripts -->
+                                <button type="submit" class="btn btn-primary mb-2" id="btnGuardarCambios">
                                     <i class="fas fa-save me-1"></i> Guardar Cambios
                                 </button>
                             </div>

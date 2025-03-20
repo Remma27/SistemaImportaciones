@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace API.Models
 {
@@ -16,10 +17,11 @@ namespace API.Models
         [StringLength(255)]
         public string? descripcion { get; set; }
         
-        // Relación con usuarios (un rol puede tener muchos usuarios)
+        // Añadir JsonIgnore para evitar referencias circulares
+        [JsonIgnore]
         public virtual ICollection<Usuario>? Usuarios { get; set; }
         
-        // Relación con permisos (un rol puede tener muchos permisos)
+        [JsonIgnore]
         public virtual ICollection<RolPermiso>? RolPermisos { get; set; }
     }
 }

@@ -32,10 +32,12 @@
 
                         <div class="row mb-4">
                             <div class="col-12">
-                                <div class="form-floating input-with-icon">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-user-circle"></i>
-                                    <input asp-for="nombre" class="form-control" placeholder="Nombre completo" required />
-                                    <label asp-for="nombre">Nombre Completo</label>
+                                    <div class="form-floating">
+                                        <input asp-for="nombre" class="form-control" placeholder="Nombre completo" required />
+                                        <label asp-for="nombre">Nombre Completo</label>
+                                    </div>
                                     <span asp-validation-for="nombre" class="text-danger"></span>
                                 </div>
                             </div>
@@ -43,10 +45,12 @@
 
                         <div class="row mb-4">
                             <div class="col-12">
-                                <div class="form-floating input-with-icon">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-envelope"></i>
-                                    <input asp-for="email" class="form-control" type="email" placeholder="Email" required />
-                                    <label asp-for="email">Email</label>
+                                    <div class="form-floating">
+                                        <input asp-for="email" class="form-control" type="email" placeholder="Email" required />
+                                        <label asp-for="email">Email</label>
+                                    </div>
                                     <span asp-validation-for="email" class="text-danger"></span>
                                 </div>
                             </div>
@@ -54,10 +58,12 @@
 
                         <div class="row mb-4">
                             <div class="col-12">
-                                <div class="form-floating input-with-icon">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-key"></i>
-                                    <input asp-for="password_hash" class="form-control" type="password" placeholder="Contraseña" required />
-                                    <label asp-for="password_hash">Contraseña</label>
+                                    <div class="form-floating">
+                                        <input asp-for="password_hash" class="form-control" type="password" placeholder="Contraseña" required />
+                                        <label asp-for="password_hash">Contraseña</label>
+                                    </div>
                                     <span asp-validation-for="password_hash" class="text-danger"></span>
                                 </div>
                             </div>
@@ -67,9 +73,9 @@
                             <div class="col-12">
                                 <div class="form-check form-switch">
                                     @{
-                                        // Garantizar un valor no nullable para el checkbox
-                                        bool isActive = Model?.activo.HasValue == true ? Model.activo.Value : true;
-                                    }
+// Garantizar un valor no nullable para el checkbox
+bool isActive = Model?.activo.HasValue == true ? Model.activo.Value : true;
+}
                                     <input type="checkbox" id="activo" name="activo" class="form-check-input" value="true" checked />
                                     <label for="activo" class="form-check-label">Usuario Activo</label>
                                 </div>

@@ -161,12 +161,20 @@ namespace API.Controllers
 
         // Endpoint para obtener todas las importaciones
         [HttpGet]
-        public JsonResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _context.Importaciones
-                .Include(i => i.Barco)
-                .ToList();
-            return new JsonResult(Ok(result));
+            try
+            {
+                var result = await _context.Importaciones
+                    .Include(i => i.Barco)
+                    .ToListAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener importaciones");
+                return StatusCode(500, new { message = "Error al obtener importaciones", error = ex.Message });
+            }
         }
     }
 }

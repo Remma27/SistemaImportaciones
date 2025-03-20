@@ -9,7 +9,6 @@ public class ImportacionService : IImportacionService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiBaseUrl;
-
     private readonly ILogger<ImportacionService> _logger;
 
     public ImportacionService(HttpClient httpClient, IConfiguration configuration, ILogger<ImportacionService> logger)
@@ -23,12 +22,17 @@ public class ImportacionService : IImportacionService
     {
         try
         {
+            _logger.LogInformation("Iniciando solicitud GetAllAsync para importaciones");
             var url = _apiBaseUrl + "GetAll";
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
+            
+            _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+            _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
 
             if (!response.IsSuccessStatusCode)
             {
+                _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
                 throw new HttpRequestException($"Error al obtener las importaciones: {response.StatusCode}, {content}");
             }
 
@@ -37,18 +41,57 @@ public class ImportacionService : IImportacionService
                 PropertyNameCaseInsensitive = true
             };
 
+            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
-            if (root.TryGetProperty("value", out JsonElement valueElement))
+            
+            _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+            
+            // Handle different JSON formats
+            if (root.ValueKind == JsonValueKind.Array)
             {
-                var importacionesJson = valueElement.GetRawText();
-                var importaciones = JsonSerializer.Deserialize<IEnumerable<Importacion>>(importacionesJson, options);
+                // Direct array - new format
+                _logger.LogInformation("Detectado formato de array directo");
+                var importaciones = JsonSerializer.Deserialize<List<Importacion>>(content, options);
+                _logger.LogInformation($"Importaciones deserializadas: {importaciones?.Count ?? 0}");
                 return importaciones ?? new List<Importacion>();
             }
+            else if (root.ValueKind == JsonValueKind.Object)
+            {
+                // Object with a property - check common patterns
+                if (root.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    _logger.LogInformation("Detectado formato con propiedad 'value'");
+                    var importacionesJson = valueElement.GetRawText();
+                    var importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesJson, options);
+                    return importaciones ?? new List<Importacion>();
+                }
+                else
+                {
+                    // Try Newtonsoft as last resort
+                    _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
+                    try
+                    {
+                        var importaciones = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Importacion>>(content);
+                        if (importaciones != null)
+                        {
+                            _logger.LogInformation($"Importaciones deserializadas con Newtonsoft: {importaciones.Count}");
+                            return importaciones;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error con Newtonsoft.Json");
+                    }
+                }
+            }
+
+            _logger.LogWarning("No se pudo deserializar la respuesta en ningún formato conocido");
             return new List<Importacion>();
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error al obtener las importaciones");
             throw new Exception($"Error al obtener las importaciones: {ex.Message}", ex);
         }
     }
@@ -64,6 +107,7 @@ public class ImportacionService : IImportacionService
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+            _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -76,16 +120,27 @@ public class ImportacionService : IImportacionService
                 PropertyNameCaseInsensitive = true
             };
 
+            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
+            var root = document.RootElement;
+            
+            _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+            
             Importacion? importacion = null;
-            if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+            
+            if (root.ValueKind == JsonValueKind.Object)
             {
-                importacion = JsonSerializer.Deserialize<Importacion>(valueElement.GetRawText(), options);
+                if (root.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    importacion = JsonSerializer.Deserialize<Importacion>(valueElement.GetRawText(), options);
+                }
+                else
+                {
+                    // Direct object - new format
+                    importacion = JsonSerializer.Deserialize<Importacion>(content, options);
+                }
             }
-            else
-            {
-                importacion = JsonSerializer.Deserialize<Importacion>(content, options);
-            }
+            
             return importacion ?? throw new InvalidOperationException($"Error al obtener la importación {id}");
         }
         catch (Exception ex)

@@ -6,6 +6,8 @@ using Sistema_de_Gestion_de_Importaciones.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using API.Services;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace API.Controllers
 {
@@ -73,7 +75,7 @@ namespace API.Controllers
         // Endpoint para crear un nuevo Movimiento
         [HttpPost]
         [Consumes("application/json")]
-        public JsonResult Create([FromBody] Movimiento movimiento)
+        public async Task<IActionResult> Create([FromBody] Movimiento movimiento)
         {
             // First clear any model state errors related to fechahorasistema
             if (ModelState.ContainsKey("fechahorasistema"))
@@ -81,37 +83,45 @@ namespace API.Controllers
                 ModelState.Remove("fechahorasistema");
             }
 
-            if (movimiento.id != 0)
+            try 
             {
-                return new JsonResult(BadRequest("El id debe ser 0 para crear un nuevo movimiento."));
+                if (movimiento.id != 0)
+                {
+                    return BadRequest("El id debe ser 0 para crear un nuevo movimiento.");
+                }
+
+                // Always set the system timestamp for new records
+                movimiento.fechahorasistema = DateTime.Now;
+
+                // Ensure fechahora is set if not provided
+                if (movimiento.fechahora == default)
+                {
+                    movimiento.fechahora = DateTime.Now;
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                _context.Movimientos.Add(movimiento);
+                await _context.SaveChangesAsync();
+                
+                // Registrar en historial
+                _historialService.GuardarHistorial("CREAR", movimiento, "Movimientos", $"Creación de movimiento {movimiento.id}");
+                
+                return Ok(movimiento);
             }
-
-            // Always set the system timestamp for new records
-            movimiento.fechahorasistema = DateTime.Now;
-
-            // Ensure fechahora is set if not provided
-            if (movimiento.fechahora == default)
+            catch (Exception ex)
             {
-                movimiento.fechahora = DateTime.Now;
+                _logger.LogError(ex, "Error al crear movimiento");
+                return StatusCode(500, new { message = "Error al crear movimiento", error = ex.Message });
             }
-
-            if (!ModelState.IsValid)
-            {
-                return new JsonResult(BadRequest(ModelState));
-            }
-
-            _context.Movimientos.Add(movimiento);
-            _context.SaveChanges();
-            
-            // Registrar en historial
-            _historialService.GuardarHistorial("CREAR", movimiento, "Movimientos", $"Creación de movimiento {movimiento.id}");
-            
-            return new JsonResult(Ok(movimiento));
         }
 
         // Endpoint para editar un Movimiento existente
         [HttpPut]
-        public JsonResult Edit(Movimiento movimiento)
+        public async Task<IActionResult> Edit(Movimiento movimiento)
         {
             // First clear any model state errors related to fechahorasistema
             if (ModelState.ContainsKey("fechahorasistema"))
@@ -119,76 +129,100 @@ namespace API.Controllers
                 ModelState.Remove("fechahorasistema");
             }
 
-            if (movimiento.id == 0)
+            try
             {
-                return new JsonResult(BadRequest("Debe proporcionar un id válido para editar un movimiento."));
-            }
+                if (movimiento.id == 0)
+                {
+                    return BadRequest("Debe proporcionar un id válido para editar un movimiento.");
+                }
 
-            if (!ModelState.IsValid)
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var movimientoInDb = await _context.Movimientos.FindAsync(movimiento.id);
+                if (movimientoInDb == null)
+                {
+                    return NotFound();
+                }
+
+                // Registrar estado anterior claramente
+                _historialService.GuardarHistorial(
+                    "ANTES_EDITAR", 
+                    movimientoInDb, 
+                    "Movimientos", 
+                    $"Estado anterior de movimiento ID: {movimientoInDb.id}"
+                );
+                
+                // Preserve the original fechahorasistema
+                movimiento.fechahorasistema = movimientoInDb.fechahorasistema;
+
+                // Aplicar los cambios
+                _context.Entry(movimientoInDb).CurrentValues.SetValues(movimiento);
+                await _context.SaveChangesAsync();
+                
+                // Registrar estado nuevo claramente
+                _historialService.GuardarHistorial(
+                    "DESPUES_EDITAR", 
+                    movimiento, 
+                    "Movimientos", 
+                    $"Estado nuevo de movimiento ID: {movimiento.id}"
+                );
+                
+                return Ok(movimiento);
+            }
+            catch (Exception ex)
             {
-                return new JsonResult(BadRequest(ModelState));
+                _logger.LogError(ex, "Error al editar movimiento: {Id}", movimiento.id);
+                return StatusCode(500, new { message = "Error al editar movimiento", error = ex.Message });
             }
-
-            var movimientoInDb = _context.Movimientos.Find(movimiento.id);
-            if (movimientoInDb == null)
-            {
-                return new JsonResult(NotFound());
-            }
-
-            // Registrar estado anterior claramente
-            _historialService.GuardarHistorial(
-                "ANTES_EDITAR", 
-                movimientoInDb, 
-                "Movimientos", 
-                $"Estado anterior de movimiento ID: {movimientoInDb.id}"
-            );
-            
-            // Preserve the original fechahorasistema
-            movimiento.fechahorasistema = movimientoInDb.fechahorasistema;
-
-            // Aplicar los cambios
-            _context.Entry(movimientoInDb).CurrentValues.SetValues(movimiento);
-            _context.SaveChanges();
-            
-            // Registrar estado nuevo claramente
-            _historialService.GuardarHistorial(
-                "DESPUES_EDITAR", 
-                movimiento, 
-                "Movimientos", 
-                $"Estado nuevo de movimiento ID: {movimiento.id}"
-            );
-            
-            return new JsonResult(Ok(movimiento));
         }
 
         // Get
         [HttpGet]
-        public JsonResult Get(int id)
+        public async Task<IActionResult> Get(int id)
         {
-            var result = _context.Movimientos.Find(id);
-            if (result == null)
+            try
             {
-                return new JsonResult(NotFound());
+                var result = await _context.Movimientos.FindAsync(id);
+                if (result == null)
+                {
+                    return NotFound();
+                }
+                return Ok(result);
             }
-            return new JsonResult(Ok(result));
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener movimiento: {Id}", id);
+                return StatusCode(500, new { message = "Error al obtener movimiento", error = ex.Message });
+            }
         }
 
         // Delete
         [HttpDelete]
-        public JsonResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = _context.Movimientos.Find(id);
-            if (result == null)
+            try
             {
-                return new JsonResult(NotFound());
+                var result = await _context.Movimientos.FindAsync(id);
+                if (result == null)
+                {
+                    return NotFound();
+                }
+                
+                // Registrar antes de eliminar
+                _historialService.GuardarHistorial("ELIMINAR", result, "Movimientos", $"Eliminación de movimiento {result.id}");
+                
+                _context.Movimientos.Remove(result);
+                await _context.SaveChangesAsync();
+                return NoContent();
             }
-            
-            // Registrar antes de eliminar
-            _historialService.GuardarHistorial("ELIMINAR", result, "Movimientos", $"Eliminación de movimiento {result.id}");
-            
-            _context.Movimientos.Remove(result);
-            _context.SaveChanges();
-            return new JsonResult(NoContent());
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar movimiento: {Id}", id);
+                return StatusCode(500, new { message = "Error al eliminar movimiento", error = ex.Message });
+            }
         }
 
         // GetAll
@@ -202,14 +236,11 @@ namespace API.Controllers
                     .OrderByDescending(m => m.id)
                     .ToListAsync();
 
-                return Ok(new
-                {
-                    count = result.Count(),
-                    data = result
-                });
+                return Ok(result);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error al obtener movimientos");
                 return StatusCode(500, new { message = "Error al obtener movimientos", error = ex.Message });
             }
         }
@@ -478,7 +509,7 @@ namespace API.Controllers
             try
             {
                 var barcos = await (from b in _context.Barcos
-                                    join i in _context.Importaciones on b.id equals i.id
+                                    join i in _context.Importaciones on b.id equals i.idbarco // Fix the join - use idbarco
                                     join m in _context.Movimientos on i.id equals m.idimportacion
                                     where m.tipotransaccion == 1
                                     select b)
@@ -487,11 +518,12 @@ namespace API.Controllers
 
                 if (!selectedBarco.HasValue)
                 {
+                    // Return a simple object without reference handling metadata
                     return Ok(new
                     {
                         count = 0,
-                        data = new List<object>(),
-                        barcos
+                        data = new List<object>(), // Empty array without reference metadata
+                        barcos = barcos.Select(b => new { b.id, b.nombrebarco }).ToList()
                     });
                 }
 
@@ -514,14 +546,27 @@ namespace API.Controllers
                                     })
                                    .ToListAsync();
 
-                return Ok(new
+                // Configure JSON serialization options to avoid reference handling
+                var serializerOptions = new JsonSerializerOptions
+                {
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                // Return a clean response without reference handling metadata
+                var response = new
                 {
                     count = result.Count,
-                    data = result,
-                });
+                    data = result, 
+                    barcos = barcos.Select(b => new { b.id, b.nombrebarco }).ToList()
+                };
+
+                return new JsonResult(response, serializerOptions);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error in RegistroRequerimientos");
                 return StatusCode(500, new { message = "Internal server error", error = ex.Message });
             }
         }

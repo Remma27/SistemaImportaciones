@@ -28,6 +28,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 var content = await response.Content.ReadAsStringAsync();
 
                 _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+                // Log first 100 chars of content for debugging
+                _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -40,18 +42,52 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNameCaseInsensitive = true
                 };
 
+                // Analyze JSON structure
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
-
-                if (root.TryGetProperty("value", out JsonElement valueElement))
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
+                // Handle different JSON formats
+                if (root.ValueKind == JsonValueKind.Array)
                 {
-                    var empresasJson = valueElement.GetRawText();
-                    var empresas = JsonSerializer.Deserialize<IEnumerable<Empresa>>(empresasJson, options);
-                    _logger.LogInformation($"Empresas deserializadas: {empresas?.Count() ?? 0}");
+                    // Direct array - our new format
+                    _logger.LogInformation("Detectado formato de array directo");
+                    var empresas = JsonSerializer.Deserialize<List<Empresa>>(content, options);
+                    _logger.LogInformation($"Empresas deserializadas: {empresas?.Count ?? 0}");
                     return empresas ?? new List<Empresa>();
                 }
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    // Object with a property - check common patterns
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
+                    {
+                        _logger.LogInformation("Detectado formato con propiedad 'value'");
+                        var empresasJson = valueElement.GetRawText();
+                        var empresas = JsonSerializer.Deserialize<List<Empresa>>(empresasJson, options);
+                        return empresas ?? new List<Empresa>();
+                    }
+                    else
+                    {
+                        // Try Newtonsoft as last resort
+                        _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
+                        try
+                        {
+                            var empresas = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Empresa>>(content);
+                            if (empresas != null)
+                            {
+                                _logger.LogInformation($"Empresas deserializadas con Newtonsoft: {empresas.Count}");
+                                return empresas;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error con Newtonsoft.Json");
+                        }
+                    }
+                }
 
-                _logger.LogWarning("No se encontró la propiedad 'value' en la respuesta");
+                _logger.LogWarning("No se pudo deserializar la respuesta en ningún formato conocido");
                 return new List<Empresa>();
             }
             catch (Exception ex)

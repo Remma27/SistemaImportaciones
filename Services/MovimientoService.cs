@@ -29,11 +29,75 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var result = await _httpClient.GetFromJsonAsync<IEnumerable<Movimiento>>(_apiBaseUrl);
-                return result ?? Enumerable.Empty<Movimiento>();
+                _logger.LogInformation("Iniciando solicitud GetAllAsync");
+                var response = await _httpClient.GetAsync(_apiBaseUrl + "/GetAll");
+                var content = await response.Content.ReadAsStringAsync();
+                
+                _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+                _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                // Analyze JSON structure
+                using JsonDocument document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
+                // Handle different JSON formats
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    // Direct array - new format
+                    _logger.LogInformation("Detectado formato de array directo");
+                    var movimientos = JsonSerializer.Deserialize<List<Movimiento>>(content, options);
+                    _logger.LogInformation($"Movimientos deserializados: {movimientos?.Count ?? 0}");
+                    return movimientos ?? new List<Movimiento>();
+                }
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    // Object with a property - check common patterns
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
+                    {
+                        _logger.LogInformation("Detectado formato con propiedad 'value'");
+                        var movimientosJson = valueElement.GetRawText();
+                        var movimientos = JsonSerializer.Deserialize<List<Movimiento>>(movimientosJson, options);
+                        return movimientos ?? new List<Movimiento>();
+                    }
+                    else
+                    {
+                        // Try Newtonsoft as last resort
+                        _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
+                        try
+                        {
+                            var movimientos = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Movimiento>>(content);
+                            if (movimientos != null)
+                            {
+                                _logger.LogInformation($"Movimientos deserializados con Newtonsoft: {movimientos.Count}");
+                                return movimientos;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error con Newtonsoft.Json");
+                        }
+                    }
+                }
+
+                _logger.LogWarning("No se pudo deserializar la respuesta en ningún formato conocido");
+                return new List<Movimiento>();
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, "Error al obtener los movimientos");
                 throw new Exception($"Error al obtener los movimientos: {ex.Message}", ex);
             }
         }
@@ -65,14 +129,23 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using JsonDocument document = JsonDocument.Parse(content);
                 Movimiento? movimiento = null;
 
-                if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+                // Analyze JSON structure
+                var root = document.RootElement;
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
+                if (root.ValueKind == JsonValueKind.Object)
                 {
-                    var movimientoJson = valueElement.GetRawText();
-                    movimiento = JsonSerializer.Deserialize<Movimiento>(movimientoJson, options);
-                }
-                else
-                {
-                    movimiento = JsonSerializer.Deserialize<Movimiento>(content, options);
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
+                    {
+                        var movimientoJson = valueElement.GetRawText();
+                        movimiento = JsonSerializer.Deserialize<Movimiento>(movimientoJson, options);
+                    }
+                    else
+                    {
+                        // Direct object - new format
+                        movimiento = JsonSerializer.Deserialize<Movimiento>(content, options);
+                    }
                 }
 
                 return movimiento ?? throw new InvalidOperationException($"No se encontró el movimiento con ID {id}");
@@ -213,11 +286,17 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
+                _logger.LogInformation("Solicitando lista de barcos para importaciones");
                 var response = await _httpClient.GetAsync("/api/Importaciones/GetAll");
-                response.EnsureSuccessStatusCode();
-
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"API Response: {content}");
+                _logger.LogInformation($"API Response recibida, longitud: {content.Length}");
 
                 var options = new JsonSerializerOptions
                 {
@@ -226,20 +305,44 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
-
-                if (root.TryGetProperty("value", out var importacionesElement))
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
+                List<Importacion>? importaciones = null;
+                
+                // Handle different JSON formats
+                if (root.ValueKind == JsonValueKind.Array)
                 {
-                    var importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesElement.GetRawText(), options);
-                    return importaciones?
-                        .OrderByDescending(i => i.fechahora)
-                        .Select(i => new SelectListItem
-                        {
-                            Value = i.id.ToString(),
-                            Text = $"{i.id} - {i.fechahora:dd/MM/yyyy} - {i.Barco?.nombrebarco ?? "Sin barco"}"
-                        }) ?? Enumerable.Empty<SelectListItem>();
+                    // Direct array - new format
+                    _logger.LogInformation("Detectado formato de array directo");
+                    importaciones = JsonSerializer.Deserialize<List<Importacion>>(content, options);
                 }
-
-                return Enumerable.Empty<SelectListItem>();
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    // Object with a property - check common patterns
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
+                    {
+                        _logger.LogInformation("Detectado formato con propiedad 'value'");
+                        var importacionesJson = valueElement.GetRawText();
+                        importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesJson, options);
+                    }
+                }
+                
+                if (importaciones == null || !importaciones.Any())
+                {
+                    _logger.LogWarning("No se encontraron importaciones o no se pudo deserializar la respuesta");
+                    return Enumerable.Empty<SelectListItem>();
+                }
+                
+                _logger.LogInformation($"Importaciones deserializadas: {importaciones.Count}");
+                
+                return importaciones
+                    .OrderByDescending(i => i.fechahora)
+                    .Select(i => new SelectListItem
+                    {
+                        Value = i.id.ToString(),
+                        Text = $"{i.id} - {i.fechahora:dd/MM/yyyy} - {i.Barco?.nombrebarco ?? "Sin barco"}"
+                    }).ToList();
             }
             catch (HttpRequestException ex)
             {
@@ -253,8 +356,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             try
             {
                 _logger.LogInformation("Iniciando solicitud para obtener importaciones");
-
-                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/GetAll");
+                
+                // Change the URL to point to the Importaciones controller instead of Movimientos
+                var url = "/api/Importaciones/GetAll";
+                _logger.LogDebug($"URL: {url}");
+                
+                var response = await _httpClient.GetAsync(url);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -264,6 +371,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"Respuesta recibida. Longitud: {content.Length} caracteres");
+                
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -271,18 +380,51 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
-
-                if (root.TryGetProperty("value", out var valueElement))
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
+                List<Importacion>? importaciones = null;
+                
+                // Handle different JSON formats
+                if (root.ValueKind == JsonValueKind.Array)
                 {
-                    var importaciones = JsonSerializer.Deserialize<List<Importacion>>(valueElement.GetRawText(), options);
-                    return importaciones?.Select(i => new SelectListItem
+                    // Direct array - new format
+                    _logger.LogInformation("Detectado formato de array directo");
+                    importaciones = JsonSerializer.Deserialize<List<Importacion>>(content, options);
+                }
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    // Object with a property - check common patterns
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
-                        Value = i.id.ToString(),
-                        Text = $"{i.Barco?.nombrebarco} - {i.fechahora:dd/MM/yyyy}"
-                    }) ?? Enumerable.Empty<SelectListItem>();
+                        _logger.LogInformation("Detectado formato con propiedad 'value'");
+                        var importacionesJson = valueElement.GetRawText();
+                        importaciones = JsonSerializer.Deserialize<List<Importacion>>(importacionesJson, options);
+                    }
+                }
+                
+                if (importaciones == null || !importaciones.Any())
+                {
+                    _logger.LogWarning("No se encontraron importaciones o no se pudo deserializar la respuesta");
+                    return Enumerable.Empty<SelectListItem>();
                 }
 
-                return Enumerable.Empty<SelectListItem>();
+                _logger.LogInformation($"Importaciones deserializadas: {importaciones.Count}");
+                
+                // Debug log the first few items to verify content
+                for (int i = 0; i < Math.Min(3, importaciones.Count); i++)
+                {
+                    var item = importaciones[i];
+                    _logger.LogDebug($"Item {i}: ID={item.id}, Barco={item.Barco?.nombrebarco ?? "null"}, Fecha={item.fechahora}");
+                }
+                
+                return importaciones
+                    .OrderByDescending(i => i.fechahora) // Sort by date descending for better usability
+                    .Select(i => new SelectListItem
+                    {
+                        Value = i.id.ToString(),
+                        Text = $"{i.Barco?.nombrebarco ?? "Sin barco"} - {i.fechahora:dd/MM/yyyy}"
+                    }).ToList();
             }
             catch (Exception ex)
             {
@@ -295,10 +437,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
+                _logger.LogInformation("Solicitando lista de empresas");
                 var empresaUrl = "/api/Empresa/GetAll";
                 var response = await _httpClient.GetAsync(empresaUrl);
-                response.EnsureSuccessStatusCode();
-
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
                 var options = new JsonSerializerOptions
                 {
@@ -307,21 +455,43 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
+                List<Empresa>? empresas = null;
+                
+                // Handle different JSON formats
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    // Direct array - new format
+                    _logger.LogInformation("Detectado formato de array directo");
+                    empresas = JsonSerializer.Deserialize<List<Empresa>>(content, options);
+                }
+                else if (root.ValueKind == JsonValueKind.Object)
+                {
+                    // Object with a property - check common patterns
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
+                    {
+                        _logger.LogInformation("Detectado formato con propiedad 'value'");
+                        var empresasJson = valueElement.GetRawText();
+                        empresas = JsonSerializer.Deserialize<List<Empresa>>(empresasJson, options);
+                    }
+                }
+                
+                if (empresas == null || !empresas.Any())
+                {
+                    _logger.LogWarning("No se encontraron empresas o no se pudo deserializar la respuesta");
+                    return Enumerable.Empty<SelectListItem>();
+                }
 
-                var empresasArray = root.TryGetProperty("value", out var valueElement)
-                    ? valueElement
-                    : root;
-
-                var empresas = JsonSerializer.Deserialize<List<Empresa>>(empresasArray.GetRawText(), options);
-
-                return empresas?
+                return empresas
                     .Where(e => e.estatus == 1)
                     .OrderBy(e => e.nombreempresa)
                     .Select(e => new SelectListItem
                     {
                         Value = e.id_empresa.ToString(),
                         Text = $"{e.id_empresa} - {e.nombreempresa ?? string.Empty}"
-                    }) ?? Enumerable.Empty<SelectListItem>();
+                    }).ToList();
             }
             catch (HttpRequestException ex)
             {
@@ -330,78 +500,72 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        public async Task<IEnumerable<SelectListItem>> GetEmpresasWithMovimientosAsync(int importacionId)
+        private int? GetIntProperty(JsonElement element, string propertyName)
         {
-            try
+            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Number)
             {
-                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={importacionId}";
-                _logger.LogInformation($"Obteniendo empresas con InformeGeneral: {url}");
-
-                var response = await _httpClient.GetAsync(url);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError($"Error: {response.StatusCode}");
-                    return Enumerable.Empty<SelectListItem>();
-                }
-
-                var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"Respuesta obtenida, longitud: {content.Length}");
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-
-                using var document = JsonDocument.Parse(content);
-                var root = document.RootElement;
-
-                if (root.TryGetProperty("data", out var dataElement))
-                {
-                    var empresasIds = new HashSet<int>();
-                    var empresasNombres = new Dictionary<int, string>();
-
-                    foreach (var item in dataElement.EnumerateArray())
-                    {
-                        if (item.TryGetProperty("empresaId", out var idElement) ||
-                            item.TryGetProperty("id_empresa", out idElement))
-                        {
-                            int empresaId = idElement.GetInt32();
-                            empresasIds.Add(empresaId);
-
-                            if (item.TryGetProperty("empresa", out var nombreElement))
-                            {
-                                empresasNombres[empresaId] = nombreElement.GetString() ?? "Sin nombre";
-                            }
-                        }
-                    }
-
-                    _logger.LogInformation($"Encontradas {empresasIds.Count} empresas con movimientos");
-
-                    var todasLasEmpresas = await GetEmpresasSelectListAsync();
-
-                    return todasLasEmpresas
-                        .Where(e => int.TryParse(e.Value, out var id) && empresasIds.Contains(id))
-                        .ToList();
-                }
-
-                _logger.LogWarning("No se encontró propiedad 'data' en la respuesta");
-                return Enumerable.Empty<SelectListItem>();
+                return property.GetInt32();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener empresas con movimientos");
-                return Enumerable.Empty<SelectListItem>();
-            }
+            return null;
         }
+
+        private string? GetStringProperty(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String)
+            {
+                return property.GetString();
+            }
+            return null;
+        }
+
+        private DateTime? GetDateTimeProperty(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String)
+            {
+                if (DateTime.TryParse(property.GetString(), out DateTime result))
+                {
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        private decimal GetDecimalProperty(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Number)
+            {
+                return property.GetDecimal();
+            }
+            return 0;
+        }
+
         async Task<List<RegistroRequerimientosViewModel>> IMovimientoService.GetRegistroRequerimientosAsync(int barcoId)
         {
             try
             {
-                Console.WriteLine($"Calling API: {_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
+                _logger.LogInformation($"Solicitando RegistroRequerimientos para barcoId={barcoId}");
+                var url = $"{_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}";
+                _logger.LogDebug($"URL: {url}");
 
-                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/RegistroRequerimientos?selectedBarco={barcoId}");
-                response.EnsureSuccessStatusCode();
-
+                var response = await _httpClient.GetAsync(url);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"API Response: {content}");
+                
+                // Log the complete response for debugging
+                _logger.LogInformation($"Respuesta completa: {content}");
+
+                // First try to determine if this is valid JSON at all
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    _logger.LogWarning("La respuesta API está vacía");
+                    return new List<RegistroRequerimientosViewModel>();
+                }
 
                 var options = new JsonSerializerOptions
                 {
@@ -409,31 +573,196 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
 
-                using var document = JsonDocument.Parse(content);
-                var root = document.RootElement;
-
-                if (root.TryGetProperty("data", out var dataElement))
+                try
                 {
-                    var registros = JsonSerializer.Deserialize<List<RegistroRequerimientosViewModel>>(
-                        dataElement.GetRawText(),
-                        options
-                    );
-
-                    Console.WriteLine($"Deserialized {registros?.Count ?? 0} records");
-
-                    return registros ?? new List<RegistroRequerimientosViewModel>();
+                    using var document = JsonDocument.Parse(content);
+                    var root = document.RootElement;
+                    
+                    _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                    
+                    // Handle various response formats
+                    List<RegistroRequerimientosViewModel> result = new List<RegistroRequerimientosViewModel>();
+                    
+                    // Case 1: Direct array in "data" property
+                    if (root.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Array)
+                    {
+                        _logger.LogInformation("Encontrada propiedad 'data' con array directo");
+                        
+                        try {
+                            result = JsonSerializer.Deserialize<List<RegistroRequerimientosViewModel>>(
+                                dataElement.GetRawText(),
+                                options
+                            ) ?? new List<RegistroRequerimientosViewModel>();
+                            _logger.LogInformation($"Deserializados {result.Count} registros desde data array");
+                            return result;
+                        }
+                        catch (JsonException ex) {
+                            _logger.LogWarning($"Error deserializando data array: {ex.Message}");
+                        }
+                    }
+                    
+                    // Case 2: Nested array in "$values" property inside "data"
+                    if (root.TryGetProperty("data", out var dataObj) && 
+                        dataObj.ValueKind == JsonValueKind.Object &&
+                        dataObj.TryGetProperty("$values", out var valuesElement) && 
+                        valuesElement.ValueKind == JsonValueKind.Array)
+                    {
+                        _logger.LogInformation("Encontrada estructura data.$values array");
+                        try {
+                            result = JsonSerializer.Deserialize<List<RegistroRequerimientosViewModel>>(
+                                valuesElement.GetRawText(),
+                                options
+                            ) ?? new List<RegistroRequerimientosViewModel>();
+                            _logger.LogInformation($"Deserializados {result.Count} registros desde $values");
+                            return result;
+                        }
+                        catch (JsonException ex) {
+                            _logger.LogWarning($"Error deserializando $values: {ex.Message}");
+                        }
+                    }
+                    
+                    // Case 3: Root is the array directly
+                    if (root.ValueKind == JsonValueKind.Array)
+                    {
+                        _logger.LogInformation("La raíz del JSON es un array directo");
+                        try {
+                            result = JsonSerializer.Deserialize<List<RegistroRequerimientosViewModel>>(
+                                content,
+                                options
+                            ) ?? new List<RegistroRequerimientosViewModel>();
+                            _logger.LogInformation($"Deserializados {result.Count} registros desde root array");
+                            return result;
+                        }
+                        catch (JsonException ex) {
+                            _logger.LogWarning($"Error deserializando root array: {ex.Message}");
+                        }
+                    }
+                    
+                    // Handle empty results
+                    if (content.Contains("\"count\":0") || content.Contains("\"data\":[]"))
+                    {
+                        _logger.LogInformation("La respuesta indica conteo cero, retornando lista vacía");
+                        return new List<RegistroRequerimientosViewModel>();
+                    }
+                    
+                    // Manual parsing as last resort
+                    if (root.TryGetProperty("data", out var dataElem))
+                    {
+                        _logger.LogInformation("Intentando parsing manual de datos");
+                        result = new List<RegistroRequerimientosViewModel>();
+                        
+                        if (dataElem.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var item in dataElem.EnumerateArray())
+                            {
+                                try 
+                                {
+                                    var registro = new RegistroRequerimientosViewModel
+                                    {
+                                        IdMovimiento = GetIntPropertySafe(item, "idMovimiento"),
+                                        FechaHora = GetDateTimePropertySafe(item, "fechaHora"),
+                                        IdImportacion = GetIntPropertySafe(item, "idImportacion"),
+                                        Importacion = GetStringPropertySafe(item, "importacion"),
+                                        IdEmpresa = GetIntPropertySafe(item, "idEmpresa"),
+                                        Empresa = GetStringPropertySafe(item, "empresa"),
+                                        TipoTransaccion = GetIntPropertySafe(item, "tipoTransaccion"),
+                                        CantidadRequerida = GetDecimalPropertySafe(item, "cantidadRequerida"),
+                                        CantidadCamiones = GetIntPropertySafe(item, "cantidadCamiones")
+                                    };
+                                    result.Add(registro);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "Error procesando elemento individual");
+                                }
+                            }
+                            _logger.LogInformation($"Manualmente procesados {result.Count} registros");
+                            return result;
+                        }
+                    }
+                    
+                    _logger.LogWarning("No se pudo procesar la respuesta en ningún formato conocido");
+                    return new List<RegistroRequerimientosViewModel>();
                 }
-
-                throw new Exception($"Estructura de respuesta inválida. Contenido: {content}");
+                catch (JsonException jex)
+                {
+                    _logger.LogError(jex, "Error analizando el JSON de respuesta");
+                    throw new Exception($"Error procesando la respuesta JSON: {jex.Message}", jex);
+                }
             }
             catch (HttpRequestException ex)
             {
+                _logger.LogError(ex, $"Error HTTP al obtener registros para barcoId={barcoId}");
                 throw new Exception($"Error al obtener registros: {ex.Message}", ex);
             }
-            catch (JsonException ex)
+            catch (Exception ex)
             {
-                throw new Exception($"Error al deserializar la respuesta: {ex.Message}", ex);
+                _logger.LogError(ex, $"Error inesperado al obtener registros para barcoId={barcoId}");
+                throw new Exception($"Error al obtener registros: {ex.Message}", ex);
             }
+        }
+
+        // Helper methods for safe property extraction
+        private int GetIntPropertySafe(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) && 
+                prop.ValueKind != JsonValueKind.Null &&
+                prop.ValueKind != JsonValueKind.Undefined)
+            {
+                if (prop.ValueKind == JsonValueKind.Number && prop.TryGetInt32(out var value))
+                    return value;
+                    
+                if (prop.ValueKind == JsonValueKind.String && 
+                    int.TryParse(prop.GetString(), out var parsedValue))
+                    return parsedValue;
+            }
+            return 0;
+        }
+
+        private decimal GetDecimalPropertySafe(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) && 
+                prop.ValueKind != JsonValueKind.Null &&
+                prop.ValueKind != JsonValueKind.Undefined)
+            {
+                if (prop.ValueKind == JsonValueKind.Number && prop.TryGetDecimal(out var value))
+                    return value;
+                    
+                if (prop.ValueKind == JsonValueKind.String && 
+                    decimal.TryParse(prop.GetString(), out var parsedValue))
+                    return parsedValue;
+            }
+            return 0;
+        }
+
+        private string GetStringPropertySafe(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) && 
+                prop.ValueKind != JsonValueKind.Null &&
+                prop.ValueKind != JsonValueKind.Undefined)
+            {
+                if (prop.ValueKind == JsonValueKind.String)
+                    return prop.GetString() ?? string.Empty;
+                
+                return prop.ToString();
+            }
+            return string.Empty;
+        }
+
+        private DateTime? GetDateTimePropertySafe(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) && 
+                prop.ValueKind != JsonValueKind.Null &&
+                prop.ValueKind != JsonValueKind.Undefined)
+            {
+                if (prop.TryGetDateTime(out var date))
+                    return date;
+                    
+                if (prop.ValueKind == JsonValueKind.String && 
+                    DateTime.TryParse(prop.GetString(), out var parsedDate))
+                    return parsedDate;
+            }
+            return null;
         }
 
         async Task<RegistroRequerimientosViewModel> IMovimientoService.GetRegistroRequerimientoByIdAsync(int id)
@@ -573,10 +902,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes");
-                response.EnsureSuccessStatusCode();
-
+                _logger.LogInformation($"Solicitando informe general para barcoId={barcoId}");
+                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes";
+                _logger.LogDebug($"URL: {url}");
+                
+                var response = await _httpClient.GetAsync(url);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug($"Respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
+                
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -584,6 +924,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
 
                 // Add debug logging to check value
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
@@ -592,16 +934,28 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     _logger.LogInformation($"Total movimientos from API: {TotalMovimientos}");
                 }
 
+                // First check if data property exists
                 if (root.TryGetProperty("data", out var dataElement))
                 {
+                    _logger.LogInformation("Encontrada propiedad 'data' en respuesta");
                     var informes = JsonSerializer.Deserialize<List<InformeGeneralViewModel>>(
                         dataElement.GetRawText(),
                         options
                     );
 
+                    _logger.LogInformation($"Deserializados {informes?.Count ?? 0} informes");
+                    return informes ?? new List<InformeGeneralViewModel>();
+                }
+                
+                // Try to deserialize directly if the response is an array
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    _logger.LogInformation("Intentando deserializar array directamente");
+                    var informes = JsonSerializer.Deserialize<List<InformeGeneralViewModel>>(content, options);
                     return informes ?? new List<InformeGeneralViewModel>();
                 }
 
+                _logger.LogWarning("No se pudo encontrar datos válidos en la respuesta");
                 throw new Exception($"Estructura de respuesta inválida");
             }
             catch (Exception ex)
@@ -781,23 +1135,33 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
+                _logger.LogInformation($"Solicitando datos de escotillas para importación {importacionId}");
                 var url = $"{_apiBaseUrl}/CalculoEscotillas?importacionId={importacionId}";
+                _logger.LogDebug($"URL: {url}");
+                
                 var response = await _httpClient.GetAsync(url);
-
-                response.EnsureSuccessStatusCode();
-
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug($"Respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
+                
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
 
+                // Just try to deserialize directly - this operation already gets a specific format
                 return JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
                     ?? new EscotillaApiResponse();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener datos de escotillas");
+                _logger.LogError(ex, "Error al obtener datos de escotillas para importación {ImportacionId}", importacionId);
                 throw;
             }
         }
@@ -881,22 +1245,30 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             try
             {
                 _logger.LogInformation($"Solicitando movimientos para importación {importacionId}");
-
                 var url = $"{_apiBaseUrl}/GetAllByImportacion?importacionId={importacionId}";
-
-                _logger.LogInformation($"URL API: {url}");
-
+                _logger.LogDebug($"URL: {url}");
+                
                 var response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error del API: {response.StatusCode}");
+                    throw new HttpRequestException($"API error: {response.StatusCode}");
+                }
+                
                 var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"Respuesta recibida de la API. Longitud: {content.Length} caracteres");
-
+                _logger.LogDebug($"Respuesta recibida. Longitud: {content.Length} caracteres");
+                
                 using var document = JsonDocument.Parse(content);
                 var root = document.RootElement;
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
 
+                // First check if data property exists
                 if (root.TryGetProperty("data", out var dataElement))
                 {
+                    _logger.LogInformation("Encontrada propiedad 'data' en respuesta");
+                    
                     if (dataElement.ValueKind == JsonValueKind.Array)
                     {
                         var resultado = new List<RegistroPesajesIndividual>();
@@ -912,8 +1284,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                                     IdImportacion = importacionId,
                                     IdEmpresa = GetIntValue(element, "idEmpresa"),
                                     EmpresaNombre = GetStringValue(element, "empresaNombre") ??
-                                                    GetStringValue(element, "empresa") ??
-                                                    "Sin Empresa",
+                                                   GetStringValue(element, "empresa") ??
+                                                   "Sin Empresa",
                                     Escotilla = GetIntValue(element, "escotilla"),
                                     Bodega = GetStringValue(element, "bodega"),
 
@@ -948,6 +1320,19 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         _logger.LogInformation($"Movimientos procesados exitosamente: {resultado.Count}");
                         return resultado;
                     }
+                }
+                
+                // Try to deserialize directly if the response is an array
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    _logger.LogInformation("Intentando deserializar array directamente");
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    
+                    var resultados = JsonSerializer.Deserialize<List<RegistroPesajesIndividual>>(content, options);
+                    return resultados ?? new List<RegistroPesajesIndividual>();
                 }
 
                 _logger.LogWarning("La respuesta de la API no contiene un array de datos válido");
@@ -1009,18 +1394,21 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
         {
             try
             {
+                _logger.LogInformation($"Solicitando datos de escotillas por empresa para importación {importacionId}");
                 var url = $"{_apiBaseUrl}/CalculoEscotillasPorEmpresa?importacionId={importacionId}";
-                _logger.LogInformation($"Solicitando datos de escotillas por empresa: {url}");
-
+                _logger.LogDebug($"URL: {url}");
+                
                 var response = await _httpClient.GetAsync(url);
-                var content = await response.Content.ReadAsStringAsync();
-
+                
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogError($"Error al obtener escotillas por empresa: {response.StatusCode}, {content}");
+                    _logger.LogError($"Error del API: {response.StatusCode}");
                     throw new HttpRequestException($"API error: {response.StatusCode}");
                 }
-
+                
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug($"Respuesta recibida. Longitud: {content.Length} caracteres");
+                
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -1028,21 +1416,128 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
-
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+                
                 var viewModel = new ReporteEscotillasPorEmpresaViewModel();
 
+                // First try with "empresas" property
                 if (root.TryGetProperty("empresas", out JsonElement empresasElement))
                 {
+                    _logger.LogInformation("Encontrada propiedad 'empresas' en respuesta");
                     viewModel.Empresas = JsonSerializer.Deserialize<List<EmpresaEscotillasViewModel>>(
                         empresasElement.GetRawText(), options) ?? new List<EmpresaEscotillasViewModel>();
+                    return viewModel;
+                }
+                
+                // If no empresas property, try to deserialize the whole response as the companies list
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    _logger.LogInformation("Intentando deserializar array directamente como empresas");
+                    viewModel.Empresas = JsonSerializer.Deserialize<List<EmpresaEscotillasViewModel>>(content, options) 
+                        ?? new List<EmpresaEscotillasViewModel>();
+                    return viewModel;
                 }
 
+                _logger.LogWarning("No se encontraron datos válidos de escotillas por empresa");
                 return viewModel;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener datos de escotillas por empresa");
                 throw;
+            }
+        }
+
+        public async Task<IEnumerable<SelectListItem>> GetEmpresasWithMovimientosAsync(int importacionId)
+        {
+            try
+            {
+                _logger.LogInformation($"Obteniendo empresas con movimientos para importación {importacionId}");
+                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={importacionId}";
+                _logger.LogDebug($"URL: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error: {response.StatusCode}");
+                    return Enumerable.Empty<SelectListItem>();
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                _logger.LogDebug($"Respuesta obtenida, longitud: {content.Length}");
+
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+                
+                _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+
+                // Check for data property in main object
+                if (root.TryGetProperty("data", out var dataElement))
+                {
+                    _logger.LogInformation("Encontrada propiedad 'data' en respuesta");
+                    var empresasIds = new HashSet<int>();
+                    var empresasNombres = new Dictionary<int, string>();
+
+                    foreach (var item in dataElement.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("empresaId", out var idElement) ||
+                            item.TryGetProperty("id_empresa", out idElement))
+                        {
+                            int empresaId = idElement.GetInt32();
+                            empresasIds.Add(empresaId);
+
+                            if (item.TryGetProperty("empresa", out var nombreElement))
+                            {
+                                empresasNombres[empresaId] = nombreElement.GetString() ?? "Sin nombre";
+                            }
+                        }
+                    }
+
+                    _logger.LogInformation($"Encontradas {empresasIds.Count} empresas con movimientos");
+
+                    var todasLasEmpresas = await GetEmpresasSelectListAsync();
+
+                    return todasLasEmpresas
+                        .Where(e => int.TryParse(e.Value, out var id) && empresasIds.Contains(id))
+                        .ToList();
+                }
+                
+                // If response is direct array, process it
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    _logger.LogInformation("Procesando array directo de empresas con movimientos");
+                    var empresasIds = new HashSet<int>();
+                    
+                    foreach (var item in root.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("empresaId", out var idElement) ||
+                            item.TryGetProperty("id_empresa", out idElement))
+                        {
+                            int empresaId = idElement.GetInt32();
+                            empresasIds.Add(empresaId);
+                        }
+                    }
+                    
+                    _logger.LogInformation($"Encontradas {empresasIds.Count} empresas con movimientos (formato directo)");
+                    
+                    var todasLasEmpresas = await GetEmpresasSelectListAsync();
+                    
+                    return todasLasEmpresas
+                        .Where(e => int.TryParse(e.Value, out var id) && empresasIds.Contains(id))
+                        .ToList();
+                }
+
+                _logger.LogWarning("No se encontraron datos válidos de empresas con movimientos");
+                return Enumerable.Empty<SelectListItem>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener empresas con movimientos");
+                return Enumerable.Empty<SelectListItem>();
             }
         }
     }

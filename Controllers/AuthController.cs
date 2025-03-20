@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Antiforgery;
 using Sistema_de_Gestion_de_Importaciones.Extensions;
 using System.Net;
+using System;
+using System.Linq;
 
 namespace SistemaDeGestionDeImportaciones.Controllers
 {
@@ -111,83 +113,86 @@ namespace SistemaDeGestionDeImportaciones.Controllers
                         ? errorMessages.First()
                         : "Por favor, completa correctamente todos los campos";
 
-                    this.Error($"Error de validación: {errorMessage}");
+                    this.Error(errorMessage);
                     return View(model);
                 }
 
-                var resultado = await _usuarioService.IniciarSesionAsync(model);
-                if (!resultado.Success)
-                {
-                    _logger.LogWarning($"Error de inicio de sesión: {resultado.ErrorMessage}");
+                var result = await _usuarioService.IniciarSesionAsync(model);
 
-                    string mensajeError = "Credenciales inválidas";
-                    if (!string.IsNullOrEmpty(resultado.ErrorMessage))
+                if (result.Success)
+                {
+                    _logger.LogInformation("Inicio de sesión exitoso para el usuario {Email}", model.Email);
+                    
+                    // Extract user data from the result
+                    if (result.Data != null && result.Data is Dictionary<string, object> userData)
                     {
-                        if (resultado.ErrorMessage.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
-                            mensajeError = "El correo electrónico no está registrado en el sistema";
-                        else if (resultado.ErrorMessage.Contains("contraseña", StringComparison.OrdinalIgnoreCase))
-                            mensajeError = "La contraseña ingresada es incorrecta";
-                        else if (resultado.ErrorMessage.Contains("bloqueado", StringComparison.OrdinalIgnoreCase))
-                            mensajeError = "La cuenta está bloqueada. Contacte al administrador";
+                        // Try to get user data
+                        userData.TryGetValue("UserId", out var userIdObj);
+                        userData.TryGetValue("UserName", out var userNameObj);
+                        userData.TryGetValue("UserRole", out var userRoleObj);
+                        
+                        int userId = userIdObj is int id ? id : 0;
+                        string userName = userNameObj?.ToString() ?? "Usuario";
+                        string userRole = userRoleObj?.ToString() ?? "Usuario";
+                        
+                        _logger.LogInformation("Datos de usuario extraídos: ID={UserId}, Nombre={UserName}, Rol={UserRole}", 
+                            userId, userName, userRole);
+                        
+                        // Create claims
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                            new Claim(ClaimTypes.Name, userName),
+                            new Claim(ClaimTypes.Email, model.Email),
+                            new Claim(ClaimTypes.Role, userRole)
+                        };
+
+                        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        var authProperties = new AuthenticationProperties
+                        {
+                            IsPersistent = model.RememberMe,
+                            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                        };
+
+                        await HttpContext.SignInAsync(
+                            CookieAuthenticationDefaults.AuthenticationScheme,
+                            new ClaimsPrincipal(claimsIdentity),
+                            authProperties);
+
+                        this.Success($"¡Bienvenido(a) {userName}!");
+
+                        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                        {
+                            return Redirect(returnUrl);
+                        }
                         else
-                            mensajeError = $"Error de autenticación: {resultado.ErrorMessage}";
+                        {
+                            return RedirectToAction("Index", "Home");
+                        }
                     }
-
-                    this.Error(mensajeError);
-                    ModelState.AddModelError(string.Empty, resultado.ErrorMessage ?? mensajeError);
+                    else
+                    {
+                        _logger.LogWarning("Autenticación exitosa pero sin datos de usuario");
+                        this.Error("Credenciales válidas pero no se pudo obtener información del usuario.");
+                        ModelState.AddModelError(string.Empty, "Credenciales válidas pero no se pudo obtener información del usuario.");
+                        return View(model);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Inicio de sesión fallido para {Email}: {Message}", model.Email, result.Message);
+                    string errorMessage = result.Message ?? "Credenciales inválidas";
+                    this.Error(errorMessage);
+                    ModelState.AddModelError(string.Empty, errorMessage);
                     return View(model);
                 }
-
-                var usuario = resultado.Data as Usuario;
-                if (usuario == null)
-                {
-                    _logger.LogWarning("Respuesta de usuario nula o inválida");
-                    this.Error("Error de autenticación");
-                    ModelState.AddModelError(string.Empty, "Error de autenticación");
-                    return View(model);
-                }
-
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, usuario.nombre ?? string.Empty),
-                    new Claim(ClaimTypes.Email, usuario.email ?? string.Empty),
-                    new Claim("UserId", usuario.id.ToString())
-                };
-
-                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                var authProperties = new AuthenticationProperties
-                {
-                    IsPersistent = model.RememberMe,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(12)
-                };
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity),
-                    authProperties);
-
-                _logger.LogInformation($"Usuario {usuario.email} ha iniciado sesión correctamente");
-                this.Success("Inicio de sesión exitoso");
-
-                return !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
-                    ? Redirect(returnUrl)
-                    : RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
-                string mensajeError = "Ha ocurrido un error durante el inicio de sesión";
-                if (ex is HttpRequestException httpEx)
-                {
-                    mensajeError = $"Error de conexión: {FormatearErrorHttp((HttpRequestException)ex)}";
-                }
-                else if (ex.InnerException != null)
-                {
-                    mensajeError = $"Error: {ObtenerMensajeAmigable(ex.InnerException.Message)}";
-                }
-
-                this.Error(mensajeError);
-                _logger.LogError(ex, "Error en el proceso de inicio de sesión");
-                ModelState.AddModelError(string.Empty, mensajeError);
+                _logger.LogError(ex, "Error en inicio de sesión para {Email}", model.Email);
+                string errorMessage = "Error de conexión con el servidor. Inténtelo de nuevo más tarde.";
+                this.Error(errorMessage);
+                ModelState.AddModelError(string.Empty, errorMessage);
                 return View(model);
             }
         }

@@ -4,6 +4,8 @@ using API.Data;
 using Microsoft.AspNetCore.Authorization;
 using API.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace API.Controllers
 {
@@ -145,10 +147,18 @@ namespace API.Controllers
 
         // Get All
         [HttpGet]
-        public JsonResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _context.Empresas.ToList();
-            return new JsonResult(Ok(result));
+            try
+            {
+                var result = await _context.Empresas.ToListAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener empresas");
+                return StatusCode(500, new { message = "Error al obtener empresas", error = ex.Message });
+            }
         }
     }
 }

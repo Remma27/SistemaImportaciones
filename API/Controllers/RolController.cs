@@ -186,12 +186,24 @@ namespace API.Controllers
                 if (rol == null)
                     return NotFound(new { message = "Rol no encontrado" });
 
-                // Eliminar asignaciones anteriores
-                var permisosActuales = await _context.RolPermisos
-                    .Where(rp => rp.rol_id == model.RolId)
-                    .ToListAsync();
+                try
+                {
+                    // Intentar eliminar las asignaciones anteriores
+                    var permisosActuales = await _context.RolPermisos
+                        .Where(rp => rp.rol_id == model.RolId)
+                        .ToListAsync();
 
-                _context.RolPermisos.RemoveRange(permisosActuales);
+                    _context.RolPermisos.RemoveRange(permisosActuales);
+                }
+                catch (Exception ex)
+                {
+                    // Si falla aquí, probablemente la tabla no existe
+                    if (ex.InnerException?.Message?.Contains("doesn't exist") == true)
+                    {
+                        return StatusCode(500, new { message = "Error: La tabla 'rol_permisos' no existe en la base de datos. Por favor, contacte al administrador del sistema." });
+                    }
+                    throw; // Relanzar si es otro tipo de error
+                }
 
                 // Crear nuevas asignaciones
                 var nuevosPermisos = new List<RolPermiso>();

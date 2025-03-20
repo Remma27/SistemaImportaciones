@@ -1,9 +1,14 @@
-using Sistema_de_Gestion_de_Importaciones.ViewModels;
+using Microsoft.Extensions.Configuration;
 using API.Models;
+using Sistema_de_Gestion_de_Importaciones.ViewModels;
 using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
+using Sistema_de_Gestion_de_Importaciones.Models;
+
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace SistemaDeGestionDeImportaciones.Services
 {
@@ -11,13 +16,13 @@ namespace SistemaDeGestionDeImportaciones.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiUrl;
+        private readonly ILogger<UsuarioService>? _logger;
 
-        public UsuarioService(HttpClient httpClient, IConfiguration configuration)
+        public UsuarioService(HttpClient httpClient, IConfiguration configuration, ILogger<UsuarioService>? logger = null)
         {
             _httpClient = httpClient;
-            var baseUrl = configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5079";
-            _apiUrl = baseUrl.EndsWith("/") ? $"{baseUrl}api/Usuario" : $"{baseUrl}/api/Usuario";
-            Console.WriteLine($"[Debug] _apiUrl: {_apiUrl}");
+            _apiUrl = configuration["ApiSettings:BaseUrl"] + "/api/Usuario";
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Usuario>> GetAllAsync()
@@ -30,66 +35,79 @@ namespace SistemaDeGestionDeImportaciones.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger?.LogError("Error fetching users: {StatusCode}, {Content}", response.StatusCode, errorContent);
                     throw new Exception($"Error al obtener usuarios: {response.StatusCode}. Detalle: {errorContent}");
                 }
                 
                 var jsonString = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[DEBUG] GetAllAsync response: {jsonString.Substring(0, Math.Min(100, jsonString.Length))}...");
+                _logger?.LogDebug("GetAllAsync response: {Response}", 
+                    jsonString.Length > 100 ? jsonString.Substring(0, 100) + "..." : jsonString);
                 
-                // Deserializar con opciones para manejar referencias circulares
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
                     ReferenceHandler = ReferenceHandler.Preserve
                 };
                 
-                try
+                // Analyze JSON structure for flexible deserialization
+                using JsonDocument document = JsonDocument.Parse(jsonString);
+                var root = document.RootElement;
+                
+                _logger?.LogDebug("JSON Root Kind: {RootKind}", root.ValueKind);
+                
+                // Handle different JSON formats
+                if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Intento 1: Deserializar directamente a lista de usuarios
-                    return JsonSerializer.Deserialize<List<Usuario>>(jsonString, options) ?? new List<Usuario>();
+                    // Direct array - new format
+                    _logger?.LogInformation("Detected direct array format");
+                    var usuarios = JsonSerializer.Deserialize<List<Usuario>>(jsonString, options);
+                    _logger?.LogInformation("Deserialized {Count} users", usuarios?.Count ?? 0);
+                    return usuarios ?? new List<Usuario>();
                 }
-                catch (Exception ex1)
+                else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    Console.WriteLine($"[DEBUG] Error en deserialización directa: {ex1.Message}");
-                    
-                    try
+                    // Object with a property - check common patterns
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
-                        // Intento 2: Verificar si hay una propiedad 'value'
-                        using (var doc = JsonDocument.Parse(jsonString))
-                        {
-                            if (doc.RootElement.TryGetProperty("value", out var valueElement))
-                            {
-                                return JsonSerializer.Deserialize<List<Usuario>>(valueElement.GetRawText(), options) ?? new List<Usuario>();
-                            }
-                            
-                            // Intento 3: Verificar si la raíz es un array
-                            if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                            {
-                                return JsonSerializer.Deserialize<List<Usuario>>(jsonString, options) ?? new List<Usuario>();
-                            }
-                        }
-                    }
-                    catch (Exception ex2)
-                    {
-                        Console.WriteLine($"[DEBUG] Error en deserialización con JsonDocument: {ex2.Message}");
-                    }
-                    
-                    // Intento de último recurso usando Newtonsoft.Json que es más tolerante
-                    try
-                    {
-                        var usuarios = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Usuario>>(jsonString);
+                        _logger?.LogInformation("Detected 'value' property format");
+                        var usuariosJson = valueElement.GetRawText();
+                        var usuarios = JsonSerializer.Deserialize<List<Usuario>>(usuariosJson, options);
                         return usuarios ?? new List<Usuario>();
+                    }
+                    
+                    // Try with Newtonsoft.Json as fallback
+                    try
+                    {
+                        _logger?.LogInformation("Trying Newtonsoft.Json deserialization");
+                        var settings = new Newtonsoft.Json.JsonSerializerSettings
+                        {
+                            ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                        };
+                        var usuarios = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Usuario>>(jsonString, settings);
+                        if (usuarios != null)
+                        {
+                            _logger?.LogInformation("Deserialized {Count} users with Newtonsoft", usuarios.Count);
+                            return usuarios;
+                        }
                     }
                     catch (Exception ex3)
                     {
-                        Console.WriteLine($"[DEBUG] Error en deserialización con Newtonsoft: {ex3.Message}");
-                        throw new Exception($"No se pudieron deserializar los usuarios: {ex1.Message}", ex1);
+                        _logger?.LogError(ex3, "Newtonsoft.Json deserialization error");
                     }
                 }
+                
+                _logger?.LogWarning("Could not deserialize response in any known format");
+                return new List<Usuario>();
             }
             catch (HttpRequestException ex)
             {
+                _logger?.LogError(ex, "HTTP request error");
                 throw new Exception($"Error al obtener los usuarios: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Unexpected error in GetAllAsync");
+                throw new Exception($"Error inesperado al obtener usuarios: {ex.Message}", ex);
             }
         }
 
@@ -97,41 +115,63 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                // Añadir la acción específica a la URL
                 var response = await _httpClient.GetAsync($"{_apiUrl}/Get?id={id}");
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Error al obtener el usuario {id}: {response.StatusCode}. Detalle: {errorContent}");
+                    _logger?.LogError("Error fetching user {Id}: {StatusCode}, {Content}", id, response.StatusCode, errorContent);
+                    throw new Exception($"Error al obtener usuario: {response.StatusCode}. Detalle: {errorContent}");
                 }
                 
-                var jsonString = await response.Content.ReadAsStringAsync();
+                var content = await response.Content.ReadAsStringAsync();
+                _logger?.LogDebug("GetByIdAsync response: {Response}", 
+                    content.Length > 100 ? content.Substring(0, 100) + "..." : content);
                 
-                // Deserializar manualmente con opciones específicas
                 var options = new JsonSerializerOptions
                 {
-                    PropertyNameCaseInsensitive = true
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
                 };
                 
-                // Extraer datos del objeto de respuesta
-                using (var doc = JsonDocument.Parse(jsonString))
+                // Analyze JSON structure
+                using JsonDocument document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+                
+                Usuario? usuario = null;
+                
+                if (root.ValueKind == JsonValueKind.Object)
                 {
-                    if (doc.RootElement.TryGetProperty("value", out var valueElement))
+                    if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
-                        var usuario = JsonSerializer.Deserialize<Usuario>(valueElement.GetRawText(), options);
-                        if (usuario == null)
-                            throw new KeyNotFoundException($"No se encontró el usuario con ID {id}");
-                        
-                        return usuario;
+                        usuario = JsonSerializer.Deserialize<Usuario>(valueElement.GetRawText(), options);
+                    }
+                    else
+                    {
+                        // Direct object
+                        usuario = JsonSerializer.Deserialize<Usuario>(content, options);
                     }
                 }
                 
-                throw new KeyNotFoundException($"No se encontró el usuario con ID {id}");
+                if (usuario == null)
+                {
+                    try
+                    {
+                        // Try with Newtonsoft as fallback
+                        usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Usuario>(content);
+                    }
+                    catch
+                    {
+                        // Ignore Newtonsoft errors
+                    }
+                }
+                
+                return usuario ?? throw new KeyNotFoundException($"No se encontró el usuario con ID {id}");
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                throw new Exception($"Error al obtener el usuario {id}: {ex.Message}", ex);
+                _logger?.LogError(ex, "Error getting user {Id}", id);
+                throw new Exception($"Error al obtener el usuario: {ex.Message}", ex);
             }
         }
 
@@ -139,13 +179,55 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(_apiUrl, usuario);
-                response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadFromJsonAsync<Usuario>();
-                return result ?? throw new InvalidOperationException("Error al crear el usuario");
+                _logger?.LogInformation("Creating user: {Email}", usuario.email);
+                
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Create", usuario);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger?.LogError("Error creating user: {StatusCode}, {Content}", response.StatusCode, errorContent);
+                    throw new Exception($"Error al crear usuario: {response.StatusCode}. Detalle: {errorContent}");
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                _logger?.LogDebug("CreateAsync response: {Response}", 
+                    content.Length > 100 ? content.Substring(0, 100) + "..." : content);
+                
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+
+                try
+                {
+                    using var document = JsonDocument.Parse(content);
+                    
+                    if (document.RootElement.TryGetProperty("value", out var valueElement))
+                    {
+                        return JsonSerializer.Deserialize<Usuario>(valueElement.GetRawText(), options) ?? usuario;
+                    }
+                    
+                    return JsonSerializer.Deserialize<Usuario>(content, options) ?? usuario;
+                }
+                catch (JsonException)
+                {
+                    // Try with Newtonsoft as fallback
+                    try
+                    {
+                        return Newtonsoft.Json.JsonConvert.DeserializeObject<Usuario>(content) ?? usuario;
+                    }
+                    catch
+                    {
+                        // Return the original if all else fails
+                        return usuario;
+                    }
+                }
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex) when (ex is not JsonException)
             {
+                _logger?.LogError(ex, "Error creating user");
                 throw new Exception($"Error al crear el usuario: {ex.Message}", ex);
             }
         }
@@ -154,63 +236,56 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                // Verificar que el ID sea consistente
-                usuario.id = id;
+                _logger?.LogInformation("Updating user: {Id}", id);
                 
-                Console.WriteLine($"[DEBUG-CRÍTICO] Actualizando usuario {id}: {usuario.nombre}, {usuario.email}, Activo: {usuario.activo}");
-                
-                // Validar datos obligatorios
-                if (string.IsNullOrWhiteSpace(usuario.nombre) || string.IsNullOrWhiteSpace(usuario.email))
-                {
-                    throw new ArgumentException("El nombre y email son obligatorios");
-                }
-
-                // Crear objeto simplificado para la actualización que no incluye password_hash
-                var actualizacionUsuario = new
-                {
-                    id = usuario.id,
-                    nombre = usuario.nombre,
-                    email = usuario.email,
-                    activo = usuario.activo,
-                    rol_id = usuario.rol_id
-                    // No incluimos password_hash intencionalmente
-                };
-                
-                // Configurar opciones de serialización
-                var jsonOptions = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
-                
-                // Serializar los datos de actualización
-                var jsonContent = JsonSerializer.Serialize(actualizacionUsuario, jsonOptions);
-                Console.WriteLine($"[DEBUG-CRÍTICO] JSON a enviar: {jsonContent}");
-                
-                // Crear contenido HTTP
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                
-                // Realizar la petición
-                var response = await _httpClient.PutAsync($"{_apiUrl}/Edit", content);
+                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/Edit", usuario);
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[DEBUG-CRÍTICO] Error response: {errorContent}");
-                    throw new Exception($"Error al actualizar el usuario: {response.StatusCode}. Detalle: {errorContent}");
+                    _logger?.LogError("Error updating user {Id}: {StatusCode}, {Content}", id, response.StatusCode, errorContent);
+                    throw new Exception($"Error al actualizar usuario: {response.StatusCode}. Detalle: {errorContent}");
                 }
                 
-                var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[DEBUG-CRÍTICO] Respuesta exitosa: {responseContent}");
+                var content = await response.Content.ReadAsStringAsync();
+                _logger?.LogDebug("UpdateAsync response: {Response}", 
+                    content.Length > 100 ? content.Substring(0, 100) + "..." : content);
                 
-                // Devolver el usuario actualizado
-                return usuario;
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+
+                try
+                {
+                    using var document = JsonDocument.Parse(content);
+                    
+                    if (document.RootElement.TryGetProperty("value", out var valueElement))
+                    {
+                        return JsonSerializer.Deserialize<Usuario>(valueElement.GetRawText(), options) ?? usuario;
+                    }
+                    
+                    return JsonSerializer.Deserialize<Usuario>(content, options) ?? usuario;
+                }
+                catch (JsonException)
+                {
+                    // Try with Newtonsoft as fallback
+                    try
+                    {
+                        return Newtonsoft.Json.JsonConvert.DeserializeObject<Usuario>(content) ?? usuario;
+                    }
+                    catch
+                    {
+                        // Return the original if all else fails
+                        return usuario;
+                    }
+                }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not JsonException)
             {
-                Console.WriteLine($"[DEBUG-CRÍTICO] Error general en UpdateAsync: {ex.Message}");
-                Console.WriteLine($"[DEBUG-CRÍTICO] StackTrace: {ex.StackTrace}");
-                throw;
+                _logger?.LogError(ex, "Error updating user {Id}", id);
+                throw new Exception($"Error al actualizar el usuario: {ex.Message}", ex);
             }
         }
 
@@ -218,17 +293,20 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                // Corrigiendo la URL para usar el endpoint correcto
+                _logger?.LogInformation("Deleting user: {Id}", id);
+                
                 var response = await _httpClient.DeleteAsync($"{_apiUrl}/Delete?id={id}");
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Error al eliminar el usuario: {response.StatusCode}. Detalle: {errorContent}");
+                    _logger?.LogError("Error deleting user {Id}: {StatusCode}, {Content}", id, response.StatusCode, errorContent);
+                    throw new Exception($"Error al eliminar usuario: {response.StatusCode}. Detalle: {errorContent}");
                 }
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
+                _logger?.LogError(ex, "Error deleting user {Id}", id);
                 throw new Exception($"Error al eliminar el usuario: {ex.Message}", ex);
             }
         }
@@ -237,35 +315,42 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                var usuarioToCreate = new Usuario
+                _logger?.LogInformation("Registering new user: {Email}", model.Email);
+                
+                var usuario = new Usuario
                 {
-                    id = 0,
                     nombre = model.Nombre,
                     email = model.Email,
                     password_hash = model.Password,
-                    fecha_creacion = DateTime.Now,
-                    activo = true
+                    activo = true,
+                    fecha_creacion = DateTime.Now
                 };
-
-                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Registrar", usuarioToCreate);
-
+                
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/Registrar", usuario);
+                var content = await response.Content.ReadAsStringAsync();
+                
+                _logger?.LogDebug("Registration response: {Response}", 
+                    content.Length > 100 ? content.Substring(0, 100) + "..." : content);
+                
                 if (!response.IsSuccessStatusCode)
                 {
-                    string errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[ERROR] Status: {response.StatusCode}, Content: {errorContent}");
-                    return OperationResult.CreateFailure($"Error al registrar el usuario: {response.StatusCode} - {errorContent}");
+                    _logger?.LogError("Registration error: {StatusCode}, {Content}", response.StatusCode, content);
+                    
+                    // Check for specific error messages to provide friendly errors
+                    if (content.Contains("ya está registrado"))
+                    {
+                        return new OperationResult { Success = false, message = "El correo electrónico ya está registrado" };
+                    }
+                    
+                    return new OperationResult { Success = false, message = $"Error de registro: {content}" };
                 }
-
-                var usuario = await response.Content.ReadFromJsonAsync<Usuario>();
-                if (usuario == null)
-                {
-                    return OperationResult.CreateFailure("Error al registrar el usuario");
-                }
-                return OperationResult.CreateSuccess(usuario);
+                
+                return new OperationResult { Success = true, message = "Usuario registrado correctamente" };
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                return OperationResult.CreateFailure($"Error al registrar el usuario: {ex.Message}");
+                _logger?.LogError(ex, "Error during user registration");
+                return new OperationResult { Success = false, message = $"Error al registrar usuario: {ex.Message}" };
             }
         }
 
@@ -273,309 +358,235 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                _httpClient.DefaultRequestHeaders.Accept.Clear();
-                _httpClient.DefaultRequestHeaders.Accept.Add(
-                    new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-
+                _logger?.LogInformation("Initiating login for user: {Email}", model.Email);
+                
                 var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/IniciarSesion", model);
-
-                var jsonString = await response.Content.ReadAsStringAsync();
-
+                var content = await response.Content.ReadAsStringAsync();
+                
+                _logger?.LogDebug("Login response: {Response}", 
+                    content.Length > 100 ? content.Substring(0, 100) + "..." : content);
+                
                 if (!response.IsSuccessStatusCode)
                 {
-                    try
+                    _logger?.LogWarning("Login failed: {StatusCode}, {Content}", response.StatusCode, content);
+                    
+                    if (content.Contains("Credenciales inválidas"))
                     {
-                        var errorObj = JsonSerializer.Deserialize<JsonElement>(jsonString);
-                        var errorMessage = errorObj.TryGetProperty("message", out var msgElement)
-                            ? msgElement.GetString() ?? "Error desconocido en la API"
-                            : "Error desconocido en la API";
-
-                        // Log más detallado para el error de inicio de sesión
-                        Console.WriteLine($"[ERROR] Login fallido - Código: {response.StatusCode}, Mensaje: {errorMessage}");
-                        
-                        // Verificar si es un mensaje específico de cuenta desactivada
-                        if (errorMessage.Contains("cuenta está desactivada") || errorMessage.Contains("inactivo"))
-                        {
-                            return OperationResult.CreateFailure(errorMessage);
-                        }
-
-                        return OperationResult.CreateFailure(errorMessage);
+                        return new OperationResult { Success = false, Message = "Credenciales inválidas" };
                     }
-                    catch
+                    
+                    if (content.Contains("cuenta está desactivada"))
                     {
-                        return OperationResult.CreateFailure($"Error al iniciar sesión: {response.StatusCode}");
+                        return new OperationResult { Success = false, Message = "Su cuenta está desactivada. Contacte al administrador." };
                     }
+                    
+                    return new OperationResult { Success = false, Message = $"Error de inicio de sesión: {content}" };
                 }
-
+                
+                // Successful login
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    ReferenceHandler = ReferenceHandler.Preserve
+                };
+                
                 try
                 {
-                    var responseObj = JsonSerializer.Deserialize<JsonElement>(jsonString);
-
-                    if (responseObj.TryGetProperty("user", out var userElement))
+                    // Parse login response to extract additional data
+                    using var document = JsonDocument.Parse(content);
+                    var root = document.RootElement;
+                    
+                    string? userRole = null;
+                    int userId = 0;
+                    string? userName = null;
+                    
+                    if (root.TryGetProperty("user", out var userElement))
                     {
-                        var usuario = JsonSerializer.Deserialize<Usuario>(userElement.GetRawText());
-                        if (usuario == null)
+                        if (userElement.TryGetProperty("id", out var idElement))
                         {
-                            return OperationResult.CreateFailure("No se pudo deserializar los datos del usuario");
+                            userId = idElement.GetInt32();
                         }
-                        return OperationResult.CreateSuccess(usuario);
+                        
+                        if (userElement.TryGetProperty("nombre", out var nameElement))
+                        {
+                            userName = nameElement.GetString();
+                        }
+                        
+                        if (userElement.TryGetProperty("rol", out var rolElement))
+                        {
+                            userRole = rolElement.GetString();
+                        }
                     }
-                    else
-                    {
-                        return OperationResult.CreateFailure("Formato de respuesta inválido");
-                    }
+                    
+                    return new OperationResult 
+                    { 
+                        Success = true, 
+                        Message = "Inicio de sesión exitoso",
+                        Data = new Dictionary<string, object?>
+                        {
+                            ["UserId"] = userId,
+                            ["UserName"] = userName,
+                            ["UserRole"] = userRole
+                        }
+                    };
                 }
-                catch (Exception ex)
+                catch (JsonException jsonEx)
                 {
-                    return OperationResult.CreateFailure($"Error al procesar respuesta: {ex.Message}");
+                    _logger?.LogError(jsonEx, "Error parsing login response");
+                    return new OperationResult { Success = true, Message = "Inicio de sesión exitoso, pero hubo un problema procesando la respuesta." };
                 }
             }
             catch (Exception ex)
             {
-                return OperationResult.CreateFailure($"Error en la conexión: {ex.Message}");
+                _logger?.LogError(ex, "Error during login");
+                return new OperationResult { Success = false, Message = $"Error al iniciar sesión: {ex.Message}" };
             }
         }
 
-        // Método para asignar un rol a un usuario
         public async Task<OperationResult> AsignarRolAsync(int usuarioId, int rolId)
         {
             try
             {
-                // Añadir logging detallado para diagnóstico
-                Console.WriteLine($"[DEBUG] Iniciando AsignarRolAsync - UsuarioId: {usuarioId}, RolId: {rolId}");
+                _logger?.LogInformation("Assigning role {RolId} to user {UserId}", rolId, usuarioId);
                 
-                // Validar los datos de entrada
-                if (usuarioId <= 0)
-                    return OperationResult.CreateFailure("ID de usuario inválido");
-                
-                if (rolId <= 0)
-                    return OperationResult.CreateFailure("ID de rol inválido");
-                    
-                var model = new AsignarRolViewModel 
-                { 
+                var model = new 
+                {
                     UsuarioId = usuarioId, 
-                    RolId = rolId 
+                    RolId = rolId
                 };
                 
-                // Mostrar URL completa a la que se enviará la solicitud
-                string requestUrl = $"{_apiUrl}/AsignarRol";
-                Console.WriteLine($"[DEBUG] URL para asignar rol: {requestUrl}");
-                Console.WriteLine($"[DEBUG] Datos a enviar: UsuarioId={usuarioId}, RolId={rolId}");
-                
-                // Mejorar el manejo de errores HTTP
-                var jsonContent = JsonSerializer.Serialize(model);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                
-                var response = await _httpClient.PostAsync(requestUrl, content);
-                var responseContent = await response.Content.ReadAsStringAsync();
-                
-                Console.WriteLine($"[DEBUG] Status Code: {response.StatusCode}");
-                Console.WriteLine($"[DEBUG] Respuesta: {responseContent}");
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/AsignarRol", model);
+                var content = await response.Content.ReadAsStringAsync();
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return OperationResult.CreateFailure($"Error al asignar rol: {response.StatusCode} - {responseContent}");
+                    _logger?.LogError("Role assignment error: {StatusCode}, {Content}", response.StatusCode, content);
+                    return new OperationResult { Success = false, Message = $"Error al asignar rol: {content}" };
                 }
                 
-                // Verificar el formato de la respuesta
-                try
-                {
-                    var responseObj = JsonSerializer.Deserialize<JsonElement>(responseContent);
-                    if (responseObj.TryGetProperty("message", out var msgElement))
-                    {
-                        string message = msgElement.GetString() ?? "Rol asignado correctamente";
-                        Console.WriteLine($"[DEBUG] Mensaje de éxito: {message}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[DEBUG] Error al procesar respuesta (pero la operación fue exitosa): {ex.Message}");
-                }
-                
-                return OperationResult.CreateSuccess(true);
+                return new OperationResult { Success = true, Message = "Rol asignado correctamente" };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[DEBUG] Excepción en AsignarRolAsync: {ex.Message}");
-                Console.WriteLine($"[DEBUG] Stack Trace: {ex.StackTrace}");
-                return OperationResult.CreateFailure($"Error de conexión: {ex.Message}");
+                _logger?.LogError(ex, "Error assigning role to user {UserId}", usuarioId);
+                return new OperationResult { Success = false, Message = $"Error al asignar rol: {ex.Message}" };
             }
         }
 
-        // Método para cambiar la contraseña de un usuario
         public async Task<OperationResult> CambiarPasswordAsync(int usuarioId, string newPassword)
         {
             try
             {
-                var usuario = await GetByIdAsync(usuarioId);
-                if (usuario == null)
-                    return OperationResult.CreateFailure("Usuario no encontrado");
+                _logger?.LogInformation("Changing password for user {UserId}", usuarioId);
                 
-                // Asignar nueva contraseña y mantener los demás datos
-                usuario.password_hash = newPassword;
-                
-                var response = await _httpClient.PutAsJsonAsync($"{_apiUrl}/Edit", usuario);
-                if (!response.IsSuccessStatusCode)
+                var model = new 
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return OperationResult.CreateFailure($"Error al cambiar contraseña: {response.StatusCode} - {errorContent}");
-                }
+                    UsuarioId = usuarioId, 
+                    NewPassword = newPassword
+                };
                 
-                return OperationResult.CreateSuccess(true);
-            }
-            catch (Exception ex)
-            {
-                return OperationResult.CreateFailure($"Error de conexión: {ex.Message}");
-            }
-        }
-
-        // Método específico para cambiar el estado activo de un usuario sin necesitar la contraseña
-        public async Task<OperationResult> ToggleActivoAsync(int usuarioId, bool nuevoEstado)
-        {
-            try
-            {
-                // URL específica para cambiar solo el estado activo
-                string url = $"{_apiUrl}/ToggleActivo?id={usuarioId}&activo={nuevoEstado}";
-                
-                var response = await _httpClient.PostAsync(url, null);
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/CambiarPassword", model);
+                var content = await response.Content.ReadAsStringAsync();
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    return OperationResult.CreateFailure($"Error al cambiar estado del usuario: {response.StatusCode} - {errorContent}");
+                    _logger?.LogError("Password change error: {StatusCode}, {Content}", response.StatusCode, content);
+                    return new OperationResult { Success = false, Message = $"Error al cambiar contraseña: {content}" };
                 }
                 
-                return OperationResult.CreateSuccess(true);
+                return new OperationResult { Success = true, Message = "Contraseña cambiada correctamente" };
             }
             catch (Exception ex)
             {
-                return OperationResult.CreateFailure($"Error de conexión: {ex.Message}");
+                _logger?.LogError(ex, "Error changing password for user {UserId}", usuarioId);
+                return new OperationResult { Success = false, Message = $"Error al cambiar contraseña: {ex.Message}" };
             }
         }
 
-        // Método para obtener todos los roles disponibles
         public async Task<List<Rol>> GetRolesAsync()
         {
             try
             {
-                // URL correcta para obtener roles
-                string baseUrl = _apiUrl.Substring(0, _apiUrl.LastIndexOf("/api/") + 5);
-                string requestUrl = $"{baseUrl}Rol/GetAll";
-                Console.WriteLine($"[ROLES] Solicitando roles desde: {requestUrl}");
+                _logger?.LogInformation("Getting roles list");
                 
-                var response = await _httpClient.GetAsync(requestUrl);
-                Console.WriteLine($"[ROLES] Response status: {response.StatusCode}");
+                var response = await _httpClient.GetAsync($"{_apiUrl}/Roles");
                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[ROLES] Error: HTTP {response.StatusCode}");
-                    return GetRolesRespaldo();
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger?.LogError("Error fetching roles: {StatusCode}, {Content}", response.StatusCode, errorContent);
+                    throw new Exception($"Error al obtener roles: {response.StatusCode}");
                 }
                 
                 var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[ROLES] Respuesta recibida ({content.Length} bytes)");
                 
+                // Handle different JSON formats
                 try
                 {
-                    // Intentar deserializar directamente la respuesta
                     var options = new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true,
-                        AllowTrailingCommas = true,
-                        ReadCommentHandling = JsonCommentHandling.Skip
+                        PropertyNameCaseInsensitive = true
                     };
                     
-                    // Primero verificar si el contenido es un objeto con propiedad "value"
-                    using (JsonDocument doc = JsonDocument.Parse(content))
+                    using var document = JsonDocument.Parse(content);
+                    var root = document.RootElement;
+                    
+                    if (root.ValueKind == JsonValueKind.Array)
                     {
-                        try
-                        {
-                            // Si la respuesta tiene una propiedad "value", extraer esa parte
-                            if (doc.RootElement.TryGetProperty("value", out var valueElement))
-                            {
-                                var roles = JsonSerializer.Deserialize<List<Rol>>(valueElement.GetRawText(), options);
-                                Console.WriteLine($"[ROLES] Roles extraídos de propiedad 'value': {roles?.Count ?? 0}");
-                                return roles ?? new List<Rol>();
-                            }
-                            
-                            // Si es un array directamente
-                            if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                            {
-                                var roles = JsonSerializer.Deserialize<List<Rol>>(content, options);
-                                Console.WriteLine($"[ROLES] Roles obtenidos de array directo: {roles?.Count ?? 0}");
-                                return roles ?? new List<Rol>();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"[ROLES] Error al deserializar JSON: {ex.Message}");
-                        }
+                        var roles = JsonSerializer.Deserialize<List<Rol>>(content, options);
+                        return roles ?? new List<Rol>();
                     }
                     
-                    // Si todo falla, intentar un último método
-                    try
+                    if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("value", out var valueElement))
                     {
-                        var responseObj = await response.Content.ReadFromJsonAsync<object>(options);
-                        var jsonString = JsonSerializer.Serialize(responseObj);
-                        Console.WriteLine($"[ROLES] Intentando con lectura genérica: {jsonString.Substring(0, Math.Min(100, jsonString.Length))}...");
-                        
-                        // Intentar extraer usando dynamic
-                        var roles = new List<Rol>();
-                        var dynamicObj = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(content);
-                        if (dynamicObj?.value != null)
-                        {
-                            foreach (var item in dynamicObj.value)
-                            {
-                                roles.Add(new Rol
-                                {
-                                    id = item.id,
-                                    nombre = item.nombre,
-                                    descripcion = item.descripcion
-                                });
-                            }
-                            Console.WriteLine($"[ROLES] Roles extraídos con Newtonsoft: {roles.Count}");
-                            return roles;
-                        }
+                        var roles = JsonSerializer.Deserialize<List<Rol>>(valueElement.GetRawText(), options);
+                        return roles ?? new List<Rol>();
                     }
-                    catch (Exception ex)
+                    
+                    // Try Newtonsoft.Json as fallback
+                    var rolesFromNewtonsoft = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Rol>>(content);
+                    if (rolesFromNewtonsoft != null)
                     {
-                        Console.WriteLine($"[ROLES] Error con método alternativo: {ex.Message}");
+                        return rolesFromNewtonsoft;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[ROLES] Error general: {ex.Message}");
+                    _logger?.LogError(ex, "Error deserializing roles");
                 }
                 
-                return GetRolesRespaldo();
+                return new List<Rol>();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ROLES] Excepción no controlada: {ex.Message}");
-                return GetRolesRespaldo();
+                _logger?.LogError(ex, "Error getting roles");
+                throw new Exception($"Error al obtener roles: {ex.Message}", ex);
             }
         }
 
-        private List<Rol> GetRolesRespaldo()
+        public async Task<OperationResult> ToggleActivoAsync(int usuarioId, bool nuevoEstado)
         {
-            Console.WriteLine("[DEBUG] Creando roles locales de respaldo");
-            return new List<Rol>
+            try
             {
-                new Rol { id = 1, nombre = "Administrador", descripcion = "Acceso completo al sistema" },
-                new Rol { id = 2, nombre = "Operador", descripcion = "Acceso a operaciones básicas" },
-                new Rol { id = 3, nombre = "Usuario", descripcion = "Acceso limitado solo lectura" }
-            };
-        }
-
-        // Clases anidadas para deserializar respuestas
-        private class ApiResponse
-        {
-            public required List<Usuario> Value { get; set; }
-        }
-
-        private class ApiSingleResponse
-        {
-            public required Usuario Value { get; set; }
+                _logger?.LogInformation("Toggling active status to {Estado} for user {UserId}", nuevoEstado, usuarioId);
+                
+                var response = await _httpClient.PostAsJsonAsync($"{_apiUrl}/ToggleActivo?id={usuarioId}&activo={nuevoEstado}", new { });
+                var content = await response.Content.ReadAsStringAsync();
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger?.LogError("Toggle active error: {StatusCode}, {Content}", response.StatusCode, content);
+                    return new OperationResult { Success = false, Message = $"Error al cambiar estado: {content}" };
+                }
+                
+                var estadoText = nuevoEstado ? "activado" : "desactivado";
+                return new OperationResult { Success = true, Message = $"Usuario {estadoText} correctamente" };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error toggling active status for user {UserId}", usuarioId);
+                return new OperationResult { Success = false, Message = $"Error al cambiar estado: {ex.Message}" };
+            }
         }
     }
 }

@@ -175,9 +175,9 @@ ServiceExtensions.AddApplicationServices(builder.Services, builder.Configuration
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-        options.JsonSerializerOptions.MaxDepth = 64;
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
 builder.Services.AddLogging(logging =>
@@ -467,6 +467,9 @@ app.UseAuthorization();
 
 // Quitar o comentar esta línea si existe
 // app.UseRoleUpdate();
+
+// Add this before app.UseRouting()
+app.UseMiddleware<API.Middleware.StandardResponseMiddleware>();
 
 // Agregar este middleware justo después de la autorización
 app.Use(async (context, next) =>

@@ -3,6 +3,7 @@ using API.Models;
 using API.Data;
 using Microsoft.AspNetCore.Authorization;
 using API.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
@@ -140,10 +141,18 @@ namespace API.Controllers
 
         // GetAll
         [HttpGet]
-        public JsonResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _context.Empresa_Bodegas.ToList();
-            return new JsonResult(Ok(result));
+            try
+            {
+                var result = await _context.Empresa_Bodegas.ToListAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener bodegas");
+                return StatusCode(500, new { message = "Error al obtener bodegas", error = ex.Message });
+            }
         }
     }
 }

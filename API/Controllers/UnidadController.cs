@@ -168,7 +168,7 @@ namespace API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener lista de unidades");
-                return StatusCode(500, new { error = "Error interno del servidor al obtener la lista de unidades" });
+                return StatusCode(500, new { message = "Error interno del servidor al obtener la lista de unidades", error = ex.Message });
             }
         }
     }

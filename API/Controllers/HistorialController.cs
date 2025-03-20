@@ -64,18 +64,8 @@ namespace API.Controllers
                 }).ToList();
 
                 _logger.LogInformation($"Total de registros obtenidos: {resultadoFinal.Count}");
-                
-                // Verificar explícitamente si hay registros con UsuarioId = 1 en el resultado final
-                var conteoUsuario1EnResultado = resultadoFinal.Count(r => r.UsuarioId == 1);
-                _logger.LogInformation($"Registros con UsuarioId = 1 en resultado: {conteoUsuario1EnResultado}");
 
-                return Ok(new
-                {
-                    TotalRegistrosEnBD = totalRegistrosEnBD,
-                    TotalRegistrosObtenidos = resultadoFinal.Count,
-                    RegistrosUsuario1 = conteoUsuario1EnResultado,
-                    Registros = resultadoFinal
-                });
+                return Ok(resultadoFinal);
             }
             catch (Exception ex)
             {

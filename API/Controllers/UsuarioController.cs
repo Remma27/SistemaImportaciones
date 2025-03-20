@@ -266,12 +266,12 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
             try 
             {
                 // Obtener los usuarios con sus roles
-                var usuarios = _context.Usuarios.Include(u => u.Rol).ToList();
+                var usuarios = await _context.Usuarios.Include(u => u.Rol).ToListAsync();
                 
                 // Crear un DTO simplificado para evitar ciclos de referencia
                 var result = usuarios.Select(u => new
@@ -286,11 +286,11 @@ namespace API.Controllers
                     Rol = u.Rol != null ? new { u.Rol.id, u.Rol.nombre, u.Rol.descripcion } : null
                 }).ToList();
                 
-                return new JsonResult(Ok(result));
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                return new JsonResult(StatusCode(500, new { message = "Error obteniendo usuarios", error = ex.Message }));
+                return StatusCode(500, new { message = "Error obteniendo usuarios", error = ex.Message });
             }
         }
 
@@ -439,23 +439,36 @@ namespace API.Controllers
                 // Agregar permisos según el rol
                 if (usuario.rol_id.HasValue)
                 {
-                    var permisos = await _rolPermisoService.ObtenerPermisosPorRolId(usuario.rol_id.Value);
-                    foreach (var permiso in permisos)
+                    try
                     {
-                        claims.Add(new Claim("Permission", permiso.nombre));
-                    }
-                    
-                    // Si es administrador, añadir todos los permisos posibles
-                    if (esAdmin)
-                    {
-                        var todosLosPermisos = await _context.Permisos.ToListAsync();
-                        foreach (var permiso in todosLosPermisos)
+                        var permisos = await _rolPermisoService.ObtenerPermisosPorRolId(usuario.rol_id.Value);
+                        foreach (var permiso in permisos)
                         {
-                            // Evitar duplicados
-                            if (!claims.Any(c => c.Type == "Permission" && c.Value == permiso.nombre))
+                            claims.Add(new Claim("Permission", permiso.nombre));
+                        }
+                        
+                        // Si es administrador, añadir todos los permisos posibles
+                        if (esAdmin)
+                        {
+                            var todosLosPermisos = await _context.Permisos.ToListAsync();
+                            foreach (var permiso in todosLosPermisos)
                             {
-                                claims.Add(new Claim("Permission", permiso.nombre));
+                                // Evitar duplicados
+                                if (!claims.Any(c => c.Type == "Permission" && c.Value == permiso.nombre))
+                                {
+                                    claims.Add(new Claim("Permission", permiso.nombre));
+                                }
                             }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // No bloquear el login si hay problemas con los permisos
+                        
+                        // Si es admin, añadir un claim especial que indique que tiene todos los permisos
+                        if (esAdmin)
+                        {
+                            claims.Add(new Claim("AllPermissions", "true"));
                         }
                     }
                 }

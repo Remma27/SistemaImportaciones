@@ -122,17 +122,17 @@ namespace API.Controllers
 
         // GetAll
         [HttpGet]
-        public JsonResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
             try
             {
-                var result = _context.Barcos.ToList();
-                return new JsonResult(Ok(result));
+                var result = await _context.Barcos.ToListAsync();
+                return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al obtener todos los barcos");
-                return new JsonResult(StatusCode(500, new { message = "Error al obtener barcos", error = ex.Message }));
+                return StatusCode(500, new { message = "Error al obtener barcos", error = ex.Message });
             }
         }
     }

@@ -21,12 +21,17 @@ public class BarcoService : IBarcoService
     {
         try
         {
+            _logger.LogInformation("Iniciando solicitud GetAllAsync para barcos");
             var url = _apiBaseUrl + "GetAll";
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
 
+            _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+            _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
+
             if (!response.IsSuccessStatusCode)
             {
+                _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
                 throw new HttpRequestException($"Error al obtener los barcos: {response.StatusCode}, {content}");
             }
 
@@ -35,18 +40,57 @@ public class BarcoService : IBarcoService
                 PropertyNameCaseInsensitive = true
             };
 
+            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
-            if (root.TryGetProperty("value", out JsonElement valueElement))
+            
+            _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+            
+            // Handle different JSON formats
+            if (root.ValueKind == JsonValueKind.Array)
             {
-                var barcosJson = valueElement.GetRawText();
-                var barcos = JsonSerializer.Deserialize<IEnumerable<Barco>>(barcosJson, options);
+                // Direct array - new format
+                _logger.LogInformation("Detectado formato de array directo");
+                var barcos = JsonSerializer.Deserialize<List<Barco>>(content, options);
+                _logger.LogInformation($"Barcos deserializados: {barcos?.Count ?? 0}");
                 return barcos ?? new List<Barco>();
             }
+            else if (root.ValueKind == JsonValueKind.Object)
+            {
+                // Object with a property - check common patterns
+                if (root.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    _logger.LogInformation("Detectado formato con propiedad 'value'");
+                    var barcosJson = valueElement.GetRawText();
+                    var barcos = JsonSerializer.Deserialize<List<Barco>>(barcosJson, options);
+                    return barcos ?? new List<Barco>();
+                }
+                else
+                {
+                    // Try Newtonsoft as last resort
+                    _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
+                    try
+                    {
+                        var barcos = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Barco>>(content);
+                        if (barcos != null)
+                        {
+                            _logger.LogInformation($"Barcos deserializados con Newtonsoft: {barcos.Count}");
+                            return barcos;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error con Newtonsoft.Json");
+                    }
+                }
+            }
+
+            _logger.LogWarning("No se pudo deserializar la respuesta en ningún formato conocido");
             return new List<Barco>();
         }
         catch (HttpRequestException ex)
         {
+            _logger.LogError(ex, "Error al obtener los barcos");
             throw new Exception($"Error al obtener los barcos: {ex.Message}", ex);
         }
     }
@@ -58,11 +102,11 @@ public class BarcoService : IBarcoService
             _logger.LogInformation($"Obteniendo barco con ID={id}");
             var url = _apiBaseUrl + $"Get?id={id}";
 
-
             var response = await _httpClient.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
 
             _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+            _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -75,17 +119,27 @@ public class BarcoService : IBarcoService
                 PropertyNameCaseInsensitive = true
             };
 
+            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
+            var root = document.RootElement;
+            
+            _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
+            
             Barco? barco = null;
-
-            if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+            
+            if (root.ValueKind == JsonValueKind.Object)
             {
-                barco = JsonSerializer.Deserialize<Barco>(valueElement.GetRawText(), options);
+                if (root.TryGetProperty("value", out JsonElement valueElement))
+                {
+                    barco = JsonSerializer.Deserialize<Barco>(valueElement.GetRawText(), options);
+                }
+                else
+                {
+                    // Direct object - new format
+                    barco = JsonSerializer.Deserialize<Barco>(content, options);
+                }
             }
-            else
-            {
-                barco = JsonSerializer.Deserialize<Barco>(content, options);
-            }
+            
             return barco;
         }
         catch (Exception ex)
@@ -97,9 +151,45 @@ public class BarcoService : IBarcoService
 
     public async Task<Barco> CreateAsync(Barco barco)
     {
-        var response = await _httpClient.PostAsJsonAsync(_apiBaseUrl + "Create", barco);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<Barco>() ?? barco;
+        try
+        {
+            _logger.LogInformation($"Iniciando solicitud CreateAsync para barco");
+            var response = await _httpClient.PostAsJsonAsync(_apiBaseUrl + "Create", barco);
+            var content = await response.Content.ReadAsStringAsync();
+
+            _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
+            _logger.LogDebug($"Contenido de respuesta: {content}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Error del API: {response.StatusCode}, Content={content}");
+                throw new HttpRequestException($"Error al crear el barco: {response.StatusCode}, {content}");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            using JsonDocument document = JsonDocument.Parse(content);
+            Barco? result = null;
+
+            if (document.RootElement.TryGetProperty("value", out JsonElement valueElement))
+            {
+                result = JsonSerializer.Deserialize<Barco>(valueElement.GetRawText(), options);
+            }
+            else
+            {
+                result = JsonSerializer.Deserialize<Barco>(content, options);
+            }
+
+            return result ?? barco;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear el barco");
+            throw new Exception($"Error al crear el barco: {ex.Message}", ex);
+        }
     }
 
     public async Task<Barco> UpdateAsync(int id, Barco barco)

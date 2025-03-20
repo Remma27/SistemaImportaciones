@@ -42,7 +42,7 @@ namespace API.Services
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true,
-                    ReferenceHandler = ReferenceHandler.Preserve, // Maneja referencias circulares
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles, // Cambiado a IgnoreCycles en lugar de Preserve
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, // Ignora propiedades nulas
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase // Usa camelCase para las propiedades
                 };

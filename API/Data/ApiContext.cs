@@ -38,6 +38,10 @@ namespace API.Data
                 .WithMany()
                 .HasForeignKey(m => m.idempresa)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            // Configurar el mapeo de RolPermiso a la tabla rol_permisos
+            modelBuilder.Entity<RolPermiso>()
+                .ToTable("rol_permisos");
         }
     }
 }

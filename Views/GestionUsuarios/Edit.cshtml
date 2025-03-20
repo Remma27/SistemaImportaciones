@@ -37,7 +37,6 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <!-- Eliminar cualquier script actual y usar un formulario simple y directo -->
                     <form method="post" action="/GestionUsuarios/Edit/@Model.id">
                         @Html.AntiForgeryToken()
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
@@ -50,20 +49,24 @@
 
                         <div class="row mb-4">
                             <div class="col-12">
-                                <div class="form-floating input-with-icon">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-user-circle"></i>
-                                    <input name="nombre" value="@Model.nombre" class="form-control" placeholder="Nombre completo" required />
-                                    <label for="nombre">Nombre Completo</label>
+                                    <div class="form-floating">
+                                        <input name="nombre" value="@Model.nombre" class="form-control" placeholder="Nombre completo" required />
+                                        <label for="nombre">Nombre Completo</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row mb-4">
                             <div class="col-12">
-                                <div class="form-floating input-with-icon">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-envelope"></i>
-                                    <input name="email" value="@Model.email" class="form-control" type="email" placeholder="Email" required />
-                                    <label for="email">Email</label>
+                                    <div class="form-floating">
+                                        <input name="email" value="@Model.email" class="form-control" type="email" placeholder="Email" required />
+                                        <label for="email">Email</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -71,18 +74,20 @@
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label fw-bold">Fecha de Creación</label>
+                                    <label class="form-label fw-bold">
+                                        <i class="far fa-calendar-alt me-2 text-primary"></i>Fecha de Creación
+                                    </label>
                                     <p class="form-control-static">
-                                        <i class="far fa-calendar-alt me-1 text-muted"></i>
                                         @(Model.fecha_creacion?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")
                                     </p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label class="form-label fw-bold">Último Acceso</label>
+                                    <label class="form-label fw-bold">
+                                        <i class="far fa-clock me-2 text-primary"></i>Último Acceso
+                                    </label>
                                     <p class="form-control-static">
-                                        <i class="far fa-clock me-1 text-muted"></i>
                                         @(Model.ultimo_acceso?.ToString("dd/MM/yyyy HH:mm") ?? "Nunca")
                                     </p>
                                 </div>
@@ -128,7 +133,6 @@
                                 <a asp-action="CambiarPassword" asp-route-id="@Model.id" class="btn btn-dark mb-2">
                                     <i class="fas fa-key me-1"></i> Cambiar Contraseña
                                 </a>
-                                <!-- Simplificar el botón sin scripts -->
                                 <button type="submit" class="btn btn-primary mb-2" id="btnGuardarCambios">
                                     <i class="fas fa-save me-1"></i> Guardar Cambios
                                 </button>

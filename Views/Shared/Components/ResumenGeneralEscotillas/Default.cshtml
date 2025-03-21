@@ -90,6 +90,125 @@
             }
             else
             {
+
+            <div class="barco-visualizacion mb-4 shadow-sm rounded">
+                        <!-- Contenedor del barco con posicionamiento relativo -->
+                        <div class="barco-container position-relative overflow-auto">
+                            <!-- Imagen del barco (fondo) -->
+                            <img src="~/images/Barco.png" alt="Esquema de barco" class="barco-imagen w-100">
+                            
+                            <!-- Overlay para posicionar los indicadores de escotillas -->
+                            <div class="escotillas-overlay">
+
+                            <!-- Conversiones solo para el resumen -->
+                            <div class="conversiones">
+                                        <div class="unit-toggle-element" style="display: none; margin-top: 8px; font-size: 0.8rem; padding-top: 8px;">
+                                            <div class="text-center mb-2 fw-bold">Conversiones</div>
+                                            <!-- Modificar las líneas que muestran las conversiones -->
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Total:</span>
+                                                <span>@((totalKilosRequeridos * 2.20462M).ToString("N2")) lbs / @((totalKilosRequeridos / 45.359237M).ToString("N2")) qq</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Descarga:</span>
+                                                <span>@((descargaTotal * 2.20462M).ToString("N2")) lbs / @((descargaTotal / 45.359237M).ToString("N2")) qq</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Faltante:</span>
+                                                <span style="color: @determinarColorDiferencia(diferenciaTotal)">
+                                                    @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal * 2.20462M).ToString("N2") lbs / 
+                                                    @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal / 45.359237M).ToString("N2") qq
+                                                </span>
+                                            </div>
+                                        </div>
+                            </div>
+
+                            <button id="downloadBtn" class="btn btn-light btn-sm" title="Descargar imagen">
+                                <i class="fas fa-download me-2"></i>Descargar
+                            </button>
+
+                            <div class="text-center mb-3">
+                                <span class="badge bg-primary px-3 py-2">
+                                    <i class="fas fa-ship me-2"></i>@ViewData["NombreBarco"]
+                                </span>
+                            </div>                            
+                            <!-- Etiquetas para las escotillas -->
+                            <div class="escotilla-labels">
+                                <div class="escotilla-label-item mb-1">
+                                    <div class="escotilla-label-text fw-bold">Total</div>
+                                    <span class="fw-bold">@totalKilosRequeridos.ToString("N0")</span>
+                                </div>
+                                <div class="escotilla-label-item mb-1" style="margin-top: 22px;">
+                                    <div class="escotilla-label-text fw-bold">Descarga</div>
+                                    <span class="fw-bold">@descargaTotal.ToString("N0")</span>
+                                </div>
+
+                                <div class="escotilla-label-item mb-1" style="margin-top: 22px;">
+                                <span class="fw-bold">@porcentajeTotal.ToString("N2")%</span>
+                                </div>
+                            </div>
+                                @foreach (var numeroEscotilla in todasLasEscotillas)
+                                {
+                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new EscotillaViewModel
+                                    { 
+                                        CapacidadKg = 0, 
+                                        DescargaRealKg = 0, 
+                                        DiferenciaKg = 0,
+                                        Estado = "Sin Iniciar" 
+                                    });
+                                    
+                                    var porcentajeEscotilla = escotilla.CapacidadKg > 0 ? 
+                                        (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
+                                    
+                                    string badgeColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
+                                    
+                                
+
+
+                                    <!-- Posicionamiento de cada escotilla -->
+                                    <div id="escotilla@(numeroEscotilla)" class="escotilla-indicador">
+                                        
+                                        <!-- Datos en formato vertical -->
+
+
+                                        <div class="escotilla-datos">
+                                            <div class="escotilla-dato mb-1">
+                                                <div class="escotilla-valor fw-bold">@escotilla.CapacidadKg.ToString("N0")</div>
+                                            </div>
+
+                                            <br>
+                                            
+                                            
+                                            <div class="escotilla-dato mb-1">
+                                                <div class="escotilla-valor fw-bold" style="color: @badgeColor">@escotilla.DescargaRealKg.ToString("N0")</div>
+                                            </div>
+
+                                            <br>
+                                            <div class="escotilla-dato">
+                                                <div class="escotilla-valor fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Azul : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
+                                                    Dif: @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                <!-- Indicador de resumen del barco con conversiones -->
+                                <div class="barco-resumen">
+                                    <div class="barco-resumen-datos">
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="text-white mb-1">Falta</span>
+                                            <span class="fw-bold" style="color: @determinarColorDiferencia(diferenciaTotal); font-family: Consolas, monospace;">
+                                                @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal).ToString("N0")
+                                            </span>
+                                            <br>
+                                            <span class="fw-bold">@((100M - porcentajeTotal).ToString("N2"))%</span>                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                  <div class="row g-4">
                         <div class="col-lg-5">
                             <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
@@ -288,116 +407,6 @@
                         </div>
                     </div>                
 
-                    <div class="barco-visualizacion mb-4 shadow-sm rounded">
-                        <!-- Contenedor del barco con posicionamiento relativo -->
-                        <div class="barco-container position-relative overflow-auto">
-                            <!-- Imagen del barco (fondo) -->
-                            <img src="~/images/Barco.png" alt="Esquema de barco" class="barco-imagen w-100">
-                            
-                            <!-- Overlay para posicionar los indicadores de escotillas -->
-                            <div class="escotillas-overlay">
-
-                            <!-- Conversiones solo para el resumen -->
-                            <div class="conversiones">
-                                        <div class="unit-toggle-element" style="display: none; margin-top: 8px; font-size: 0.8rem; padding-top: 8px;">
-                                            <div class="text-center mb-2 fw-bold">Conversiones</div>
-                                            <!-- Modificar las líneas que muestran las conversiones -->
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Total:</span>
-                                                <span>@((totalKilosRequeridos * 2.20462M).ToString("N2")) lbs / @((totalKilosRequeridos / 45.359237M).ToString("N2")) qq</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Descarga:</span>
-                                                <span>@((descargaTotal * 2.20462M).ToString("N2")) lbs / @((descargaTotal / 45.359237M).ToString("N2")) qq</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between">
-                                                <span class="text-muted">Faltante:</span>
-                                                <span style="color: @determinarColorDiferencia(diferenciaTotal)">
-                                                    @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal * 2.20462M).ToString("N2") lbs / 
-                                                    @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal / 45.359237M).ToString("N2") qq
-                                                </span>
-                                            </div>
-                                        </div>
-                            </div>
-
-                            <!-- Etiquetas para las escotillas -->
-                            <div class="escotilla-labels">
-                                <div class="escotilla-label-item mb-1">
-                                    <div class="escotilla-label-text fw-bold">Total</div>
-                                    <span class="fw-bold">@totalKilosRequeridos.ToString("N0")</span>
-                                </div>
-                                <div class="escotilla-label-item mb-1" style="margin-top: 22px;">
-                                    <div class="escotilla-label-text fw-bold">Descarga</div>
-                                    <span class="fw-bold">@descargaTotal.ToString("N0")</span>
-                                </div>
-
-                                <div class="escotilla-label-item mb-1" style="margin-top: 22px;">
-                                <span class="fw-bold">@porcentajeTotal.ToString("N2")%</span>
-                                </div>
-                            </div>
-                                @foreach (var numeroEscotilla in todasLasEscotillas)
-                                {
-                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new EscotillaViewModel
-                                    { 
-                                        CapacidadKg = 0, 
-                                        DescargaRealKg = 0, 
-                                        DiferenciaKg = 0,
-                                        Estado = "Sin Iniciar" 
-                                    });
-                                    
-                                    var porcentajeEscotilla = escotilla.CapacidadKg > 0 ? 
-                                        (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
-                                    
-                                    string badgeColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
-                                    
-                                
-
-
-                                    <!-- Posicionamiento de cada escotilla -->
-                                    <div id="escotilla@(numeroEscotilla)" class="escotilla-indicador">
-                                        
-                                        <!-- Datos en formato vertical -->
-
-
-                                        <div class="escotilla-datos">
-                                            <div class="escotilla-dato mb-1">
-                                                <div class="escotilla-valor fw-bold">@escotilla.CapacidadKg.ToString("N0")</div>
-                                            </div>
-
-                                            <br>
-                                            
-                                            
-                                            <div class="escotilla-dato mb-1">
-                                                <div class="escotilla-valor fw-bold" style="color: @badgeColor">@escotilla.DescargaRealKg.ToString("N0")</div>
-                                            </div>
-
-                                            <br>
-                                            <div class="escotilla-dato">
-                                                <div class="escotilla-valor fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Azul : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
-                                                    Dif: @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                                
-                                <!-- Indicador de resumen del barco con conversiones -->
-                                <div class="barco-resumen">
-                                    <div class="barco-resumen-datos">
-                                        <div class="d-flex flex-column align-items-start">
-                                            <span class="text-white mb-1">Falta</span>
-                                            <span class="fw-bold" style="color: @determinarColorDiferencia(diferenciaTotal); font-family: Consolas, monospace;">
-                                                @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal).ToString("N0")
-                                            </span>
-                                            <br>
-                                            <span class="fw-bold">@((100M - porcentajeTotal).ToString("N2"))%</span>                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                   
                     <!-- Scripts para gráficos -->
                     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                     <script>
@@ -499,6 +508,105 @@
             });
         }
     });
+</script>
+// Agregar antes del cierre del body
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script>
+document.getElementById('downloadBtn').addEventListener('click', async function() {
+    try {
+        this.disabled = true;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+
+        // Primero, obtener solo el contenedor del barco
+        const barcoContainer = document.querySelector('.barco-container');
+        
+        // Crear un contenedor temporal con dimensiones fijas
+        const tempContainer = document.createElement('div');
+        tempContainer.style.width = '1600px';
+        tempContainer.style.height = '437px';
+        tempContainer.style.position = 'absolute';
+        tempContainer.style.left = '-9999px';
+        document.body.appendChild(tempContainer);
+
+        // Clonar el contenido
+        const clon = barcoContainer.cloneNode(true);
+        tempContainer.appendChild(clon);
+
+        // Forzar las posiciones correctas en el clon
+        const escotillas = {
+            5: { top: 217, left: 421 },
+            4: { top: 217, left: 599 },
+            3: { top: 217, left: 778 },
+            2: { top: 217, left: 943 },
+            1: { top: 217, left: 1085 }
+        };
+
+        // Ajustar posiciones de cada escotilla
+        Object.entries(escotillas).forEach(([num, pos]) => {
+            const escotilla = clon.querySelector(`#escotilla${num}`);
+            if (escotilla) {
+                escotilla.style.position = 'absolute';
+                escotilla.style.top = `${pos.top}px`;
+                escotilla.style.left = `${pos.left}px`;
+                escotilla.style.zIndex = '10';
+            }
+        });
+
+        // Ajustar posición de las etiquetas
+        const labels = clon.querySelector('.escotilla-labels');
+        if (labels) {
+            labels.style.position = 'absolute';
+            labels.style.top = '202px';
+            labels.style.left = '227px';
+            labels.style.zIndex = '6';
+        }
+
+        // Ajustar posición del resumen
+        const resumen = clon.querySelector('.barco-resumen');
+        if (resumen) {
+            resumen.style.position = 'absolute';
+            resumen.style.bottom = '124px';
+            resumen.style.left = '1217px';
+            resumen.style.zIndex = '20';
+        }
+
+        // Configuración de html2canvas
+        const options = {
+            width: 1600,
+            height: 437,
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            removeContainer: true,
+            ignoreElements: (element) => {
+                return element.classList.contains('capturing') || 
+                       element.id === 'downloadBtn';
+            }
+        };
+
+        // Generar la imagen
+        const canvas = await html2canvas(tempContainer, options);
+        
+        // Crear y descargar la imagen
+        const link = document.createElement('a');
+        link.download = `visualizacion-barco-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        // Limpiar
+        document.body.removeChild(tempContainer);
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-download me-2"></i>Descargar';
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar la imagen. Por favor, intente nuevamente.');
+        this.disabled = false;
+        this.innerHTML = '<i class="fas fa-download me-2"></i>Descargar';
+    }
+});
 </script>
 <script>
     // Sincronizar con el estado global del toggle

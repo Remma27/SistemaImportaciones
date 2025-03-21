@@ -1063,31 +1063,31 @@ table > thead > tr > th.unit-toggle-columns.visible {
 
 /* Posiciones invertidas para las escotillas (5 al 1) */
 #escotilla5 { 
-    top: 212px !important; 
+    top: 215px !important; 
     left: 421px !important; 
     position: absolute !important;
     z-index: 10 !important;
 }
 #escotilla4 { 
-    top: 212px !important; 
+    top: 215px !important; 
     left: 599px !important; 
     position: absolute !important;
     z-index: 10 !important;
 }
 #escotilla3 { 
-    top: 212px !important; 
+    top: 215px !important; 
     left: 778px !important; 
     position: absolute !important;
     z-index: 10 !important;
 }
 #escotilla2 { 
-    top: 212px !important; 
+    top: 215px !important; 
     left: 943px !important; 
     position: absolute !important;
     z-index: 10 !important;
 }
 #escotilla1 { 
-    top: 212px !important; 
+    top: 215px !important; 
     left: 1085px !important; 
     position: absolute !important;
     z-index: 10 !important;
@@ -1170,4 +1170,41 @@ table > thead > tr > th.unit-toggle-columns.visible {
 
 .conversiones .border-top {
     border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* Estilos para la visualización del barco */
+.barco-visualizacion {
+    background: #fff;
+    padding: 20px;
+    position: relative;
+}
+
+/* Estilos para el botón de descarga */
+.barco-visualizacion #downloadBtn {
+    position: absolute;
+    top: 4px;
+    right: 1417px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    padding: 5px 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.barco-visualizacion #downloadBtn:hover {
+    background: #f8f9fa;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.barco-visualizacion #downloadBtn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+/* Agregar esta clase para ocultar el botón durante la captura */
+.capturing {
+    opacity: 0 !important;
+    visibility: hidden !important;
 }

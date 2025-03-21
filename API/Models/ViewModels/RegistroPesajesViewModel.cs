@@ -7,6 +7,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 {
     public class RegistroPesajesViewModel
     {
+        public string? NombreBarco { get; set; }
         public List<RegistroPesajesIndividual> Tabla1Data { get; set; } = new List<RegistroPesajesIndividual>();
         public List<RegistroPesajesAgregado> Tabla2Data { get; set; } = new List<RegistroPesajesAgregado>();
         public List<TotalesPorBodegaViewModel> TotalesPorBodega { get; set; } = new List<TotalesPorBodegaViewModel>();
@@ -27,6 +28,8 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal TotalKilosRequeridos { get; set; }
         public decimal TotalDescargaKilos { get; set; }
         public decimal TotalKilosFaltantes { get; set; }
+
+
     }
 
     public class RegistroPesajesIndividual
@@ -69,6 +72,8 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal? CantidadEntregadaQuintales { get; set; }
         public decimal? CantidadRequeridaLibras { get; set; }
         public decimal? CantidadEntregadaLibras { get; set; }
+
+        
     }
 
     public class RegistroPesajesAgregado
@@ -82,6 +87,8 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal CamionesFaltantes { get; set; }
         public int ConteoPlacas { get; set; }
         public decimal PorcentajeDescarga { get; set; }
+
+        
 
     }
 

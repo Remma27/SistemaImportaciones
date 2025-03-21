@@ -204,15 +204,28 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Always fetch fresh data from the database
-                _logger.LogInformation($"Cargando datos frescos de escotillas para importación {importacionId}");
                 var escotillasData = await _movimientoService.GetEscotillasDataAsync(importacionId);
 
                 if (escotillasData == null)
                 {
-                    _logger.LogWarning($"API devolvió NULL para datos de escotillas de importación {importacionId}");
                     SetDefaultEscotillasValues(viewModel, $"No hay datos disponibles para la importación {importacionId}");
                     return;
+                }
+
+                // Get the ship name from ViewBag.Barcos
+                var barcos = ViewBag.Barcos as SelectList;
+                var barcoItem = barcos?.Items.Cast<SelectListItem>()
+                    .FirstOrDefault(b => b.Value == importacionId.ToString());
+
+                if (barcoItem != null)
+                {
+                    // Extract just the ship name from the format "ID - DATE - SHIP_NAME"
+                    var fullText = barcoItem.Text;
+                    viewModel.NombreBarco = fullText.Split('-').Last().Trim();
+                }
+                else
+                {
+                    viewModel.NombreBarco = "Sin nombre";
                 }
 
                 _logger.LogInformation($"TotalKilosRequeridos recibidos: {escotillasData.TotalKilosRequeridos}");
@@ -225,9 +238,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
                 viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
 
-                // Establecer ViewData que será utilizado por la vista parcial
+                // Set ViewData
                 ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
                 ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
+                ViewData["NombreBarco"] = viewModel.NombreBarco;
 
                 _logger.LogInformation($"ViewData[KilosRequeridos] establecido a: {ViewData["KilosRequeridos"]}");
             }
@@ -247,6 +261,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             viewModel.PorcentajeTotal = 0;
             viewModel.EstadoGeneral = estado;
             viewModel.TotalKilosRequeridos = 0;
+            viewModel.NombreBarco = "Sin nombre"; // Add this line
         }
 
         private async Task PopulateDropdowns(int? selectedBarco, int? empresaId)

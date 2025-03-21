@@ -4,6 +4,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
     {
         public List<EscotillaDetalle> Escotillas { get; set; } = new();
         public TotalesEscotillas Totales { get; set; } = new();
+        public string? NombreBarco { get; internal set; }
     }
 
     public class EscotillaDetalle

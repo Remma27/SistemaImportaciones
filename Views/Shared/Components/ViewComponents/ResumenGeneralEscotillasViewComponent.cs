@@ -13,7 +13,8 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewComponents
             decimal diferenciaTotal,
             decimal porcentajeTotal,
             string estadoGeneral,
-            decimal kilosRequeridos = 0)
+            decimal kilosRequeridos = 0,
+            string nombreBarco = "") // Add nombreBarco parameter with default value
         {
             ViewData["CapacidadTotal"] = capacidadTotal;
             ViewData["DescargaTotal"] = descargaTotal;
@@ -21,6 +22,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewComponents
             ViewData["PorcentajeTotal"] = porcentajeTotal;
             ViewData["EstadoGeneral"] = estadoGeneral;
             ViewData["KilosRequeridos"] = kilosRequeridos;
+            ViewData["NombreBarco"] = nombreBarco; // Use the parameter value
 
             return View(model);
         }

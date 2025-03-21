@@ -22,58 +22,83 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             ViewData["FullWidth"] = true;
             var viewModel = new RegistroPesajesViewModel();
-            ViewBag.Barcos = new SelectList(await _movimientoService.GetBarcosSelectListAsync(), "Value", "Text", selectedBarco);
 
-            if (!selectedBarco.HasValue)
+            // Obtener la lista de barcos
+            var barcos = await _movimientoService.GetBarcosSelectListAsync();
+            ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
+
+            if (selectedBarco.HasValue)
             {
-                return View(viewModel);
-            }
-
-            try
-            {
-                // Get the report data
-                var informeGeneralData = await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value);
-                var escotillasData = await _movimientoService.GetEscotillasDataAsync(selectedBarco.Value);
-
-                // Map to ViewModel
-                viewModel.Tabla2Data = informeGeneralData.Select(ig => new RegistroPesajesAgregado
+                try
                 {
-                    Agroindustria = ig.Empresa ?? "Sin nombre",
-                    KilosRequeridos = (decimal)ig.RequeridoKg,
-                    ToneladasRequeridas = (decimal)ig.RequeridoTon,
-                    DescargaKilos = (decimal)ig.DescargaKg,
-                    FaltanteKilos = (decimal)ig.FaltanteKg,
-                    ToneladasFaltantes = (decimal)ig.TonFaltantes,
-                    CamionesFaltantes = (decimal)ig.CamionesFaltantes,
-                    ConteoPlacas = ig.ConteoPlacas,
-                    PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
-                }).ToList();
+                    // Get the ship name from the dropdown list and extract only the name part
+                    var barcoItem = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
+                    if (barcoItem != null)
+                    {
+                        var fullText = barcoItem.Text;
+                        var parts = fullText.Split('-');
+                        if (parts.Length >= 3)
+                        {
+                            // Get only the ship name part, ignoring ID and date
+                            viewModel.NombreBarco = parts[2].Trim();
+                        }
+                        else
+                        {
+                            viewModel.NombreBarco = fullText;
+                        }
+                    }
+                    else
+                    {
+                        viewModel.NombreBarco = "Sin nombre";
+                    }
 
-                if (escotillasData != null)
-                {
-                    viewModel.EscotillasData = escotillasData.Escotillas;
-                    viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
-                    viewModel.DescargaTotal = escotillasData.DescargaTotal;
-                    viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
-                    viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
-                    viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
-                    viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
+                    // Set ViewData for ship name before loading other data
+                    ViewData["NombreBarco"] = viewModel.NombreBarco;
 
-                    // Establecer ViewData que será utilizado por la vista parcial
-                    ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
-                    ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
+                    // ...rest of your existing code...
+                    var informeGeneralData = await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value);
+                    var escotillasData = await _movimientoService.GetEscotillasDataAsync(selectedBarco.Value);
 
+                    // Set ViewData for ship name
+                    ViewData["NombreBarco"] = viewModel.NombreBarco;
+
+                    // Map to ViewModel
+                    viewModel.Tabla2Data = informeGeneralData.Select(ig => new RegistroPesajesAgregado
+                    {
+                        Agroindustria = ig.Empresa ?? "Sin nombre",
+                        KilosRequeridos = (decimal)ig.RequeridoKg,
+                        ToneladasRequeridas = (decimal)ig.RequeridoTon,
+                        DescargaKilos = (decimal)ig.DescargaKg,
+                        FaltanteKilos = (decimal)ig.FaltanteKg,
+                        ToneladasFaltantes = (decimal)ig.TonFaltantes,
+                        CamionesFaltantes = (decimal)ig.CamionesFaltantes,
+                        ConteoPlacas = ig.ConteoPlacas,
+                        PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
+                    }).ToList();
+
+                    if (escotillasData != null)
+                    {
+                        viewModel.EscotillasData = escotillasData.Escotillas;
+                        viewModel.CapacidadTotal = escotillasData.CapacidadTotal;
+                        viewModel.DescargaTotal = escotillasData.DescargaTotal;
+                        viewModel.DiferenciaTotal = escotillasData.DiferenciaTotal;
+                        viewModel.PorcentajeTotal = escotillasData.PorcentajeTotal;
+                        viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
+                        viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
+
+                        // Establecer ViewData que será utilizado por la vista parcial
+                        ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
+                        ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
+
+                    }
                 }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"Error al cargar el informe: {ex.Message}");
+                }
+            }
 
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                // Log the exception
-                // _logger.LogError(ex, "Error loading informe general");
-                ModelState.AddModelError("", $"Error al cargar el informe: {ex.Message}");
-                return View(viewModel);
-            }
+            return View(viewModel);
         }
     }
 }

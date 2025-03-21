@@ -1230,7 +1230,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     DiferenciaTotal = apiResponse?.Totales?.DiferenciaTotal ?? 0,
                     PorcentajeTotal = apiResponse?.Totales?.PorcentajeTotal ?? 0,
                     TotalKilosRequeridos = apiResponse?.Totales?.TotalKilosRequeridos ?? 0,
-                    EstadoGeneral = apiResponse?.Totales?.EstadoGeneral ?? "Sin información"
+                    EstadoGeneral = apiResponse?.Totales?.EstadoGeneral ?? "Sin información",
+                    NombreBarco = apiResponse?.NombreBarco ?? "Sin nombre" // Agregar esta línea
+
                 };
             }
             catch (Exception ex)

@@ -7,7 +7,7 @@
 
     var escotillasDiccionario = Model?.ToDictionary(e => e.NumeroEscotilla, e => e) ?? new Dictionary<int,
     Sistema_de_Gestion_de_Importaciones.ViewModels.EscotillaViewModel>();
-    var todasLasEscotillas = Enumerable.Range(1, 5).Reverse();
+    var todasLasEscotillas = Enumerable.Range(1, 5).OrderByDescending(x => x);
     var hayDatos = Model != null && Model.Any();
     
     decimal descargaTotal = 0;
@@ -90,99 +90,7 @@
             }
             else
             {
-                    <div class="table-responsive mb-4 shadow-sm rounded">
-                        <table id="tablaEscotillas" class="table table-striped table-hover align-middle mb-0">
-                            <thead>
-                                <tr class="bg-dark text-white text-center">
-                                    <th class="align-middle py-3" style="width: 22%">Métrica</th>
-                                    @foreach (var numeroEscotilla in todasLasEscotillas)
-                                    {
-                                            <th class="align-middle py-3">
-                                                <div class="d-flex align-items-center justify-content-center">
-                                                    <i class="fas fa-door-open me-2 text-warning"></i>
-                                                    <span>Escotilla @numeroEscotilla</span>
-                                                </div>
-                                            </th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="fw-bold">Capacidad (Kg)</td>
-                                    @foreach (var numeroEscotilla in todasLasEscotillas)
-                                    {
-                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                            EscotillaViewModel
-                                            { CapacidadKg = 0 });
-                                            <td class="text-end">@escotilla.CapacidadKg.ToString("N0")</td>
-                                    }
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Descargado (Kg)</td>
-                                    @foreach (var numeroEscotilla in todasLasEscotillas)
-                                    {
-                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                            EscotillaViewModel
-                                            { DescargaRealKg = 0 });
-                                            <td class="text-end">@escotilla.DescargaRealKg.ToString("N0")</td>
-                                    }
-                                </tr>
-                                <tr class="bg-light unit-toggle-row" style="display:none;">
-                                    <td class="fw-bold">Descargado (Lbs/Qq)</td>
-                                    @foreach (var numeroEscotilla in todasLasEscotillas)
-                                    {
-                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                            EscotillaViewModel
-                                            { DescargaRealKg = 0 });
-                                            <td class="text-end">
-                                                <div>
-                                                    <span class="d-block">@((escotilla.DescargaRealKg * 2.20462M).ToString("N0")) lbs</span>
-                                                    <span class="d-block text-muted small">@((escotilla.DescargaRealKg / 45.359237M).ToString("N2")) qq</span>
-                                                </div>
-                                            </td>
-                                    }
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Diferencia (Kg)</td>
-                                    @foreach (var numeroEscotilla in todasLasEscotillas)
-                                    {
-                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                            EscotillaViewModel
-                                            { DiferenciaKg = 0 });
-                                            <td class="text-end @(escotilla.DiferenciaKg < 0 ? "text-success fw-bold" : (escotilla.DiferenciaKg > 0 ? "text-danger fw-bold" : ""))">
-                                                @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
-                                            </td>
-                                    }
-                                </tr>
-                                <tr>
-                                    <td class="fw-bold">Estado</td>
-                                    @foreach (var numeroEscotilla in todasLasEscotillas)
-                                    {
-                                            var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new
-                                            EscotillaViewModel
-                                            { Estado = "Sin Iniciar" });
-                                    
-                                            var porcentajeEscotilla = escotilla.CapacidadKg > 0 ?
-                                                                                              (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
-                                    
-                                            string badgeColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
-                                    
-                                            <td class="text-center">
-                                                <span class="badge rounded-pill px-3 py-2 estado-badge"
-                                                      style="background-color: @badgeColor !important; color: @ColorScheme.Blanco;
-                                                             box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                                                    <i class="fas @(escotilla.Estado.ToLower().Contains("complet") ? "fa-check-circle" : 
-                                                                  escotilla.Estado.ToLower().Contains("proces") ? "fa-sync-alt" : "fa-clock") me-1"></i>
-                                                @escotilla.Estado
-                                            </span>
-                                        </td>
-                                }
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="row g-4">
+                 <div class="row g-4">
                         <div class="col-lg-5">
                             <div class="card bg-white shadow-sm h-100 border-0 rounded-4 overflow-hidden">
                                 <div class="card-header bg-white border-0 pt-4 pb-0">
@@ -379,6 +287,117 @@
                             </div>
                         </div>
                     </div>                
+
+                    <div class="barco-visualizacion mb-4 shadow-sm rounded">
+                        <!-- Contenedor del barco con posicionamiento relativo -->
+                        <div class="barco-container position-relative overflow-auto">
+                            <!-- Imagen del barco (fondo) -->
+                            <img src="~/images/Barco.png" alt="Esquema de barco" class="barco-imagen w-100">
+                            
+                            <!-- Overlay para posicionar los indicadores de escotillas -->
+                            <div class="escotillas-overlay">
+
+                            <!-- Conversiones solo para el resumen -->
+                            <div class="conversiones">
+                                        <div class="unit-toggle-element" style="display: none; margin-top: 8px; font-size: 0.8rem; padding-top: 8px;">
+                                            <div class="text-center mb-2 fw-bold">Conversiones</div>
+                                            <!-- Modificar las líneas que muestran las conversiones -->
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Total:</span>
+                                                <span>@((totalKilosRequeridos * 2.20462M).ToString("N2")) lbs / @((totalKilosRequeridos / 45.359237M).ToString("N2")) qq</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Descarga:</span>
+                                                <span>@((descargaTotal * 2.20462M).ToString("N2")) lbs / @((descargaTotal / 45.359237M).ToString("N2")) qq</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Faltante:</span>
+                                                <span style="color: @determinarColorDiferencia(diferenciaTotal)">
+                                                    @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal * 2.20462M).ToString("N2") lbs / 
+                                                    @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal / 45.359237M).ToString("N2") qq
+                                                </span>
+                                            </div>
+                                        </div>
+                            </div>
+
+                            <!-- Etiquetas para las escotillas -->
+                            <div class="escotilla-labels">
+                                <div class="escotilla-label-item mb-1">
+                                    <div class="escotilla-label-text fw-bold">Total</div>
+                                    <span class="fw-bold">@totalKilosRequeridos.ToString("N0")</span>
+                                </div>
+                                <div class="escotilla-label-item mb-1" style="margin-top: 22px;">
+                                    <div class="escotilla-label-text fw-bold">Descarga</div>
+                                    <span class="fw-bold">@descargaTotal.ToString("N0")</span>
+                                </div>
+
+                                <div class="escotilla-label-item mb-1" style="margin-top: 22px;">
+                                <span class="fw-bold">@porcentajeTotal.ToString("N2")%</span>
+                                </div>
+                            </div>
+                                @foreach (var numeroEscotilla in todasLasEscotillas)
+                                {
+                                    var escotilla = escotillasDiccionario.GetValueOrDefault(numeroEscotilla, new EscotillaViewModel
+                                    { 
+                                        CapacidadKg = 0, 
+                                        DescargaRealKg = 0, 
+                                        DiferenciaKg = 0,
+                                        Estado = "Sin Iniciar" 
+                                    });
+                                    
+                                    var porcentajeEscotilla = escotilla.CapacidadKg > 0 ? 
+                                        (escotilla.DescargaRealKg / escotilla.CapacidadKg * 100) : 0;
+                                    
+                                    string badgeColor = determinarColorUnificado(escotilla.Estado, porcentajeEscotilla);
+                                    
+                                
+
+
+                                    <!-- Posicionamiento de cada escotilla -->
+                                    <div id="escotilla@(numeroEscotilla)" class="escotilla-indicador">
+                                        
+                                        <!-- Datos en formato vertical -->
+
+
+                                        <div class="escotilla-datos">
+                                            <div class="escotilla-dato mb-1">
+                                                <div class="escotilla-valor fw-bold">@escotilla.CapacidadKg.ToString("N0")</div>
+                                            </div>
+
+                                            <br>
+                                            
+                                            
+                                            <div class="escotilla-dato mb-1">
+                                                <div class="escotilla-valor fw-bold" style="color: @badgeColor">@escotilla.DescargaRealKg.ToString("N0")</div>
+                                            </div>
+
+                                            <br>
+                                            <div class="escotilla-dato">
+                                                <div class="escotilla-valor fw-bold" style="color: @(escotilla.DiferenciaKg < 0 ? ColorScheme.Azul : (escotilla.DiferenciaKg > 0 ? ColorScheme.Rojo : "inherit"))">
+                                                    Dif: @(escotilla.DiferenciaKg < 0 ? "+" : "")@Math.Abs(escotilla.DiferenciaKg).ToString("N0")
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                <!-- Indicador de resumen del barco con conversiones -->
+                                <div class="barco-resumen">
+                                    <div class="barco-resumen-datos">
+                                        <div class="d-flex flex-column align-items-start">
+                                            <span class="text-white mb-1">Falta</span>
+                                            <span class="fw-bold" style="color: @determinarColorDiferencia(diferenciaTotal); font-family: Consolas, monospace;">
+                                                @(diferenciaTotal < 0 ? "+" : "")@Math.Abs(diferenciaTotal).ToString("N0")
+                                            </span>
+                                            <br>
+                                            <span class="fw-bold">@((100M - porcentajeTotal).ToString("N2"))%</span>                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                   
                     <!-- Scripts para gráficos -->
                     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                     <script>
@@ -479,33 +498,6 @@
                 subtree: true 
             });
         }
-
-        /*
-        document.getElementById('btnToggleUnidad')?.addEventListener('click', function() {
-            const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
-            const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
-        
-            unitToggleElements.forEach(el => {
-                if (el.style.display === 'none' || el.style.display === '') {
-                    $(el).fadeIn(300); // Usando jQuery para una animación suave
-                } else {
-                    $(el).fadeOut(300);
-                }
-            });
-        
-            unitToggleRows.forEach(row => {
-                if (row.style.display === 'none' || row.style.display === '') {
-                    $(row).fadeIn(300);
-                } else {
-                    $(row).fadeOut(300);
-                }
-            });
-
-            // Opcional: actualizar atributo del botón para controlar estado
-            const isShowing = this.getAttribute('data-showing') === 'true';
-            this.setAttribute('data-showing', !isShowing);
-        });
-        */
     });
 </script>
 <script>
@@ -914,7 +906,17 @@
     });
 </script>
 
-<!-- Eliminar cualquier otro script personalizado de toggle para evitar conflictos -->
+<script>
+function centrarContenidoBarco() {
+    // Mantener la posición natural del scroll
+    const barcoContainer = document.querySelector('.barco-container');
+    if (barcoContainer) {
+        barcoContainer.style.transform = 'none';
+        barcoContainer.style.maxWidth = 'none';
+        barcoContainer.style.width = '1600px';
+    }
+}
+</script>
 
 <style>
     /* Asegurar que los elementos toggle se muestren correctamente cuando están activos */

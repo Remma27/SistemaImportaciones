@@ -752,21 +752,46 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                             _logger.LogInformation($"Respuesta API importación: {importacionContent}");
 
                             using var importacionDoc = JsonDocument.Parse(importacionContent);
+                            var rootElement = importacionDoc.RootElement;
 
-                            if (importacionDoc.RootElement.TryGetProperty("value", out var impValueElement))
+                            Importacion? importacion = null;
+
+                            if (rootElement.TryGetProperty("value", out var impValueElement))
                             {
-                                var importacion = JsonSerializer.Deserialize<Importacion>(impValueElement.GetRawText(), options);
-                                if (importacion?.Barco != null)
+                                importacion = JsonSerializer.Deserialize<Importacion>(impValueElement.GetRawText(), options);
+                            }
+                            else
+                            {
+                                importacion = JsonSerializer.Deserialize<Importacion>(importacionContent, options);
+                            }
+
+                            if (importacion != null)
+                            {
+                                if (importacion.Barco != null && !string.IsNullOrEmpty(importacion.Barco.nombrebarco))
                                 {
                                     importacionNombre = $"{importacion.Barco.nombrebarco} - {importacion.fechahora:dd/MM/yyyy}";
-                                    _logger.LogInformation($"Nombre importación encontrado: {importacionNombre}");
                                 }
+                                else
+                                {
+                                    if (rootElement.TryGetProperty("barco", out var barcoElement) && 
+                                        barcoElement.TryGetProperty("nombrebarco", out var nombreBarcoElement))
+                                    {
+                                        string nombreBarco = nombreBarcoElement.GetString() ?? "Sin nombre";
+                                        importacionNombre = $"{nombreBarco} - {importacion.fechahora:dd/MM/yyyy}";
+                                    }
+                                    else
+                                    {
+                                        importacionNombre = $"Importación #{movimiento.idimportacion} - {importacion.fechahora:dd/MM/yyyy}";
+                                    }
+                                }
+                                _logger.LogInformation($"Nombre importación encontrado: {importacionNombre}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error al obtener detalles de la importación");
+                        importacionNombre = $"Importación #{movimiento.idimportacion}";
                     }
                 }
 
@@ -782,21 +807,44 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                             _logger.LogInformation($"Respuesta API empresa: {empresaContent}");
 
                             using var empresaDoc = JsonDocument.Parse(empresaContent);
+                            var rootElement = empresaDoc.RootElement;
 
-                            if (empresaDoc.RootElement.TryGetProperty("value", out var empValueElement))
+                            Empresa? empresa = null;
+
+                            if (rootElement.TryGetProperty("value", out var empValueElement))
                             {
-                                var empresa = JsonSerializer.Deserialize<Empresa>(empValueElement.GetRawText(), options);
-                                if (empresa != null && !string.IsNullOrEmpty(empresa.nombreempresa))
+                                empresa = JsonSerializer.Deserialize<Empresa>(empValueElement.GetRawText(), options);
+                            }
+                            else
+                            {
+                                empresa = JsonSerializer.Deserialize<Empresa>(empresaContent, options);
+                            }
+
+                            if (empresa != null)
+                            {
+                                if (!string.IsNullOrEmpty(empresa.nombreempresa))
                                 {
                                     empresaNombre = empresa.nombreempresa;
-                                    _logger.LogInformation($"Nombre empresa encontrado: {empresaNombre}");
                                 }
+                                else
+                                {
+                                    if (rootElement.TryGetProperty("nombreempresa", out var nombreElement))
+                                    {
+                                        empresaNombre = nombreElement.GetString() ?? $"Empresa #{movimiento.idempresa}";
+                                    }
+                                    else
+                                    {
+                                        empresaNombre = $"Empresa #{movimiento.idempresa}";
+                                    }
+                                }
+                                _logger.LogInformation($"Nombre empresa encontrado: {empresaNombre}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error al obtener detalles de la empresa");
+                        empresaNombre = $"Empresa #{movimiento.idempresa}";
                     }
                 }
 
@@ -813,6 +861,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     Empresa = empresaNombre
                 };
 
+                _logger.LogInformation($"ViewModel preparado - IdMovimiento: {viewModel.IdMovimiento}, " +
+                                      $"Importacion: '{viewModel.Importacion}', Empresa: '{viewModel.Empresa}'");
+
                 return viewModel;
             }
             catch (HttpRequestException ex)
@@ -827,12 +878,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        public async Task<List<InformeGeneralViewModel>> GetInformeGeneralAsync(int barcoId)
+        public async Task<List<InformeGeneralViewModel>> GetInformeGeneralAsync(int id)
         {
             try
             {
-                _logger.LogInformation($"Solicitando informe general para barcoId={barcoId}");
-                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes";
+                _logger.LogInformation($"Solicitando informe general para barcoId={id}");
+                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={id}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes";
                 _logger.LogDebug($"URL: {url}");
                 
                 var response = await _httpClient.GetAsync(url);
@@ -886,7 +937,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error obteniendo informe general para barco {BarcoId}", barcoId);
+                _logger.LogError(ex, "Error obteniendo informe general para barco {BarcoId}", id);
                 throw;
             }
         }

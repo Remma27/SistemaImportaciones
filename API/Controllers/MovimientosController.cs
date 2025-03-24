@@ -206,7 +206,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -215,6 +215,22 @@ namespace API.Controllers
                 if (result == null)
                 {
                     return NotFound();
+                }
+                
+                // Check if this is a requirement (tipotransaccion=1) and has associated weight records
+                if (result.tipotransaccion == 1)
+                {
+                    var hasWeightRecords = await _context.Movimientos.AnyAsync(m => 
+                        m.idimportacion == result.idimportacion && 
+                        m.idempresa == result.idempresa && 
+                        m.tipotransaccion == 2);
+                        
+                    if (hasWeightRecords)
+                    {
+                        return BadRequest(new { 
+                            message = "No se puede eliminar el requerimiento porque ya tiene pesajes registrados." 
+                        });
+                    }
                 }
                 
                 _historialService.GuardarHistorial("ELIMINAR", result, "Movimientos", $"Eliminación de movimiento {result.id}");

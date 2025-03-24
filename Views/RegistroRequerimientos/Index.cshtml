@@ -151,14 +151,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        document.querySelector('select[name="selectedBarco"]').addEventListener('change', function () {
-            this.disabled = true;
-            this.parentElement.insertAdjacentHTML('beforeend',
-                '<div class="spinner-border spinner-border-sm text-primary position-absolute end-0 me-3" role="status">' +
-                '<span class="visually-hidden">Cargando...</span></div>');
-        });
-    </script>
-}

@@ -6,6 +6,7 @@ using Sistema_de_Gestion_de_Importaciones.Services.Interfaces;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
 using API.Models;
 using Sistema_de_Gestion_de_Importaciones.Extensions;
+using System.Text.Json;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
@@ -201,7 +202,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int? id, int? selectedBarco)
         {
             if (id == null)
@@ -211,25 +212,30 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             if (viewModel == null)
                 return NotFound();
 
+            _logger.LogInformation($"Delete action - Initial viewModel values: " +
+                                  $"IdEmpresa={viewModel.IdEmpresa}, Empresa={viewModel.Empresa}, " +
+                                  $"IdImportacion={viewModel.IdImportacion}, Importacion={viewModel.Importacion}");
+
             ViewBag.SelectedBarco = selectedBarco;
             return View(viewModel);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id, int? selectedBarco)
         {
             try
             {
                 await _movimientoService.DeleteAsync(id);
-                return RedirectToAction(nameof(Index), new { selectedBarco });
+                this.Success("Requerimiento eliminado exitosamente");
             }
             catch (Exception ex)
             {
+                this.Error("Error al eliminar el requerimiento: " + ex.Message);
                 _logger.LogError(ex, "Error deleting movimiento ID {Id}: {Message}", id, ex.Message);
-                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+            return RedirectToAction(nameof(Index), new { selectedBarco });
         }
     }
 }

@@ -50,8 +50,8 @@
 
                         <a href="@(isBarcoSelected ? Url.Action("ReporteIndividual", "RegistroPesajes", new { 
                             selectedBarco = selectedBarco,  
-                                                        rernController = "InformeGeneral",
-                                                            returnAction = "Index" }) : "#")" id="btnTablaDetallada"
+                            returnController = "InformeGeneral", // CORREGIDO
+                            returnAction = "Index" }) : "#")" id="btnTablaDetallada"
                             class="btn btn-dark btn-action @(!enableDetailButton ? "disabled" : "")"
                             title="Vista detallada">
                             <i class="fas fa-table-cells"></i>

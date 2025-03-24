@@ -11,7 +11,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Administrador,Operador")]
     public class EmpresaController : ControllerBase
     {
         private readonly ApiContext _context;

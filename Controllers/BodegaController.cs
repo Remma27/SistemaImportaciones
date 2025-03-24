@@ -19,6 +19,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Index()
         {
             try
@@ -34,6 +35,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public IActionResult Create()
         {
             return View();
@@ -41,6 +43,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create(Empresa_Bodegas nuevaBodega)
         {
             if (ModelState.IsValid)
@@ -61,6 +64,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(nuevaBodega);
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -83,6 +87,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id, Empresa_Bodegas updatedBodega)
         {
             if (id != updatedBodega.id)
@@ -108,6 +113,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(updatedBodega);
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Delete(int id)
         {
             var bodega = await _bodegaService.GetByIdAsync(id);
@@ -120,6 +126,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try

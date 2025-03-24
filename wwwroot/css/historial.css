@@ -66,16 +66,16 @@
 }
 
 .badge-antes-editar {
-    background-color: #ffc107;
-    color: #343a40;
+    background-color: #fd7e14; /* Color naranja sólido */
+    color: white; /* Mejor contraste que el texto oscuro */
     font-weight: 500;
     padding: 6px 10px;
     border-radius: 20px;
 }
 
 .badge-despues-editar {
-    background-color: #17a2b8;
-    color: white;
+    background-color: #0dcaf0;
+    color: #212529; /* Mejor contraste para este color */
     font-weight: 500;
     padding: 6px 10px;
     border-radius: 20px;
@@ -357,7 +357,7 @@
 }
 
 .detail-header {
-    background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+    background-color: #1e3c72; /* Color sólido en lugar del degradado */
     color: white;
     padding: 20px;
     border-top-left-radius: 8px;
@@ -685,45 +685,31 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
 /* Force smaller font size and tighter spacing for medium screens */
 @media (max-width: 1199px) {
     .historial-table {
-        font-size: 0.8rem;
+        font-size: 0.85rem; /* Ligeramente más grande */
     }
     
     .historial-table th,
     .historial-table td {
-        padding: 6px 4px !important;
+        padding: 8px 6px !important; /* Más espacio */
     }
     
     .operacion-tag {
-        min-width: 30px !important;
-        padding: 4px !important;
+        min-width: 70px !important; /* Más ancho para el texto */
+        padding: 5px 8px !important;
     }
     
     .operacion-text {
-        display: none !important;
+        display: inline-block !important; /* Mostrar texto siempre */
+        font-size: 0.8rem;
     }
     
     .table-name {
-        max-width: 60px !important;
-        font-size: 0.75rem !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
+        max-width: 100px !important; /* Más espacio para nombres de tabla */
+        font-size: 0.8rem !important;
     }
     
     .descripcion-cell {
-        max-width: 120px !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .fecha-container {
-        font-size: 0.75rem !important;
-    }
-    
-    .fecha-container div {
-        white-space: nowrap;
+        max-width: 150px !important; /* Más ancho */
     }
 }
 
@@ -749,7 +735,7 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     .historial-table td {
         display: flex;
         text-align: left;
-        padding: 8px 15px !important;
+        padding: 10px 15px !important;
         border-bottom: 1px solid #eee;
     }
     
@@ -825,4 +811,247 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
 /* Fix DataTables responsive layout issues */
 .dataTables_scroll {
     overflow-x: auto !important;
+}
+
+/* Mejorar la vista de detalle para pantallas pequeñas */
+@media (max-width: 767px) {
+    .detail-container {
+        padding: 0 10px;
+    }
+    
+    .detail-card {
+        margin-bottom: 1rem;
+    }
+    
+    .detail-header {
+        padding: 15px;
+    }
+    
+    .detail-header h4 {
+        font-size: 1.1rem;
+    }
+    
+    .detail-section {
+        padding: 15px;
+    }
+    
+    .json-preview {
+        max-height: 300px;
+        font-size: 0.85rem;
+    }
+    
+    .info-label, .info-value {
+        width: 100%;
+        text-align: left;
+    }
+    
+    .info-label {
+        margin-bottom: 5px;
+    }
+    
+    .info-value {
+        padding-left: 0;
+    }
+}
+
+/* Mejoras específicas para el encabezado de detalle */
+.detail-header {
+    background-color: #1e3c72; /* Color sólido */
+    color: white;
+    padding: 20px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.detail-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+}
+
+.detail-header h4 {
+    margin-bottom: 10px;
+    font-size: 1.25rem;
+    width: 100%;
+    word-break: break-word;
+}
+
+.detail-header .badge {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 6px 10px;
+}
+
+/* Mejoras específicas para pantallas medianas y pequeñas */
+@media (max-width: 767px) {
+    .detail-header {
+        padding: 15px;
+    }
+    
+    .detail-header h4 {
+        font-size: 1.1rem;
+        line-height: 1.4;
+    }
+    
+    .detail-header .badge {
+        margin-top: 8px;
+    }
+    
+    .detail-header i {
+        font-size: 0.9rem;
+    }
+    
+    .detail-header span.badge {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+    }
+}
+
+/* Para pantallas muy pequeñas */
+@media (max-width: 575px) {
+    .detail-header h4 {
+        font-size: 1rem;
+    }
+    
+    .detail-section {
+        padding: 12px;
+    }
+    
+    .breadcrumb {
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Mejoras para los controles de paginación de DataTables en responsive */
+@media (max-width: 767px) {
+    /* Hacer que los controles de paginación se vean mejor en móviles */
+    .dataTables_paginate {
+        float: none !important;
+        text-align: center !important;
+        padding-top: 1rem !important;
+        margin-top: 1rem !important;
+        border-top: 1px solid #dee2e6;
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+    
+    .dataTables_paginate .paginate_button {
+        padding: 0.375rem 0.5rem !important;
+        margin: 0 2px !important;
+        font-size: 0.875rem !important;
+        min-width: 30px !important;
+    }
+    
+    /* Centrar información de la página actual */
+    .dataTables_info {
+        text-align: center !important;
+        float: none !important;
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Ajustar el contenedor para acomodar mejor los controles */
+    div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+        margin: 0 !important;
+        white-space: nowrap !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+    }
+    
+    /* Mejorar el tamaño y espaciado de los botones de página */
+    .pagination .page-item .page-link {
+        padding: 0.375rem 0.5rem !important;
+        font-size: 0.875rem !important;
+    }
+}
+
+/* Para dispositivos muy pequeños, simplificar aún más */
+@media (max-width: 400px) {
+    .dataTables_paginate .paginate_button:not(.previous):not(.next) {
+        padding: 0.25rem 0.4rem !important;
+        min-width: 25px !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        padding: 0.25rem 0.5rem !important;
+    }
+}
+
+/* Corrección completa para botones de paginación en DataTables */
+.dataTables_wrapper .dataTables_paginate {
+    text-align: center !important;
+    float: none !important;
+    margin-top: 1rem !important;
+    width: 100% !important;
+}
+
+/* Solucionamos el problema de tamaño y alineación */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.5rem !important;
+    min-width: 2rem !important;
+    text-align: center !important;
+    border: 1px solid #dee2e6 !important;
+    margin-left: 2px !important;
+    margin-right: 2px !important;
+    background-color: #fff !important;
+    border-radius: 4px !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background-color: #1e3c72 !important;
+    color: white !important;
+    border-color: #1e3c72 !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) {
+    background-color: #f8f9fa !important;
+    color: #1e3c72 !important;
+}
+
+/* Reglas específicas para pantallas pequeñas */
+@media (max-width: 767px) {
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        min-width: 1.5rem !important;
+        padding: 0.4rem !important;
+        font-size: 0.8rem !important;
+        margin: 0 1px !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .ellipsis {
+        min-width: 1.5rem !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        padding: 0.4rem 0.6rem !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate {
+        padding: 1rem 0 !important;
+    }
+}
+
+/* Para dispositivos muy pequeños, simplificamos aún más */
+@media (max-width: 400px) {
+    /* Ocultamos algunos números para simplificar la vista */
+    .dataTables_wrapper .dataTables_paginate .paginate_button:not(.previous):not(.next):not(.current) {
+        display: none !important;
+    }
+    
+    /* Mantenemos visible solo el botón actual, anterior y siguiente */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        display: inline-block !important;
+        min-width: 2rem !important;
+        padding: 0.5rem 0.8rem !important;
+        margin: 0 3px !important;
+    }
+    
+    .dataTables_wrapper .dataTables_paginate .ellipsis {
+        display: none !important;
+    }
 }

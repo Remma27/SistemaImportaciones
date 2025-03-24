@@ -240,6 +240,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Registrar eventos para restablecer el estado a métrico al salir
+    window.addEventListener('beforeunload', function() {
+        localStorage.setItem('showingMetric', 'true');
+    });
+    
+    window.addEventListener('unload', function() {
+        localStorage.setItem('showingMetric', 'true');
+    });
+
     // Escuchar eventos globales de cambio de unidades
     window.addEventListener('unitToggleChanged', function(e) {
         const showAlternative = e.detail.showAlternative;

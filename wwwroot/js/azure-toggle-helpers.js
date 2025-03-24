@@ -1,32 +1,21 @@
-/**
- * Helpers para asegurar compatibilidad de toggle de unidades en Azure
- */
 (function() {
-    // Detectar si estamos en entorno Azure
     const isAzure = window.location.hostname.includes('azure') || 
                    window.location.hostname.includes('azurewebsites');
     
-    // Solo aplicar en Azure
     if (!isAzure) return;
     
-    // Verificar si jQuery está disponible
     const jQueryAvailable = typeof window.jQuery !== 'undefined';
     
-    // Funciones auxiliares que no interfieren con las globales
     window.azureHelpers = {
-        // Estado de jQuery
         hasJQuery: jQueryAvailable,
         
-        // Función segura para aplicar toggle
         applyToggle: function(showAlternative) {
             try {
-                // Intentar usar función global si existe
                 if (typeof window.toggleUnitDisplay === 'function') {
                     window.toggleUnitDisplay(showAlternative);
                     return true;
                 }
                 
-                // Fallback seguro sin jQuery
                 const elements = document.querySelectorAll('.unit-toggle-element');
                 const rows = document.querySelectorAll('.unit-toggle-row');
                 
@@ -42,7 +31,6 @@
                     else row.classList.remove('show');
                 });
                 
-                // Intentar disparar evento para otros componentes
                 try {
                     window.dispatchEvent(new CustomEvent('unitToggleChanged', {
                         detail: { showAlternative: showAlternative }
@@ -58,24 +46,21 @@
             }
         },
         
-        // Leer estado actual
         getToggleState: function() {
             try {
                 const savedMetricState = localStorage.getItem('showingMetric');
-                return savedMetricState === 'false'; // true = mostrar alternativas
+                return savedMetricState === 'false'; 
             } catch (error) {
                 console.warn('Error al leer localStorage:', error);
                 return false;
             }
         },
         
-        // Disparar sincronización
         syncAll: function() {
             const showAlternative = this.getToggleState();
             return this.applyToggle(showAlternative);
         },
         
-        // Restablecer a métrico
         resetToMetric: function() {
             try {
                 localStorage.setItem('showingMetric', 'true');
@@ -88,7 +73,6 @@
         }
     };
     
-    // Asegurar sincronización inicial
     document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
             if (window.azureHelpers) {
@@ -97,7 +81,6 @@
         }, 1000);
     });
     
-    // Registrar eventos de salida de página
     window.addEventListener('beforeunload', function() {
         if (window.azureHelpers) {
             window.azureHelpers.resetToMetric();
@@ -110,7 +93,6 @@
         }
     });
     
-    // Monitorear cambios en localStorage para componentes que no reciben eventos
     try {
         let lastKnownState = localStorage.getItem('showingMetric');
         setInterval(function() {

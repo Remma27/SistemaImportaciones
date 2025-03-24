@@ -23,7 +23,6 @@ namespace API.Controllers
             _logger = logger;
         }
 
-        // Endpoint para crear un nuevo Barco
         [HttpPost]
         [Consumes("application/json")]
         [Authorize(Roles = "Administrador,Operador")]
@@ -42,7 +41,6 @@ namespace API.Controllers
             return new JsonResult(Ok(barco));
         }
 
-        // Endpoint para editar un Barco existente
         [HttpPut]
         [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Edit(Barco barco)
@@ -55,7 +53,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound());
                 }
 
-                // Registrar estado anterior claramente
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     barcoExistente, 
@@ -63,11 +60,9 @@ namespace API.Controllers
                     $"Estado anterior del barco {barcoExistente.nombrebarco} (ID: {barcoExistente.id})"
                 );
                 
-                // Aplicar los cambios
                 _context.Entry(barcoExistente).CurrentValues.SetValues(barco);
                 _context.SaveChanges();
                 
-                // Registrar estado nuevo claramente
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     barco, 

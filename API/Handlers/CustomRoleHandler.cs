@@ -13,16 +13,13 @@ namespace API.Handlers
                 return Task.CompletedTask;
             }
 
-            // Buscar cualquier tipo de claim que contenga role o rol
             foreach (var claim in context.User.Claims)
             {
-                // Verificar directamente el tipo y valor de cada claim
                 if (claim.Type.Contains("role", System.StringComparison.OrdinalIgnoreCase) ||
                     claim.Type.EndsWith("role", System.StringComparison.OrdinalIgnoreCase))
                 {
                     foreach (var role in requirement.AllowedRoles)
                     {
-                        // Comprobar si el valor del claim coincide con algún rol requerido (ignorando mayúsculas/minúsculas)
                         if (string.Equals(claim.Value, role, System.StringComparison.OrdinalIgnoreCase))
                         {
                             context.Succeed(requirement);
@@ -31,7 +28,6 @@ namespace API.Handlers
                     }
                 }
 
-                // Buscar el claim específico "IsAdmin" para administradores
                 if (claim.Type == "IsAdmin" && claim.Value == "true" && 
                     requirement.AllowedRoles.Contains("Administrador"))
                 {

@@ -1,8 +1,6 @@
-/* Estilos base para componentes */
 .text-success { color: #28a745 !important; }
 .text-danger { color: #dc3545 !important; }
 
-/* Estilos para badges */
 .estado-badge, .badge {
     font-weight: 500;
     letter-spacing: 0.3px;
@@ -14,7 +12,6 @@
     font-size: 0.85em;
 }
 
-/* Estilos para las cards de escotillas */
 .escotilla-card {
     background-color: white;
     border-radius: 0.75rem !important;
@@ -43,7 +40,6 @@
     width: 100%;
 }
 
-/* Estilos para gráficos de donut */
 .donut-chart-container {
     position: relative;
     width: clamp(100px, 15vw, 160px);
@@ -53,7 +49,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-shrink: 0; /* Evitar que se comprima */
+    flex-shrink: 0; 
 }
 
 .donut-chart-container canvas {
@@ -90,7 +86,6 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Sección de detalles de la card */
 .escotilla-card .mt-3.small.text-muted {
     width: 100%;
     flex-grow: 1;
@@ -123,7 +118,6 @@
     font-size: 0.9rem;
 }
 
-/* Grid de cards */
 .col-md-6.col-lg-2.text-center {
     display: flex;
     padding: 0.75rem;
@@ -135,7 +129,6 @@
     flex-direction: column;
 }
 
-/* Estilos para barra de progreso */
 .custom-progress-container {
     height: 34px;
     background-color: #f0f0f0;
@@ -165,7 +158,6 @@
     text-shadow: 0px 0px 3px rgba(255,255,255,0.9);
 }
 
-/* Estilos para cambio de unidades */
 .unit-toggle-element {
     display: none !important;
     margin-top: 3px;
@@ -206,7 +198,6 @@ tr.unit-toggle-row.show {
     margin-top: 3px;
 }
 
-/* Estilos para visualización del barco */
 .barco-visualizacion {
     width: 100%;
     overflow-x: auto;
@@ -256,7 +247,6 @@ tr.unit-toggle-row.show {
     z-index: 2;
 }
 
-/* Estilos para escotillas en el barco */
 .escotilla-indicador {
     position: absolute;
     width: 130px;
@@ -287,7 +277,6 @@ tr.unit-toggle-row.show {
     white-space: nowrap;
 }
 
-/* Estilos para el resumen del barco */
 .barco-resumen {
     position: absolute;
     bottom: 124px;
@@ -311,7 +300,6 @@ tr.unit-toggle-row.show {
     gap: 10px;
 }
 
-/* Posiciones específicas de las escotillas */
 #escotilla5 { 
     top: 215px !important; 
     left: 421px !important; 
@@ -343,7 +331,6 @@ tr.unit-toggle-row.show {
     z-index: 10 !important;
 }
 
-/* Fuentes para elementos del barco */
 .barco-container,
 .escotilla-datos,
 .escotilla-valor,
@@ -352,7 +339,6 @@ tr.unit-toggle-row.show {
     font-family: "Consolas", "Monaco", "Lucida Console", monospace !important;
 }
 
-/* Estilos para conversiones */
 .conversiones {
     position: absolute;
     top: 24px;
@@ -395,7 +381,6 @@ tr.unit-toggle-row.show {
     border-color: rgba(0,0,0,0.08) !important;
 }
 
-/* Estilos para botón de descarga */
 .barco-visualizacion #downloadBtn {
     position: absolute;
     top: 4px;
@@ -424,7 +409,6 @@ tr.unit-toggle-row.show {
     visibility: hidden !important;
 }
 
-/* Fix para metric-box */
 .metric-box {
     height: 100%;
     display: flex;
@@ -432,12 +416,10 @@ tr.unit-toggle-row.show {
     justify-content: center;
 }
 
-/* Ajustes para el card-body */
 .card-body {
     overflow: visible !important;
 }
 
-/* Estilo alternativo horizontal */
 .escotilla-card.horizontal {
     flex-direction: row;
     flex-wrap: wrap;
@@ -459,7 +441,6 @@ tr.unit-toggle-row.show {
     margin-top: 0 !important;
 }
 
-/* Media Queries */
 @media (min-width: 1400px) {
     .donut-chart-container {
         width: 160px;
@@ -481,7 +462,6 @@ tr.unit-toggle-row.show {
     }
 }
 
-/* Solución para el rango problemático de 1204px a 1756px */
 @media (min-width: 1204px) and (max-width: 1756px) {
     .col-md-6.col-lg-2.text-center {
         width: 25%;
@@ -559,7 +539,6 @@ tr.unit-toggle-row.show {
         max-height: 130px;
     }
     
-    /* Mejoramos visualización del texto */
     .escotilla-card .d-flex.justify-content-between span:last-child {
         font-size: 0.85rem;
     }

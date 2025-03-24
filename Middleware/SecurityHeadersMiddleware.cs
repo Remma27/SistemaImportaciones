@@ -15,13 +15,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Agregar headers de seguridad antes de que comience la respuesta
             context.Response.Headers["X-Content-Type-Options"] = "nosniff";
             context.Response.Headers["X-Frame-Options"] = "DENY";
             context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
             context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
             
-            // Continuar con el pipeline
             await _next(context);
         }
     }
@@ -73,7 +71,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
             _directives[directive].Add(value);
         }
 
-        // Más métodos según sea necesario
     }
 
     public class ContentSecurityPolicyDirectiveBuilder

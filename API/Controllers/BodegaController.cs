@@ -40,7 +40,6 @@ namespace API.Controllers
                 _context.Empresa_Bodegas.Add(bodega);
                 _context.SaveChanges();
                 
-                // Registrar en historial con método directo
                 _historialService.GuardarHistorial("CREAR", bodega, "Empresa_Bodegas", $"Creación de bodega ID: {bodega.id}");
                 _logger.LogInformation($"Bodega creada con ID: {bodega.id}, registro en historial completado");
                 
@@ -67,7 +66,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound());
                 }
                 
-                // Registrar estado anterior claramente
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     bodegaInDb, 
@@ -75,11 +73,9 @@ namespace API.Controllers
                     $"Estado anterior de bodega ID: {bodegaInDb.id}, Nombre: {bodegaInDb.bodega}"
                 );
 
-                // Aplicar los cambios
                 _context.Entry(bodegaInDb).CurrentValues.SetValues(bodega);
                 _context.SaveChanges();
                 
-                // Registrar estado nuevo claramente
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     bodega, 
@@ -122,7 +118,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound()) { StatusCode = 404 };
                 }
                 
-                // Registrar antes de eliminar
                 _historialService.GuardarHistorial("ELIMINAR", result, "Empresa_Bodegas", $"Eliminación de bodega ID: {id}");
                 
                 _context.Empresa_Bodegas.Remove(result);

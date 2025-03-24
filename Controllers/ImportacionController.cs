@@ -68,7 +68,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 }
             }
             
-            // Repopulate dropdown when returning to view due to errors
             try
             {
                 var barcos = await _barcoService.GetAllAsync();
@@ -138,7 +137,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 }
             }
             
-            // Repopulate dropdown when returning to view due to errors
             try
             {
                 var barcos = await _barcoService.GetAllAsync();

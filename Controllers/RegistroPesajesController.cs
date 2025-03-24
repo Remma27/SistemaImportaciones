@@ -40,7 +40,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var watch = Stopwatch.StartNew();
             try
             {
-                // Disable caching for this response
                 Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
                 Response.Headers["Pragma"] = "no-cache";
                 Response.Headers["Expires"] = "0";
@@ -125,7 +124,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Always fetch fresh data from the database
                 _logger.LogInformation($"Cargando datos frescos para tabla 1, importación: {importacionId}, empresa: {empresaId}");
                 var calculo = await _movimientoService.CalculoMovimientos(importacionId, empresaId);
 
@@ -169,11 +167,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Always fetch fresh data from the database
                 _logger.LogInformation($"Cargando datos frescos para tabla 2, importación: {importacionId}");
                 var informeGeneral = await _movimientoService.GetInformeGeneralAsync(importacionId);
 
-                // Log the TotalMovimientos value after API call
                 _logger.LogInformation($"TotalMovimientos retrieved from API: {_movimientoService.TotalMovimientos}");
 
                 if (informeGeneral != null)
@@ -191,7 +187,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         PorcentajeDescarga = (decimal)ig.PorcentajeDescarga
                     }).ToList();
 
-                    // Also store the value in ViewBag for debugging purposes
                     ViewBag.TotalMovimientos = _movimientoService.TotalMovimientos;
                     _logger.LogInformation($"ViewBag.TotalMovimientos set to: {_movimientoService.TotalMovimientos}");
                 }
@@ -216,14 +211,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return;
                 }
 
-                // Get the ship name from ViewBag.Barcos
                 var barcos = ViewBag.Barcos as SelectList;
                 var barcoItem = barcos?.Items.Cast<SelectListItem>()
                     .FirstOrDefault(b => b.Value == importacionId.ToString());
 
                 if (barcoItem != null)
                 {
-                    // Extract just the ship name from the format "ID - DATE - SHIP_NAME"
                     var fullText = barcoItem.Text;
                     viewModel.NombreBarco = fullText.Split('-').Last().Trim();
                 }
@@ -242,7 +235,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
                 viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
 
-                // Set ViewData
                 ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
                 ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
                 ViewData["NombreBarco"] = viewModel.NombreBarco;
@@ -266,7 +258,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             viewModel.PorcentajeTotal = 0;
             viewModel.EstadoGeneral = estado;
             viewModel.TotalKilosRequeridos = 0;
-            viewModel.NombreBarco = "Sin nombre"; // Add this line
+            viewModel.NombreBarco = "Sin nombre";
         }
 
         [Authorize(Roles = "Administrador,Operador")]
@@ -280,7 +272,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 if (selectedBarco.HasValue)
                 {
-                    // Pass the importation ID to get only companies with movements
                     var empresasData = await _movimientoService.GetEmpresasWithMovimientosAsync(selectedBarco.Value);
                     var empresas = empresasData?.ToList() ?? new List<SelectListItem>();
                     ViewBag.Empresas = new SelectList(empresas, "Value", "Text", empresaId);
@@ -362,7 +353,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 var result = await _movimientoService.CreateAsync(movimiento);
                 TempData["Success"] = "Registro creado exitosamente.";
 
-                // Always force data reload after create
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa, refreshData = true });
             }
@@ -416,7 +406,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.UpdateAsync(id, movimiento);
                 TempData["Success"] = "Registro actualizado exitosamente.";
 
-                // Always force data reload after edit
                 return RedirectToAction(nameof(Index),
                     new { selectedBarco = viewModel.IdImportacion, empresaId = viewModel.IdEmpresa, refreshData = true });
             }
@@ -480,7 +469,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id, int selectedBarco, int empresaId)
         {
             try
@@ -495,7 +484,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.DeleteAsync(id);
                 TempData["Success"] = "Registro eliminado correctamente";
 
-                // Always force data reload after delete
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId, refreshData = true });
             }
             catch (Exception ex)
@@ -507,7 +495,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id, int selectedBarco, int empresaId)
         {
             try
@@ -556,7 +544,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             var watch = Stopwatch.StartNew();
             try
             {
-                // Disable caching for this response
                 Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
                 Response.Headers["Pragma"] = "no-cache";
                 Response.Headers["Expires"] = "0";
@@ -595,7 +582,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Disable caching for this response
                 Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
                 Response.Headers["Pragma"] = "no-cache";
                 Response.Headers["Expires"] = "0";
@@ -681,19 +667,16 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 _logger.LogInformation($"Cargando formulario de creación para barco: {selectedBarco}, empresa: {empresaId}");
 
-                // Crear un nuevo viewModel inicializado con los IDs necesarios
                 var viewModel = new RegistroPesajesIndividual
                 {
                     IdImportacion = selectedBarco,
                     IdEmpresa = empresaId,
-                    TipoTransaccion = 2, // Valor predeterminado para tipo de transacción
+                    TipoTransaccion = 2,
                 };
 
-                // Cargar las bodegas para el dropdown
                 var bodegas = await _bodegaService.GetAllAsync();
                 ViewBag.Bodegas = new SelectList(bodegas, "id", "bodega");
 
-                // Pasar los parámetros de ruta al ViewBag para mantener el contexto
                 ViewBag.SelectedBarco = selectedBarco;
                 ViewBag.EmpresaId = empresaId;
 

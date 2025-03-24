@@ -70,13 +70,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 if (ModelState.IsValid)
                 {
-                    // En lugar de usar CreateAsync, usar RegistrarUsuarioAsync que sabemos que funciona
                     var viewModel = new RegistroViewModel
                     {
                         Nombre = usuario.nombre ?? string.Empty,
                         Email = usuario.email ?? string.Empty,
                         Password = usuario.password_hash ?? string.Empty,
-                        ConfirmPassword = usuario.password_hash ?? string.Empty // Añadir ConfirmPassword para cumplir con el requisito
+                        ConfirmPassword = usuario.password_hash ?? string.Empty 
                     };
                     
                     var result = await _usuarioService.RegistrarUsuarioAsync(viewModel);
@@ -126,7 +125,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Usuario usuario)
         {
-            // Añadir registro exhaustivo para diagnosticar el problema
             _logger.LogWarning("Iniciando edición de usuario {Id} - POST recibido con datos: {@Usuario}", id, usuario);
             
             if (id != usuario.id)
@@ -138,7 +136,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             
             try
             {
-                // Verificar el modelo sin ModelState
                 if (string.IsNullOrEmpty(usuario.nombre) || string.IsNullOrEmpty(usuario.email))
                 {
                     _logger.LogWarning("Datos inválidos: Nombre={Nombre}, Email={Email}", usuario.nombre, usuario.email);
@@ -146,7 +143,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return View(usuario);
                 }
                 
-                // Obtener el usuario actual para preservar datos importantes
                 var usuarioActual = await _usuarioService.GetByIdAsync(id);
                 if (usuarioActual == null)
                 {
@@ -162,11 +158,10 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     RolId = usuarioActual.rol_id
                 });
                 
-                // Preservar valores que no deben cambiar en la edición básica
-                usuario.password_hash = usuarioActual.password_hash; // Mantener contraseña actual
-                usuario.rol_id = usuarioActual.rol_id; // Mantener rol actual
-                usuario.fecha_creacion = usuarioActual.fecha_creacion; // Mantener fecha de creación
-                usuario.ultimo_acceso = usuarioActual.ultimo_acceso; // Mantener último acceso
+                usuario.password_hash = usuarioActual.password_hash; 
+                usuario.rol_id = usuarioActual.rol_id; 
+                usuario.fecha_creacion = usuarioActual.fecha_creacion;
+                usuario.ultimo_acceso = usuarioActual.ultimo_acceso;
                 
                 _logger.LogInformation("Preparado usuario para actualizar: {@Usuario}", new {
                     usuario.id,
@@ -176,11 +171,9 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     RolId = usuario.rol_id
                 });
                 
-                // Registrar datos a enviar
                 _logger.LogInformation("Enviando actualización para usuario {Id}: {Nombre}, {Email}, {Activo}", 
                     id, usuario.nombre, usuario.email, usuario.activo);
                 
-                // USAR EL SERVICIO PARA ACTUALIZAR - con try/catch específico
                 try
                 {
                     var usuarioActualizado = await _usuarioService.UpdateAsync(id, usuario);
@@ -188,7 +181,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     _logger.LogInformation("Usuario actualizado exitosamente. Datos devueltos: {@Usuario}", 
                         new { usuarioActualizado.id, usuarioActualizado.nombre, usuarioActualizado.email });
                     
-                    // Agregar mensaje de éxito y redireccionar
                     this.Success("Usuario actualizado correctamente");
                     
                     return RedirectToAction(nameof(Index));
@@ -293,7 +285,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Añadir diagnóstico detallado
                 _logger.LogInformation("Iniciando asignación de rol - UsuarioId: {UsuarioId}, RolId: {RolId}", 
                     viewModel.UsuarioId, viewModel.RolId);
                 
@@ -342,7 +333,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 ModelState.AddModelError("", "Error al asignar el rol: " + ex.Message);
             }
 
-            // Si llegamos aquí es porque hubo un error, volvemos a cargar el formulario
             var usuario = await _usuarioService.GetByIdAsync(viewModel.UsuarioId);
             var roles = await _usuarioService.GetRolesAsync();
             
@@ -403,7 +393,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 _logger.LogInformation("Intentando cambiar contraseña para usuario ID: {UserId}", viewModel.UsuarioId);
                 
-                // Validaciones adicionales
                 if (string.IsNullOrEmpty(viewModel.Password))
                 {
                     _logger.LogWarning("Contraseña vacía al intentar cambiar para usuario {Id}", viewModel.UsuarioId);
@@ -418,7 +407,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return View(viewModel);
                 }
                 
-                // Verificar requisitos mínimos de contraseña
                 if (viewModel.Password.Length < 6)
                 {
                     _logger.LogWarning("Contraseña demasiado corta ({Length}) para usuario {Id}", 
@@ -427,7 +415,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return View(viewModel);
                 }
                 
-                // Verificar que el usuario exista antes de intentar cambiar la contraseña
                 var usuario = await _usuarioService.GetByIdAsync(viewModel.UsuarioId);
                 if (usuario == null)
                 {
@@ -436,13 +423,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return RedirectToAction(nameof(Index));
                 }
                 
-                // Antes de la llamada - loguear información
                 _logger.LogInformation("Llamando a CambiarPasswordAsync para usuario {Id}, longitud de contraseña: {Length}", 
                     viewModel.UsuarioId, viewModel.Password.Length);
                     
                 var result = await _usuarioService.CambiarPasswordAsync(viewModel.UsuarioId, viewModel.Password);
                 
-                // Después de la llamada - loguear resultado
                 _logger.LogInformation("Resultado de CambiarPasswordAsync para usuario {Id}: Success={Success}, Message={Message}", 
                     viewModel.UsuarioId, result.Success, result.Message);
                 
@@ -479,10 +464,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Invertir el estado actual
                 bool nuevoEstado = !(usuario.activo ?? true);
                 
-                // Usar el método específico para cambiar estado
                 var result = await _usuarioService.ToggleActivoAsync(id, nuevoEstado);
                 
                 if (result.Success)

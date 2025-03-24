@@ -17,8 +17,6 @@ namespace API.Data
         public DbSet<Movimiento> Movimientos { get; set; }
         public DbSet<Unidad> Unidades { get; set; }
         public DbSet<HistorialCambios> HistorialCambios { get; set; }
-        
-        // Añadir los nuevos DbSets
         public DbSet<Rol> Roles { get; set; }
         public DbSet<Permiso> Permisos { get; set; }
         public DbSet<RolPermiso> RolPermisos { get; set; }
@@ -39,7 +37,6 @@ namespace API.Data
                 .HasForeignKey(m => m.idempresa)
                 .OnDelete(DeleteBehavior.Restrict);
             
-            // Configurar el mapeo de RolPermiso a la tabla rol_permisos
             modelBuilder.Entity<RolPermiso>()
                 .ToTable("rol_permisos");
         }

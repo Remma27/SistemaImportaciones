@@ -36,7 +36,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Helpers
             {
                 return result;
             }
-            return 60; // Default value
+            return 60; 
         }
 
         public static string GetApiBaseUrl()

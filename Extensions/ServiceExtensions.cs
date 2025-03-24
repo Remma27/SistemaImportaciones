@@ -11,7 +11,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // Remove any existing IMovimientoService registration if present
             string apiBaseUrl = EnvironmentHelper.GetApiBaseUrl();
             if (string.IsNullOrEmpty(apiBaseUrl))
             {
@@ -24,7 +23,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
                 client.DefaultRequestHeaders.Add("User-Agent", "SistemaGestionImportaciones");
             });
 
-            // Registro de servicios
             services.AddScoped<IImportacionService>(sp =>
             {
                 var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");

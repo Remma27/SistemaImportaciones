@@ -973,16 +973,16 @@ table > thead > tr > th.unit-toggle-columns.visible {
 
 .barco-container {
     position: relative;
-    width: 1600px; /* mantener ancho fijo */
+    width: 1600px;
     height: 437px;
-    overflow-x: auto !important; /* forzar scroll */
-    overflow-y: hidden; /* prevenir scroll vertical */
+    overflow-x: auto !important; 
+    overflow-y: hidden; 
     background-color: #f8f9fa;
     border-radius: 8px;
     margin: 0 auto;
-    -webkit-overflow-scrolling: touch; /* mejor scroll en iOS */
-    max-width: none !important; /* prevenir que se ajuste el ancho */
-    transform: none !important; /* prevenir transformaciones que afecten el scroll */
+    -webkit-overflow-scrolling: touch; 
+    max-width: none !important; 
+    transform: none !important;
 }
 
 .barco-visualizacion {
@@ -1003,7 +1003,7 @@ table > thead > tr > th.unit-toggle-columns.visible {
 
 .card-body {
     padding: var(--card-spacing-sm);
-    overflow: hidden; /* Contener el scroll dentro del barco-container */
+    overflow: hidden; 
     max-width: 100%;
 }
 
@@ -1019,8 +1019,8 @@ table > thead > tr > th.unit-toggle-columns.visible {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1793px; /* igual al ancho de la imagen */
-    height: 437px; /* igual a la altura de la imagen */
+    width: 1793px; 
+    height: 437px;
     z-index: 2;
 }
 
@@ -1051,7 +1051,6 @@ table > thead > tr > th.unit-toggle-columns.visible {
     gap: 10px;
 }
 
-/* Estilos definitivos para las escotillas */
     .escotilla-labels {
         position: absolute !important;
         top: 202px !important; 
@@ -1061,7 +1060,6 @@ table > thead > tr > th.unit-toggle-columns.visible {
         width: 203px !important;
     }
 
-/* Posiciones invertidas para las escotillas (5 al 1) */
 #escotilla5 { 
     top: 215px !important; 
     left: 421px !important; 
@@ -1093,7 +1091,6 @@ table > thead > tr > th.unit-toggle-columns.visible {
     z-index: 10 !important;
 }
 
-    /* Estilos para el barco y elementos relacionados */
 .barco-container,
 .escotilla-datos,
 .escotilla-valor,
@@ -1123,13 +1120,11 @@ table > thead > tr > th.unit-toggle-columns.visible {
     letter-spacing: -0.5px;
 }
 
-/* Ajustar espaciado para datos numéricos */
 .escotilla-dato {
     text-align: center;
     padding-right: 2px;
 }
 
-/* Estilos para la sección de conversiones */
 .conversiones {
     position: absolute;
     top: 24px;
@@ -1172,14 +1167,12 @@ table > thead > tr > th.unit-toggle-columns.visible {
     border-color: rgba(0,0,0,0.08) !important;
 }
 
-/* Estilos para la visualización del barco */
 .barco-visualizacion {
     background: #fff;
     padding: 20px;
     position: relative;
 }
 
-/* Estilos para el botón de descarga */
 .barco-visualizacion #downloadBtn {
     position: absolute;
     top: 4px;
@@ -1203,7 +1196,6 @@ table > thead > tr > th.unit-toggle-columns.visible {
     cursor: wait;
 }
 
-/* Agregar esta clase para ocultar el botón durante la captura */
 .capturing {
     opacity: 0 !important;
     visibility: hidden !important;

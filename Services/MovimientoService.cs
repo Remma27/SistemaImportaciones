@@ -47,16 +47,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Analyze JSON structure
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - new format
                     _logger.LogInformation("Detectado formato de array directo");
                     var movimientos = JsonSerializer.Deserialize<List<Movimiento>>(content, options);
                     _logger.LogInformation($"Movimientos deserializados: {movimientos?.Count ?? 0}");
@@ -64,7 +61,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -74,7 +70,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     }
                     else
                     {
-                        // Try Newtonsoft as last resort
                         _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                         try
                         {
@@ -129,7 +124,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 using JsonDocument document = JsonDocument.Parse(content);
                 Movimiento? movimiento = null;
 
-                // Analyze JSON structure
                 var root = document.RootElement;
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
@@ -143,7 +137,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     }
                     else
                     {
-                        // Direct object - new format
                         movimiento = JsonSerializer.Deserialize<Movimiento>(content, options);
                     }
                 }
@@ -310,16 +303,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 List<Importacion>? importaciones = null;
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - new format
                     _logger.LogInformation("Detectado formato de array directo");
                     importaciones = JsonSerializer.Deserialize<List<Importacion>>(content, options);
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -357,7 +347,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             {
                 _logger.LogInformation("Iniciando solicitud para obtener importaciones");
                 
-                // Change the URL to point to the Importaciones controller instead of Movimientos
                 var url = "/api/Importaciones/GetAll";
                 _logger.LogDebug($"URL: {url}");
                 
@@ -385,16 +374,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 List<Importacion>? importaciones = null;
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - new format
                     _logger.LogInformation("Detectado formato de array directo");
                     importaciones = JsonSerializer.Deserialize<List<Importacion>>(content, options);
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -411,7 +397,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
                 _logger.LogInformation($"Importaciones deserializadas: {importaciones.Count}");
                 
-                // Debug log the first few items to verify content
                 for (int i = 0; i < Math.Min(3, importaciones.Count); i++)
                 {
                     var item = importaciones[i];
@@ -419,7 +404,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 }
                 
                 return importaciones
-                    .OrderByDescending(i => i.fechahora) // Sort by date descending for better usability
+                    .OrderByDescending(i => i.fechahora)
                     .Select(i => new SelectListItem
                     {
                         Value = i.id.ToString(),
@@ -460,16 +445,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 List<Empresa>? empresas = null;
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - new format
                     _logger.LogInformation("Detectado formato de array directo");
                     empresas = JsonSerializer.Deserialize<List<Empresa>>(content, options);
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -499,46 +481,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 throw new Exception($"Error al obtener la lista de empresas: {ex.Message}", ex);
             }
         }
-
-        private int? GetIntProperty(JsonElement element, string propertyName)
-        {
-            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Number)
-            {
-                return property.GetInt32();
-            }
-            return null;
-        }
-
-        private string? GetStringProperty(JsonElement element, string propertyName)
-        {
-            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String)
-            {
-                return property.GetString();
-            }
-            return null;
-        }
-
-        private DateTime? GetDateTimeProperty(JsonElement element, string propertyName)
-        {
-            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String)
-            {
-                if (DateTime.TryParse(property.GetString(), out DateTime result))
-                {
-                    return result;
-                }
-            }
-            return null;
-        }
-
-        private decimal GetDecimalProperty(JsonElement element, string propertyName)
-        {
-            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Number)
-            {
-                return property.GetDecimal();
-            }
-            return 0;
-        }
-
         async Task<List<RegistroRequerimientosViewModel>> IMovimientoService.GetRegistroRequerimientosAsync(int barcoId)
         {
             try
@@ -557,10 +499,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 var content = await response.Content.ReadAsStringAsync();
                 
-                // Log the complete response for debugging
                 _logger.LogInformation($"Respuesta completa: {content}");
 
-                // First try to determine if this is valid JSON at all
                 if (string.IsNullOrWhiteSpace(content))
                 {
                     _logger.LogWarning("La respuesta API está vacía");
@@ -580,10 +520,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     
                     _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
                     
-                    // Handle various response formats
                     List<RegistroRequerimientosViewModel> result = new List<RegistroRequerimientosViewModel>();
                     
-                    // Case 1: Direct array in "data" property
                     if (root.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Array)
                     {
                         _logger.LogInformation("Encontrada propiedad 'data' con array directo");
@@ -601,7 +539,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         }
                     }
                     
-                    // Case 2: Nested array in "$values" property inside "data"
                     if (root.TryGetProperty("data", out var dataObj) && 
                         dataObj.ValueKind == JsonValueKind.Object &&
                         dataObj.TryGetProperty("$values", out var valuesElement) && 
@@ -621,7 +558,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         }
                     }
                     
-                    // Case 3: Root is the array directly
                     if (root.ValueKind == JsonValueKind.Array)
                     {
                         _logger.LogInformation("La raíz del JSON es un array directo");
@@ -638,14 +574,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         }
                     }
                     
-                    // Handle empty results
                     if (content.Contains("\"count\":0") || content.Contains("\"data\":[]"))
                     {
                         _logger.LogInformation("La respuesta indica conteo cero, retornando lista vacía");
                         return new List<RegistroRequerimientosViewModel>();
                     }
                     
-                    // Manual parsing as last resort
                     if (root.TryGetProperty("data", out var dataElem))
                     {
                         _logger.LogInformation("Intentando parsing manual de datos");
@@ -702,7 +636,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        // Helper methods for safe property extraction
         private int GetIntPropertySafe(JsonElement element, string propertyName)
         {
             if (element.TryGetProperty(propertyName, out var prop) && 
@@ -805,10 +738,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 if (movimiento == null)
                     throw new InvalidOperationException($"No se encontró el movimiento con ID {id}");
 
-                // Depurar los valores de IDs para diagnosticar el problema
                 _logger.LogInformation($"Movimiento ID: {movimiento.id}, ImportacionID: {movimiento.idimportacion}, EmpresaID: {movimiento.idempresa}");
 
-                // Obtener el nombre de la importación (barco) directamente desde la API
                 string importacionNombre = "Desconocido";
                 if (movimiento.idimportacion > 0)
                 {
@@ -821,25 +752,49 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                             _logger.LogInformation($"Respuesta API importación: {importacionContent}");
 
                             using var importacionDoc = JsonDocument.Parse(importacionContent);
+                            var rootElement = importacionDoc.RootElement;
 
-                            if (importacionDoc.RootElement.TryGetProperty("value", out var impValueElement))
+                            Importacion? importacion = null;
+
+                            if (rootElement.TryGetProperty("value", out var impValueElement))
                             {
-                                var importacion = JsonSerializer.Deserialize<Importacion>(impValueElement.GetRawText(), options);
-                                if (importacion?.Barco != null)
+                                importacion = JsonSerializer.Deserialize<Importacion>(impValueElement.GetRawText(), options);
+                            }
+                            else
+                            {
+                                importacion = JsonSerializer.Deserialize<Importacion>(importacionContent, options);
+                            }
+
+                            if (importacion != null)
+                            {
+                                if (importacion.Barco != null && !string.IsNullOrEmpty(importacion.Barco.nombrebarco))
                                 {
                                     importacionNombre = $"{importacion.Barco.nombrebarco} - {importacion.fechahora:dd/MM/yyyy}";
-                                    _logger.LogInformation($"Nombre importación encontrado: {importacionNombre}");
                                 }
+                                else
+                                {
+                                    if (rootElement.TryGetProperty("barco", out var barcoElement) && 
+                                        barcoElement.TryGetProperty("nombrebarco", out var nombreBarcoElement))
+                                    {
+                                        string nombreBarco = nombreBarcoElement.GetString() ?? "Sin nombre";
+                                        importacionNombre = $"{nombreBarco} - {importacion.fechahora:dd/MM/yyyy}";
+                                    }
+                                    else
+                                    {
+                                        importacionNombre = $"Importación #{movimiento.idimportacion} - {importacion.fechahora:dd/MM/yyyy}";
+                                    }
+                                }
+                                _logger.LogInformation($"Nombre importación encontrado: {importacionNombre}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error al obtener detalles de la importación");
+                        importacionNombre = $"Importación #{movimiento.idimportacion}";
                     }
                 }
 
-                // Obtener el nombre de la empresa directamente desde la API
                 string empresaNombre = "Desconocida";
                 if (movimiento.idempresa > 0)
                 {
@@ -852,25 +807,47 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                             _logger.LogInformation($"Respuesta API empresa: {empresaContent}");
 
                             using var empresaDoc = JsonDocument.Parse(empresaContent);
+                            var rootElement = empresaDoc.RootElement;
 
-                            if (empresaDoc.RootElement.TryGetProperty("value", out var empValueElement))
+                            Empresa? empresa = null;
+
+                            if (rootElement.TryGetProperty("value", out var empValueElement))
                             {
-                                var empresa = JsonSerializer.Deserialize<Empresa>(empValueElement.GetRawText(), options);
-                                if (empresa != null && !string.IsNullOrEmpty(empresa.nombreempresa))
+                                empresa = JsonSerializer.Deserialize<Empresa>(empValueElement.GetRawText(), options);
+                            }
+                            else
+                            {
+                                empresa = JsonSerializer.Deserialize<Empresa>(empresaContent, options);
+                            }
+
+                            if (empresa != null)
+                            {
+                                if (!string.IsNullOrEmpty(empresa.nombreempresa))
                                 {
                                     empresaNombre = empresa.nombreempresa;
-                                    _logger.LogInformation($"Nombre empresa encontrado: {empresaNombre}");
                                 }
+                                else
+                                {
+                                    if (rootElement.TryGetProperty("nombreempresa", out var nombreElement))
+                                    {
+                                        empresaNombre = nombreElement.GetString() ?? $"Empresa #{movimiento.idempresa}";
+                                    }
+                                    else
+                                    {
+                                        empresaNombre = $"Empresa #{movimiento.idempresa}";
+                                    }
+                                }
+                                _logger.LogInformation($"Nombre empresa encontrado: {empresaNombre}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error al obtener detalles de la empresa");
+                        empresaNombre = $"Empresa #{movimiento.idempresa}";
                     }
                 }
 
-                // Convertir el Movimiento a RegistroRequerimientosViewModel
                 var viewModel = new RegistroRequerimientosViewModel
                 {
                     IdMovimiento = movimiento.id,
@@ -878,11 +855,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     IdImportacion = movimiento.idimportacion,
                     IdEmpresa = movimiento.idempresa,
                     TipoTransaccion = movimiento.tipotransaccion,
-                    CantidadRequerida = movimiento.cantidadrequerida ?? 0m, // Handle nullable with default
-                    CantidadCamiones = movimiento.cantidadcamiones ?? 0,    // Handle nullable with default
+                    CantidadRequerida = movimiento.cantidadrequerida ?? 0m, 
+                    CantidadCamiones = movimiento.cantidadcamiones ?? 0,    
                     Importacion = importacionNombre,
                     Empresa = empresaNombre
                 };
+
+                _logger.LogInformation($"ViewModel preparado - IdMovimiento: {viewModel.IdMovimiento}, " +
+                                      $"Importacion: '{viewModel.Importacion}', Empresa: '{viewModel.Empresa}'");
 
                 return viewModel;
             }
@@ -898,12 +878,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
         }
 
-        public async Task<List<InformeGeneralViewModel>> GetInformeGeneralAsync(int barcoId)
+        public async Task<List<InformeGeneralViewModel>> GetInformeGeneralAsync(int id)
         {
             try
             {
-                _logger.LogInformation($"Solicitando informe general para barcoId={barcoId}");
-                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={barcoId}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes";
+                _logger.LogInformation($"Solicitando informe general para barcoId={id}");
+                var url = $"{_apiBaseUrl}/InformeGeneral?importacionId={id}&fields=empresaId,empresa,requeridoKg,requeridoTon,descargaKg,faltanteKg,tonFaltantes,conteoPlacas,porcentajeDescarga,camionesFaltantes";
                 _logger.LogDebug($"URL: {url}");
                 
                 var response = await _httpClient.GetAsync(url);
@@ -927,14 +907,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
 
-                // Add debug logging to check value
                 if (root.TryGetProperty("totalMovimientos", out var totalMovimientosElement))
                 {
                     TotalMovimientos = totalMovimientosElement.GetInt32();
                     _logger.LogInformation($"Total movimientos from API: {TotalMovimientos}");
                 }
 
-                // First check if data property exists
                 if (root.TryGetProperty("data", out var dataElement))
                 {
                     _logger.LogInformation("Encontrada propiedad 'data' en respuesta");
@@ -947,7 +925,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     return informes ?? new List<InformeGeneralViewModel>();
                 }
                 
-                // Try to deserialize directly if the response is an array
                 if (root.ValueKind == JsonValueKind.Array)
                 {
                     _logger.LogInformation("Intentando deserializar array directamente");
@@ -960,7 +937,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error obteniendo informe general para barco {BarcoId}", barcoId);
+                _logger.LogError(ex, "Error obteniendo informe general para barco {BarcoId}", id);
                 throw;
             }
         }
@@ -1155,7 +1132,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Just try to deserialize directly - this operation already gets a specific format
                 return JsonSerializer.Deserialize<EscotillaApiResponse>(content, options)
                     ?? new EscotillaApiResponse();
             }
@@ -1231,7 +1207,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PorcentajeTotal = apiResponse?.Totales?.PorcentajeTotal ?? 0,
                     TotalKilosRequeridos = apiResponse?.Totales?.TotalKilosRequeridos ?? 0,
                     EstadoGeneral = apiResponse?.Totales?.EstadoGeneral ?? "Sin información",
-                    NombreBarco = apiResponse?.NombreBarco ?? "Sin nombre" // Agregar esta línea
+                    NombreBarco = apiResponse?.NombreBarco ?? "Sin nombre"
 
                 };
             }
@@ -1266,7 +1242,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
 
-                // First check if data property exists
                 if (root.TryGetProperty("data", out var dataElement))
                 {
                     _logger.LogInformation("Encontrada propiedad 'data' en respuesta");
@@ -1324,7 +1299,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     }
                 }
                 
-                // Try to deserialize directly if the response is an array
                 if (root.ValueKind == JsonValueKind.Array)
                 {
                     _logger.LogInformation("Intentando deserializar array directamente");
@@ -1423,7 +1397,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 var viewModel = new ReporteEscotillasPorEmpresaViewModel();
 
-                // First try with "empresas" property
                 if (root.TryGetProperty("empresas", out JsonElement empresasElement))
                 {
                     _logger.LogInformation("Encontrada propiedad 'empresas' en respuesta");
@@ -1432,7 +1405,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     return viewModel;
                 }
                 
-                // If no empresas property, try to deserialize the whole response as the companies list
                 if (root.ValueKind == JsonValueKind.Array)
                 {
                     _logger.LogInformation("Intentando deserializar array directamente como empresas");
@@ -1477,7 +1449,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
 
-                // Check for data property in main object
                 if (root.TryGetProperty("data", out var dataElement))
                 {
                     _logger.LogInformation("Encontrada propiedad 'data' en respuesta");
@@ -1508,7 +1479,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         .ToList();
                 }
                 
-                // If response is direct array, process it
                 if (root.ValueKind == JsonValueKind.Array)
                 {
                     _logger.LogInformation("Procesando array directo de empresas con movimientos");

@@ -42,7 +42,6 @@ namespace API.Controllers
                 await _context.Unidades.AddAsync(unidad);
                 await _context.SaveChangesAsync();
                 
-                // Registrar en historial
                 _historialService.GuardarHistorial("CREAR", unidad, "Unidades", $"Creación de unidad: {unidad.nombre}");
 
                 _logger.LogInformation("Unidad creada exitosamente: {Id}", unidad.id);
@@ -78,7 +77,6 @@ namespace API.Controllers
                     return NotFound(new { error = $"Unidad con ID {id} no encontrada" });
                 }
                 
-                // Registrar estado anterior claramente
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     unidadExistente, 
@@ -86,11 +84,9 @@ namespace API.Controllers
                     $"Estado anterior de unidad {unidadExistente.nombre} (ID: {unidadExistente.id})"
                 );
 
-                // Aplicar los cambios
                 _context.Entry(unidadExistente).CurrentValues.SetValues(unidad);
                 await _context.SaveChangesAsync();
                 
-                // Registrar estado nuevo claramente
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     unidad, 
@@ -141,7 +137,6 @@ namespace API.Controllers
                     return NotFound(new { error = $"Unidad con ID {id} no encontrada" });
                 }
                 
-                // Registrar antes de eliminar
                 _historialService.GuardarHistorial("ELIMINAR", unidad, "Unidades", $"Eliminación de unidad ID: {id}");
 
                 _context.Unidades.Remove(unidad);

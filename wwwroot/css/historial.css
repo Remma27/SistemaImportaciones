@@ -1,11 +1,7 @@
-/* Estilos para el módulo de historial */
-
-/* Contenedor principal */
 .historial-container {
     transition: all 0.3s;
 }
 
-/* Estilos para los filtros */
 .filter-container {
     background-color: #f8f9fa;
     border-radius: 8px;
@@ -28,7 +24,6 @@
     align-items: center;
 }
 
-/* Estilos para la tabla de historial */
 .historial-table {
     width: 100% !important;
     border-collapse: separate;
@@ -56,7 +51,6 @@
     transform: translateY(-2px);
 }
 
-/* Estilos para las insignias de operación */
 .badge-crear {
     background-color: #28a745;
     color: white;
@@ -66,8 +60,8 @@
 }
 
 .badge-antes-editar {
-    background-color: #fd7e14; /* Color naranja sólido */
-    color: white; /* Mejor contraste que el texto oscuro */
+    background-color: #fd7e14;
+    color: white; 
     font-weight: 500;
     padding: 6px 10px;
     border-radius: 20px;
@@ -75,7 +69,7 @@
 
 .badge-despues-editar {
     background-color: #0dcaf0;
-    color: #212529; /* Mejor contraste para este color */
+    color: #212529; 
     font-weight: 500;
     padding: 6px 10px;
     border-radius: 20px;
@@ -97,7 +91,6 @@
     border-radius: 20px;
 }
 
-/* Nuevos estilos de etiquetas de operación mejoradas */
 .operacion-tag {
     display: inline-flex !important;
     align-items: center;
@@ -144,7 +137,6 @@
     color: white;
 }
 
-/* Estilos para nombre de tabla */
 .table-badge-container {
     display: flex;
     align-items: center;
@@ -161,7 +153,6 @@
     display: inline-block;
 }
 
-/* Mejoras para las celdas de descripción */
 .descripcion-cell {
     max-width: 300px;
     overflow: hidden;
@@ -169,12 +160,10 @@
     white-space: nowrap;
 }
 
-/* Estilo para la fecha */
 .fecha-container {
     font-size: 0.9rem;
 }
 
-/* Mejoras responsivas específicas para la tabla de historial */
 @media (max-width: 992px) {
     .operacion-tag {
         padding: 5px 7px;
@@ -185,7 +174,6 @@
     
     .operacion-text {
         font-size: 0.7rem;
-        /* No ocultamos el texto, solo lo hacemos más pequeño */
     }
     
     .operacion-tag i {
@@ -349,7 +337,6 @@
     }
 }
 
-/* Estilos para los detalles */
 .detail-card {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
     border-radius: 8px;
@@ -357,7 +344,7 @@
 }
 
 .detail-header {
-    background-color: #1e3c72; /* Color sólido en lugar del degradado */
+    background-color: #1e3c72;
     color: white;
     padding: 20px;
     border-top-left-radius: 8px;
@@ -385,7 +372,6 @@
     padding: 5px 0;
 }
 
-/* JSON Viewer */
 .json-preview {
     background-color: #f8f9fa;
     border-radius: 8px;
@@ -405,7 +391,6 @@
 .json-preview .null { color: #6c757d; }
 .json-preview .key { color: #007bff; }
 
-/* Botones de acción */
 .action-btn {
     padding: 8px 20px;
     border-radius: 20px;
@@ -418,7 +403,6 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilos responsivos */
 @media (max-width: 768px) {
     .filter-container {
         padding: 15px;
@@ -474,7 +458,6 @@
     }
 }
 
-/* Mejoras para pantallas grandes */
 @media (min-width: 992px) {
     .detail-container {
         padding: 0 30px;
@@ -496,7 +479,6 @@
     }
 }
 
-/* Reemplazo de las clases de DataTables para mejor apariencia */
 .dataTables_wrapper .dataTables_length,
 .dataTables_wrapper .dataTables_filter {
     margin-bottom: 15px;
@@ -526,7 +508,6 @@
     border: 1px solid #dee2e6 !important;
 }
 
-/* Mejoras para etiquetas de operación */
 .operacion-tag {
     display: flex;
     align-items: center;
@@ -547,13 +528,11 @@
     margin-right: 5px;
 }
 
-/* Mejoras para la tabla responsive */
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Mejoras para DataTables responsive */
 table.dataTable.dtr-inline.collapsed>tbody>tr>td.dtr-control:before,
 table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     background-color: #007bff !important;
@@ -588,11 +567,9 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Mejoras específicas para la visualización en pantallas medianas */
 @media (min-width: 769px) and (max-width: 992px) {
-    /* Ajustes específicos para pantallas medianas (tablets) */
     .historial-table {
-        min-width: 750px; /* Ancho mínimo más pequeño para tablets */
+        min-width: 750px; 
     }
     
     .historial-table thead th {
@@ -605,7 +582,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         padding: 8px 6px;
     }
     
-    /* Hacer las tags de operación más compactas pero mantener el texto */
     .operacion-tag {
         padding: 4px 6px;
         min-width: 70px;
@@ -622,7 +598,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         margin-right: 3px;
     }
     
-    /* Ajustar espaciado para hacer más compacto */
     .table-name {
         padding: 3px 6px;
         font-size: 0.8rem;
@@ -630,14 +605,13 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
     
     .descripcion-cell {
-        max-width: 180px; /* Limitar ancho para evitar desbordamiento */
+        max-width: 180px; 
     }
     
     .fecha-container {
         font-size: 0.8rem;
     }
     
-    /* Mejorar la distribución de columnas */
     .historial-table tbody td[data-label="ID"] {
         max-width: 40px;
     }
@@ -654,27 +628,24 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         min-width: 80px;
     }
     
-    /* Fix para el scrolling horizontal al filtrar */
     .card-body {
         overflow-x: auto;
     }
 }
 
-/* Mejorar contraste de las etiquetas para mayor legibilidad */
 .operacion-tag.operacion-crear {
-    background-color: #198754; /* Verde más oscuro */
+    background-color: #198754;
 }
 
 .operacion-tag.operacion-antes-editar {
-    background-color: #fd7e14; /* Naranja más oscuro */
-    color: #fff; /* Texto blanco para mejor contraste */
+    background-color: #fd7e14; 
+    color: #fff; 
 }
 
 .operacion-tag.operacion-despues-editar {
-    background-color: #0dcaf0; /* Azul más brillante */
+    background-color: #0dcaf0; 
 }
 
-/* Specific table improvements for all screen sizes */
 .historial-table {
     width: 100% !important;
     border-collapse: separate;
@@ -682,38 +653,36 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     margin: 0;
 }
 
-/* Force smaller font size and tighter spacing for medium screens */
 @media (max-width: 1199px) {
     .historial-table {
-        font-size: 0.85rem; /* Ligeramente más grande */
+        font-size: 0.85rem;
     }
     
     .historial-table th,
     .historial-table td {
-        padding: 8px 6px !important; /* Más espacio */
+        padding: 8px 6px !important;
     }
     
     .operacion-tag {
-        min-width: 70px !important; /* Más ancho para el texto */
+        min-width: 70px !important;
         padding: 5px 8px !important;
     }
     
     .operacion-text {
-        display: inline-block !important; /* Mostrar texto siempre */
+        display: inline-block !important;
         font-size: 0.8rem;
     }
     
     .table-name {
-        max-width: 100px !important; /* Más espacio para nombres de tabla */
+        max-width: 100px !important;
         font-size: 0.8rem !important;
     }
     
     .descripcion-cell {
-        max-width: 150px !important; /* Más ancho */
+        max-width: 150px !important;
     }
 }
 
-/* Complete mobile transformation - vertical cards instead of table */
 @media (max-width: 767px) {
     .historial-table thead {
         display: none;
@@ -765,7 +734,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Fix for DataTables controls on small screens */
 @media (max-width: 767px) {
     div.dataTables_wrapper div.dataTables_length,
     div.dataTables_wrapper div.dataTables_filter,
@@ -782,7 +750,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Make sure operation tags are visible on all screen sizes */
 .operacion-tag {
     display: inline-flex !important;
     align-items: center;
@@ -799,7 +766,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     font-size: 1rem;
 }
 
-/* Improved colors with better contrast */
 .operacion-crear { background-color: #198754; color: white; }
 .operacion-antes-editar { background-color: #fd7e14; color: white; }
 .operacion-despues-editar { background-color: #0dcaf0; color: white; }
@@ -808,12 +774,10 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
 .operacion-logout { background-color: #495057; color: white; }
 .operacion-otro { background-color: #6c757d; color: white; }
 
-/* Fix DataTables responsive layout issues */
 .dataTables_scroll {
     overflow-x: auto !important;
 }
 
-/* Mejorar la vista de detalle para pantallas pequeñas */
 @media (max-width: 767px) {
     .detail-container {
         padding: 0 10px;
@@ -854,9 +818,8 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Mejoras específicas para el encabezado de detalle */
 .detail-header {
-    background-color: #1e3c72; /* Color sólido */
+    background-color: #1e3c72; 
     color: white;
     padding: 20px;
     border-top-left-radius: 8px;
@@ -881,7 +844,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     padding: 6px 10px;
 }
 
-/* Mejoras específicas para pantallas medianas y pequeñas */
 @media (max-width: 767px) {
     .detail-header {
         padding: 15px;
@@ -906,7 +868,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Para pantallas muy pequeñas */
 @media (max-width: 575px) {
     .detail-header h4 {
         font-size: 1rem;
@@ -922,9 +883,7 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Mejoras para los controles de paginación de DataTables en responsive */
 @media (max-width: 767px) {
-    /* Hacer que los controles de paginación se vean mejor en móviles */
     .dataTables_paginate {
         float: none !important;
         text-align: center !important;
@@ -943,7 +902,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         min-width: 30px !important;
     }
     
-    /* Centrar información de la página actual */
     .dataTables_info {
         text-align: center !important;
         float: none !important;
@@ -952,7 +910,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         font-size: 0.875rem !important;
     }
     
-    /* Ajustar el contenedor para acomodar mejor los controles */
     div.dataTables_wrapper div.dataTables_paginate ul.pagination {
         margin: 0 !important;
         white-space: nowrap !important;
@@ -960,14 +917,12 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
         flex-wrap: wrap !important;
     }
     
-    /* Mejorar el tamaño y espaciado de los botones de página */
     .pagination .page-item .page-link {
         padding: 0.375rem 0.5rem !important;
         font-size: 0.875rem !important;
     }
 }
 
-/* Para dispositivos muy pequeños, simplificar aún más */
 @media (max-width: 400px) {
     .dataTables_paginate .paginate_button:not(.previous):not(.next) {
         padding: 0.25rem 0.4rem !important;
@@ -980,7 +935,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Corrección completa para botones de paginación en DataTables */
 .dataTables_wrapper .dataTables_paginate {
     text-align: center !important;
     float: none !important;
@@ -988,7 +942,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     width: 100% !important;
 }
 
-/* Solucionamos el problema de tamaño y alineación */
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     padding: 0.5rem !important;
     min-width: 2rem !important;
@@ -1011,7 +964,6 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     color: #1e3c72 !important;
 }
 
-/* Reglas específicas para pantallas pequeñas */
 @media (max-width: 767px) {
     .dataTables_wrapper .dataTables_paginate .paginate_button {
         min-width: 1.5rem !important;
@@ -1034,14 +986,11 @@ table.dataTable.dtr-inline.collapsed>tbody>tr>th.dtr-control:before {
     }
 }
 
-/* Para dispositivos muy pequeños, simplificamos aún más */
 @media (max-width: 400px) {
-    /* Ocultamos algunos números para simplificar la vista */
     .dataTables_wrapper .dataTables_paginate .paginate_button:not(.previous):not(.next):not(.current) {
         display: none !important;
     }
     
-    /* Mantenemos visible solo el botón actual, anterior y siguiente */
     .dataTables_wrapper .dataTables_paginate .paginate_button.current,
     .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
     .dataTables_wrapper .dataTables_paginate .paginate_button.next {

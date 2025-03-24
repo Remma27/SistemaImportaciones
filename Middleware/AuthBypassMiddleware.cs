@@ -19,17 +19,15 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
             var path = context.Request.Path.ToString().ToLowerInvariant();
             var bypassAuth = Environment.GetEnvironmentVariable("BYPASS_AUTH") == "true";
 
-            // If we're bypassing authentication or this is a login/register path
             if (bypassAuth || path.Contains("/auth/") || path.Contains("/tempauth/") || path.StartsWith("/status"))
             {
                 _logger.LogInformation("Bypassing authentication for path: {Path}", path);
 
-                // Check for authenticated user claim if needed for views
                 if (!(context.User.Identity?.IsAuthenticated ?? false) && path != "/auth/iniciarsesion" && path != "/auth/registrarse")
                 {
-                    // Add a temporary identity for testing if needed
-                    // This would allow views that expect an authenticated user to still render
-                    // We're not implementing this here as it might cause other issues
+                    _logger.LogWarning("Usuario no autenticado intentando acceder a recurso protegido. Redirigiendo a login");
+                    context.Response.Redirect("/auth/iniciarsesion", permanent: false);
+                    return;
                 }
             }
 
@@ -37,7 +35,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
         }
     }
 
-    // Extension method for easier middleware registration
     public static class AuthBypassMiddlewareExtensions
     {
         public static IApplicationBuilder UseAuthBypass(this IApplicationBuilder builder)

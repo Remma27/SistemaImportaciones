@@ -82,10 +82,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Inicializar las donas después de un breve retraso para asegurar que todos los elementos están creados
     setTimeout(initializeDonutCharts, 300);
 
-    // Usar un MutationObserver para detectar cambios en el DOM y actualizar las gráficas
     const observer = new MutationObserver(() => {
         initializeDonutCharts();
     });
@@ -98,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Inicializar la barra de progreso
     setTimeout(function() {
         const progressBar = document.getElementById('progressBarMain');
         if (progressBar) {
@@ -108,16 +105,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }, 100);
 
-    // Funcionalidad para descargar imagen
     document.getElementById('downloadBtn')?.addEventListener('click', async function() {
         try {
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
 
-            // Primero, obtener solo el contenedor del barco
             const barcoContainer = document.querySelector('.barco-container');
             
-            // Crear un contenedor temporal con dimensiones fijas
             const tempContainer = document.createElement('div');
             tempContainer.style.width = '1600px';
             tempContainer.style.height = '437px';
@@ -125,11 +119,9 @@ document.addEventListener('DOMContentLoaded', function () {
             tempContainer.style.left = '-9999px';
             document.body.appendChild(tempContainer);
 
-            // Clonar el contenido
             const clon = barcoContainer.cloneNode(true);
             tempContainer.appendChild(clon);
 
-            // Forzar las posiciones correctas en el clon
             const escotillas = {
                 5: { top: 217, left: 421 },
                 4: { top: 217, left: 599 },
@@ -138,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 1: { top: 217, left: 1085 }
             };
 
-            // Ajustar posiciones de cada escotilla
             Object.entries(escotillas).forEach(([num, pos]) => {
                 const escotilla = clon.querySelector(`#escotilla${num}`);
                 if (escotilla) {
@@ -149,7 +140,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Ajustar posición de las etiquetas
             const labels = clon.querySelector('.escotilla-labels');
             if (labels) {
                 labels.style.position = 'absolute';
@@ -158,7 +148,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 labels.style.zIndex = '6';
             }
 
-            // Ajustar posición del resumen
             const resumen = clon.querySelector('.barco-resumen');
             if (resumen) {
                 resumen.style.position = 'absolute';
@@ -167,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 resumen.style.zIndex = '20';
             }
 
-            // Configuración de html2canvas
             const options = {
                 width: 1600,
                 height: 437,
@@ -183,16 +171,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             };
 
-            // Generar la imagen
             const canvas = await html2canvas(tempContainer, options);
             
-            // Crear y descargar la imagen
             const link = document.createElement('a');
             link.download = `visualizacion-barco-${new Date().toISOString().slice(0,10)}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
 
-            // Limpiar
             document.body.removeChild(tempContainer);
             this.disabled = false;
             this.innerHTML = '<i class="fas fa-download me-2"></i>Descargar';
@@ -205,17 +190,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Manejo de unidades (métrico vs. imperial)
     function syncUnitsToggleState() {
         const unitToggleElements = document.querySelectorAll('.unit-toggle-element');
         const unitToggleRows = document.querySelectorAll('.unit-toggle-row');
         
-        // Verificar estado en localStorage
         try {
             const savedMetricState = localStorage.getItem('showingMetric');
             const showAlternative = savedMetricState === 'false';
             
-            // Aplicar estado actual
             unitToggleElements.forEach(el => {
                 if (showAlternative) {
                     $(el).fadeIn(300);
@@ -240,7 +222,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Registrar eventos para restablecer el estado a métrico al salir
     window.addEventListener('beforeunload', function() {
         localStorage.setItem('showingMetric', 'true');
     });
@@ -249,7 +230,6 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('showingMetric', 'true');
     });
 
-    // Escuchar eventos globales de cambio de unidades
     window.addEventListener('unitToggleChanged', function(e) {
         const showAlternative = e.detail.showAlternative;
         
@@ -277,10 +257,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Sincronizar estado inicial
     setTimeout(syncUnitsToggleState, 300);
 
-    // Función auxiliar para centrar el contenido del barco
     function centrarContenidoBarco() {
         const barcoContainer = document.querySelector('.barco-container');
         if (barcoContainer) {
@@ -290,9 +268,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Ajustar el contenido del barco después de cargar
     centrarContenidoBarco();
     
-    // También ajustar cuando se redimensiona la ventana
     window.addEventListener('resize', centrarContenidoBarco);
 });

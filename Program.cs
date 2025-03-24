@@ -193,7 +193,6 @@ builder.Services.AddLogging(logging =>
     }
 });
 
-// Add this to your existing logging configuration
 builder.Logging.AddFile("Logs/app-{Date}.log", LogLevel.Information);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -214,7 +213,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         options.Cookie.SameSite = SameSiteMode.Lax;
 
-        // Configuración adicional para asegurar que los roles funcionen
         options.Cookie.MaxAge = TimeSpan.FromHours(8);
         
         options.Events.OnValidatePrincipal = async context =>
@@ -226,13 +224,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
 
-            // Asegurarse de que los roles estén presentes en el principal
             var principal = context.Principal;
             if (principal?.Identity?.IsAuthenticated == true)
             {
                 if (!principal.Claims.Any(c => c.Type == ClaimTypes.Role))
                 {
-                    // Si por alguna razón no hay claim de rol, obtener el usuario de la BD
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     if (!string.IsNullOrEmpty(userId) && int.TryParse(userId, out int id))
                     {
@@ -245,7 +241,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                             var identity = (ClaimsIdentity)principal.Identity!;
                             identity.AddClaim(new Claim(ClaimTypes.Role, rolNombre));
                             
-                            // No rechazar el principal porque lo hemos actualizado
                             return;
                         }
                     }
@@ -277,15 +272,12 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 return Task.CompletedTask;
             }
 
-            // Check if the user is authenticated
             if (context.HttpContext.User.Identity?.IsAuthenticated == true)
             {
-                // Redirect to Home/Index if authenticated but doesn't have sufficient permissions
                 context.Response.Redirect("/Home/Index");
             }
             else
             {
-                // If not authenticated, redirect to the login page
                 context.Response.Redirect(options.AccessDeniedPath);
             }
             
@@ -423,7 +415,6 @@ builder.Services.AddScoped<IHistorialService>(sp =>
     return new HistorialService(httpClient, configuration, logger);
 });
 
-// Registrar el servicio de roles y permisos
 builder.Services.AddScoped<RolPermisoService>();
 
 builder.Services.AddHsts(options =>
@@ -448,7 +439,6 @@ builder.Services.AddAntiforgery(options =>
     options.HeaderName = "X-CSRF-TOKEN";
 });
 
-// Después de registrar otros servicios, agregar el CustomRoleHandler
 builder.Services.AddSingleton<IAuthorizationHandler, API.Handlers.CustomRoleHandler>();
 
 var app = builder.Build();
@@ -465,27 +455,19 @@ else
     app.UseHsts();
 }
 
-// Reordenados los middleware en el orden correcto
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 
-// Corregir el espacio de nombres para el middleware
 app.UseMiddleware<RoleDebugMiddleware>();
 
 app.UseAuthorization();
 
-// Quitar o comentar esta línea si existe
-// app.UseRoleUpdate();
-
-// Add this before app.UseRouting()
 app.UseMiddleware<API.Middleware.StandardResponseMiddleware>();
 
-// Agregar este middleware justo después de la autorización
 app.Use(async (context, next) =>
 {
-    // Extraer el userId del header si viene de una solicitud API-a-API
     if (context.Request.Headers.TryGetValue("X-UserId", out var userIdValue) && !string.IsNullOrEmpty(userIdValue))
     {
         string userId = userIdValue.ToString();
@@ -503,7 +485,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-// Solo dejamos los middleware esenciales
 app.UseMiddleware<SessionExpirationMiddleware>();
 app.UseMiddleware<ApiLoggingMiddleware>();
 

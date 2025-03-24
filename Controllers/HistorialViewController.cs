@@ -22,7 +22,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         {
             try
             {
-                // Obtener TODOS los registros de historial sin ningún tipo de filtrado
                 var historial = await _historialService.ObtenerTodoAsync();
                 _logger.LogInformation("Mostrando todos los {Count} registros históricos del sistema", historial.TotalRegistros);
                 return View(historial);
@@ -62,7 +61,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                     return NotFound();
                 }
                 
-                // Intentamos formatear el JSON para mejor visualización
                 try
                 {
                     var jsonObject = JsonSerializer.Deserialize<JsonElement>(registro.DatosJSON);

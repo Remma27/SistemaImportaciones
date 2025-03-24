@@ -32,7 +32,6 @@
     background-color: #212529;
 }
 
-/* Responsive header adjustments */
 @media (max-width: 767.98px) {
     .card-header .btn-sm {
         padding: 0.25rem 0.5rem;
@@ -43,7 +42,6 @@
         font-size: 1.1rem;
     }
 
-    /* On very small screens, make buttons more compact */
     @media (max-width: 575.98px) {
         .card-header .btn-sm span {
             display: none;

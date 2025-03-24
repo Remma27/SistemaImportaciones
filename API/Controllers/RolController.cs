@@ -12,7 +12,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
+    [Authorize(Roles = "Administrador")] 
     public class RolController : ControllerBase
     {
         private readonly ApiContext _context;
@@ -99,7 +99,6 @@ namespace API.Controllers
                 if (rolExistente == null)
                     return NotFound(new { message = "Rol no encontrado" });
 
-                // Guardar estado anterior
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR",
                     rolExistente,
@@ -107,13 +106,11 @@ namespace API.Controllers
                     $"Estado anterior del rol {rolExistente.nombre}"
                 );
 
-                // Actualizar propiedades
                 rolExistente.nombre = rol.nombre;
                 rolExistente.descripcion = rol.descripcion;
 
                 await _context.SaveChangesAsync();
 
-                // Guardar estado nuevo
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR",
                     rolExistente,
@@ -139,7 +136,6 @@ namespace API.Controllers
                 if (rol == null)
                     return NotFound(new { message = "Rol no encontrado" });
 
-                // Verificar que no haya usuarios con este rol
                 var usuariosConRol = await _context.Usuarios.CountAsync(u => u.rol_id == id);
                 if (usuariosConRol > 0)
                     return BadRequest(new { message = $"No se puede eliminar el rol porque está asignado a {usuariosConRol} usuarios" });
@@ -189,7 +185,6 @@ namespace API.Controllers
 
                 try
                 {
-                    // Intentar eliminar las asignaciones anteriores
                     var permisosActuales = await _context.RolPermisos
                         .Where(rp => rp.rol_id == model.RolId)
                         .ToListAsync();
@@ -198,15 +193,13 @@ namespace API.Controllers
                 }
                 catch (Exception ex)
                 {
-                    // Si falla aquí, probablemente la tabla no existe
                     if (ex.InnerException?.Message?.Contains("doesn't exist") == true)
                     {
                         return StatusCode(500, new { message = "Error: La tabla 'rol_permisos' no existe en la base de datos. Por favor, contacte al administrador del sistema." });
                     }
-                    throw; // Relanzar si es otro tipo de error
+                    throw; 
                 }
 
-                // Crear nuevas asignaciones
                 var nuevosPermisos = new List<RolPermiso>();
                 foreach (var permisoId in model.PermisosIds)
                 {

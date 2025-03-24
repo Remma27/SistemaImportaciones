@@ -30,21 +30,18 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 var content = await response.Content.ReadAsStringAsync();
                 _logger.LogDebug("Respuesta JSON recibida: {Length} bytes", content.Length);
                 
-                // First, check if the response is a JSON array or object
                 if (string.IsNullOrEmpty(content))
                 {
                     _logger.LogWarning("Respuesta JSON vacía");
                     return new HistorialResponseViewModel();
                 }
                 
-                // Trim whitespace to ensure accurate checking
                 content = content.Trim();
                 
                 try
                 {
                     if (content.StartsWith("[") && content.EndsWith("]"))
                     {
-                        // Response is an array - deserialize directly to List<HistorialViewModel>
                         _logger.LogInformation("Respuesta detectada como array JSON");
                         var registros = JsonConvert.DeserializeObject<List<HistorialViewModel>>(content);
                         
@@ -56,7 +53,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     }
                     else
                     {
-                        // Response is an object - try to deserialize to HistorialResponseViewModel
                         _logger.LogInformation("Respuesta detectada como objeto JSON");
                         var resultado = JsonConvert.DeserializeObject<HistorialResponseViewModel>(content);
                         
@@ -64,13 +60,11 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         {
                             _logger.LogInformation("Registros de historial obtenidos: {Count}", resultado.TotalRegistros);
                             
-                            // Verify the IDs received for debugging
                             if (resultado.Registros != null && resultado.Registros.Any())
                             {
                                 var ids = resultado.Registros.Select(r => r.Id).Take(10).ToList();
                                 _logger.LogInformation("Primeros 10 IDs: {Ids}", string.Join(", ", ids));
                                 
-                                // Check if there's any record with ID=1
                                 var tieneId1 = resultado.Registros.Any(r => r.Id == 1);
                                 _logger.LogInformation("¿Contiene registro con ID=1? {TieneId1}", tieneId1);
                             }
@@ -83,7 +77,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 {
                     _logger.LogError(ex, "Error en deserialización JSON: {Message}", ex.Message);
                     
-                    // Try one more approach - use System.Text.Json as fallback
                     try
                     {
                         _logger.LogInformation("Intentando deserialización con System.Text.Json");
@@ -111,7 +104,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                         _logger.LogError(innerEx, "Error en deserialización con System.Text.Json");
                     }
                     
-                    // Return empty result if all deserialization attempts fail
                     return new HistorialResponseViewModel();
                 }
             }

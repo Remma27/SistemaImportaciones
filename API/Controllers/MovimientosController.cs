@@ -72,7 +72,6 @@ namespace API.Controllers
             }
         }
 
-        // Helper method to get Costa Rica current time
         private DateTime GetCostaRicaTime()
         {
             try
@@ -82,18 +81,15 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                // Fallback: Costa Rica is UTC-6, so manually adjust if timezone not found
                 return DateTime.UtcNow.AddHours(-6);
             }
         }
 
-        // Endpoint para crear un nuevo Movimiento
         [HttpPost]
         [Consumes("application/json")]
         [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create([FromBody] Movimiento movimiento)
         {
-            // First clear any model state errors related to fechahorasistema
             if (ModelState.ContainsKey("fechahorasistema"))
             {
                 ModelState.Remove("fechahorasistema");
@@ -106,10 +102,8 @@ namespace API.Controllers
                     return BadRequest("El id debe ser 0 para crear un nuevo movimiento.");
                 }
 
-                // Always set the system timestamp for new records with Costa Rica time
                 movimiento.fechahorasistema = GetCostaRicaTime();
 
-                // Ensure fechahora is set if not provided
                 if (movimiento.fechahora == default)
                 {
                     movimiento.fechahora = GetCostaRicaTime();
@@ -123,7 +117,6 @@ namespace API.Controllers
                 _context.Movimientos.Add(movimiento);
                 await _context.SaveChangesAsync();
                 
-                // Registrar en historial
                 _historialService.GuardarHistorial("CREAR", movimiento, "Movimientos", $"Creación de movimiento {movimiento.id}");
                 
                 return Ok(movimiento);
@@ -135,12 +128,10 @@ namespace API.Controllers
             }
         }
 
-        // Endpoint para editar un Movimiento existente
         [HttpPut]
         [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(Movimiento movimiento)
         {
-            // First clear any model state errors related to fechahorasistema
             if (ModelState.ContainsKey("fechahorasistema"))
             {
                 ModelState.Remove("fechahorasistema");
@@ -164,7 +155,6 @@ namespace API.Controllers
                     return NotFound();
                 }
 
-                // Registrar estado anterior claramente
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     movimientoInDb, 
@@ -172,14 +162,11 @@ namespace API.Controllers
                     $"Estado anterior de movimiento ID: {movimientoInDb.id}"
                 );
                 
-                // Preserve the original fechahorasistema
                 movimiento.fechahorasistema = movimientoInDb.fechahorasistema;
 
-                // Aplicar los cambios
                 _context.Entry(movimientoInDb).CurrentValues.SetValues(movimiento);
                 await _context.SaveChangesAsync();
                 
-                // Registrar estado nuevo claramente
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     movimiento, 
@@ -230,7 +217,6 @@ namespace API.Controllers
                     return NotFound();
                 }
                 
-                // Registrar antes de eliminar
                 _historialService.GuardarHistorial("ELIMINAR", result, "Movimientos", $"Eliminación de movimiento {result.id}");
                 
                 _context.Movimientos.Remove(result);
@@ -265,7 +251,6 @@ namespace API.Controllers
             }
         }
 
-        // Get All Movimientos por Importacion, de la vista de reporte individual detallado
         [HttpGet]
         [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> GetAllByImportacion(int importacionId)
@@ -425,7 +410,6 @@ namespace API.Controllers
             }
         }
 
-        // Endpoint para obtener el informe general, de la vista de informe general
         [HttpGet]
         [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> InformeGeneral(int? importacionId)
@@ -524,7 +508,6 @@ namespace API.Controllers
             }
         }
 
-        // Endpoint para obtener el registro de requerimientos, de la vista de registro de requerimientos
         [HttpGet]
         [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> RegistroRequerimientos([FromQuery] int? selectedBarco)
@@ -532,7 +515,7 @@ namespace API.Controllers
             try
             {
                 var barcos = await (from b in _context.Barcos
-                                    join i in _context.Importaciones on b.id equals i.idbarco // Fix the join - use idbarco
+                                    join i in _context.Importaciones on b.id equals i.idbarco 
                                     join m in _context.Movimientos on i.id equals m.idimportacion
                                     where m.tipotransaccion == 1
                                     select b)
@@ -541,11 +524,10 @@ namespace API.Controllers
 
                 if (!selectedBarco.HasValue)
                 {
-                    // Return a simple object without reference handling metadata
                     return Ok(new
                     {
                         count = 0,
-                        data = new List<object>(), // Empty array without reference metadata
+                        data = new List<object>(),
                         barcos = barcos.Select(b => new { b.id, b.nombrebarco }).ToList()
                     });
                 }
@@ -569,7 +551,6 @@ namespace API.Controllers
                                     })
                                    .ToListAsync();
 
-                // Configure JSON serialization options to avoid reference handling
                 var serializerOptions = new JsonSerializerOptions
                 {
                     ReferenceHandler = ReferenceHandler.IgnoreCycles,
@@ -577,7 +558,6 @@ namespace API.Controllers
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 };
 
-                // Return a clean response without reference handling metadata
                 var response = new
                 {
                     count = result.Count,
@@ -594,7 +574,6 @@ namespace API.Controllers
             }
         }
 
-        // Endpoint para obtener el cálculo de movimientos, segunda tabla de la vista de registro de pesajes de camiones con grana
         [HttpGet]
         [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> CalculoMovimientos([FromQuery] int importacionId, [FromQuery] int idempresa)
@@ -676,7 +655,7 @@ namespace API.Controllers
                         placa = mov.placa ?? "",
                         placa_alterna = mov.placa_alterna ?? "",
                         cantidadrequerida = (decimal)(mov.cantidadrequerida ?? 0),
-                        cantidadentregada = entregado, // Use matching delivery if found
+                        cantidadentregada = entregado, 
                         peso_faltante = (decimal)(mov.cantidadrequerida ?? 0) - entregado,
                         porcentaje = mov.cantidadrequerida > 0
                             ? Math.Round((entregado * 100 / (decimal)(mov.cantidadrequerida ?? 0)), 2)
@@ -751,7 +730,6 @@ namespace API.Controllers
                     return BadRequest(new { message = "ImportacionId debe ser mayor a 0" });
                 }
 
-                // Primero obtenemos el barco y sus capacidades por escotilla
                 var importacion = await _context.Importaciones
                     .Include(i => i.Barco)
                     .FirstOrDefaultAsync(i => i.id == importacionId);
@@ -761,10 +739,9 @@ namespace API.Controllers
                     return NotFound(new { message = "No se encontró la importación o el barco asociado" });
                 }
 
-                // Obtener los movimientos agrupados por escotilla
                 var movimientosPorEscotilla = await (from m in _context.Movimientos
                                                      where m.idimportacion == importacionId
-                                                     && m.tipotransaccion == 2 // Solo movimientos de descarga
+                                                     && m.tipotransaccion == 2 
                                                      && m.escotilla != null
                                                      group m by m.escotilla into g
                                                      select new
@@ -773,12 +750,10 @@ namespace API.Controllers
                                                          DescargaReal = g.Sum(x => x.cantidadentregada)
                                                      }).ToListAsync();
 
-                // Calcular el total de kilos requeridos para esta importación
                 var totalKilosRequeridos = await _context.Movimientos
                     .Where(m => m.idimportacion == importacionId && m.tipotransaccion == 1)
                     .SumAsync(m => (decimal?)(m.cantidadrequerida ?? 0)) ?? 0;
 
-                // Procesar las capacidades del barco y calcular diferencias
                 var result = new List<object>();
                 var capacidadesPorEscotilla = importacion.Barco.ObtenerCapacidadesEscotillas();
 
@@ -803,7 +778,6 @@ namespace API.Controllers
                     });
                 }
 
-                // Calcular totales
                 var totalCapacidad = capacidadesPorEscotilla.Sum(x => x.Value);
                 var totalDescarga = movimientosPorEscotilla.Sum(x => x.DescargaReal);
                 var totalDiferencia = totalCapacidad - totalDescarga;
@@ -878,7 +852,6 @@ namespace API.Controllers
                                                                 DescargaReal = g.Sum(x => x.cantidadentregada)
                                                             }).ToListAsync();
 
-                // Agrupar por empresa
                 var empresasAgrupadoEscotillas = movimientosPorEmpresaEscotilla
                     .GroupBy(m => new { m.IdEmpresa, m.NombreEmpresa })
                     .Select(g => new

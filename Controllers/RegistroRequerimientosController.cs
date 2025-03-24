@@ -176,7 +176,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 }
                 else
                 {
-                    // Log validation errors
                     foreach (var modelState in ModelState.Values)
                     {
                         foreach (var error in modelState.Errors)
@@ -185,7 +184,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         }
                     }
 
-                    // Reloading data for the view
                     ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
                     ViewBag.SelectedBarco = selectedBarco;
                     return View(viewModel);
@@ -196,7 +194,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 _logger.LogError(ex, $"Error updating movimiento ID {id}: {ex.Message}");
                 ModelState.AddModelError("", $"Ha ocurrido un error al guardar los cambios: {ex.Message}");
 
-                // Reloading data for the view
                 ViewBag.Empresas = new SelectList(await _movimientoService.GetEmpresasSelectListAsync(), "Value", "Text", viewModel.IdEmpresa);
                 ViewBag.SelectedBarco = selectedBarco;
                 return View(viewModel);

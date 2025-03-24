@@ -29,7 +29,6 @@ namespace SistemaDeGestionDeImportaciones.Services
         {
             try
             {
-                // Añadir la acción específica a la URL
                 var response = await _httpClient.GetAsync($"{_apiUrl}/GetAll");
                 
                 if (!response.IsSuccessStatusCode)
@@ -49,16 +48,13 @@ namespace SistemaDeGestionDeImportaciones.Services
                     ReferenceHandler = ReferenceHandler.Preserve
                 };
                 
-                // Analyze JSON structure for flexible deserialization
                 using JsonDocument document = JsonDocument.Parse(jsonString);
                 var root = document.RootElement;
                 
                 _logger?.LogDebug("JSON Root Kind: {RootKind}", root.ValueKind);
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - new format
                     _logger?.LogInformation("Detected direct array format");
                     var usuarios = JsonSerializer.Deserialize<List<Usuario>>(jsonString, options);
                     _logger?.LogInformation("Deserialized {Count} users", usuarios?.Count ?? 0);
@@ -66,7 +62,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger?.LogInformation("Detected 'value' property format");
@@ -75,7 +70,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                         return usuarios ?? new List<Usuario>();
                     }
                     
-                    // Try with Newtonsoft.Json as fallback
                     try
                     {
                         _logger?.LogInformation("Trying Newtonsoft.Json deserialization");
@@ -134,7 +128,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                     ReferenceHandler = ReferenceHandler.Preserve
                 };
                 
-                // Analyze JSON structure
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
                 
@@ -148,7 +141,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                     }
                     else
                     {
-                        // Direct object
                         usuario = JsonSerializer.Deserialize<Usuario>(content, options);
                     }
                 }
@@ -157,12 +149,10 @@ namespace SistemaDeGestionDeImportaciones.Services
                 {
                     try
                     {
-                        // Try with Newtonsoft as fallback
                         usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<Usuario>(content);
                     }
                     catch
                     {
-                        // Ignore Newtonsoft errors
                     }
                 }
                 
@@ -213,14 +203,12 @@ namespace SistemaDeGestionDeImportaciones.Services
                 }
                 catch (JsonException)
                 {
-                    // Try with Newtonsoft as fallback
                     try
                     {
                         return Newtonsoft.Json.JsonConvert.DeserializeObject<Usuario>(content) ?? usuario;
                     }
                     catch
                     {
-                        // Return the original if all else fails
                         return usuario;
                     }
                 }
@@ -270,14 +258,12 @@ namespace SistemaDeGestionDeImportaciones.Services
                 }
                 catch (JsonException)
                 {
-                    // Try with Newtonsoft as fallback
                     try
                     {
                         return Newtonsoft.Json.JsonConvert.DeserializeObject<Usuario>(content) ?? usuario;
                     }
                     catch
                     {
-                        // Return the original if all else fails
                         return usuario;
                     }
                 }
@@ -336,7 +322,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                 {
                     _logger?.LogError("Registration error: {StatusCode}, {Content}", response.StatusCode, content);
                     
-                    // Check for specific error messages to provide friendly errors
                     if (content.Contains("ya está registrado"))
                     {
                         return new OperationResult { Success = false, message = "El correo electrónico ya está registrado" };
@@ -383,7 +368,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                     return new OperationResult { Success = false, Message = $"Error de inicio de sesión: {content}" };
                 }
                 
-                // Successful login
                 var options = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true,
@@ -392,7 +376,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                 
                 try
                 {
-                    // Parse login response to extract additional data
                     using var document = JsonDocument.Parse(content);
                     var root = document.RootElement;
                     
@@ -493,11 +476,9 @@ namespace SistemaDeGestionDeImportaciones.Services
                 
                 _logger?.LogDebug("Sending password change request for user {UserId} to API", usuarioId);
                 
-                // Log the API endpoint we're calling
                 string endpoint = $"{_apiUrl}/CambiarPassword";
                 _logger?.LogInformation("Calling API endpoint: {Endpoint}", endpoint);
                 
-                // Add more detailed request logging
                 try
                 {
                     string requestJson = System.Text.Json.JsonSerializer.Serialize(model);
@@ -507,8 +488,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                 {
                     _logger?.LogWarning("Could not serialize request for logging: {ErrorMessage}", logEx.Message);
                 }
-
-                // Make the request with error handling
                 HttpResponseMessage response;
                 try
                 {
@@ -523,7 +502,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                     };
                 }
                 
-                // Read content even if unsuccessful for better diagnostics
                 string content;
                 try
                 {
@@ -545,7 +523,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                     
                     if (!string.IsNullOrEmpty(content))
                     {
-                        // Try to parse possible JSON error message
                         try
                         {
                             using var document = JsonDocument.Parse(content);
@@ -557,7 +534,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                         catch (Exception jsonEx)
                         {
                             _logger?.LogWarning(jsonEx, "Failed to parse error response as JSON");
-                            // If not valid JSON, use content as is
                             errorMessage += ": " + content;
                         }
                     }
@@ -591,7 +567,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                 
                 var content = await response.Content.ReadAsStringAsync();
                 
-                // Handle different JSON formats
                 try
                 {
                     var options = new JsonSerializerOptions
@@ -614,7 +589,6 @@ namespace SistemaDeGestionDeImportaciones.Services
                         return roles ?? new List<Rol>();
                     }
                     
-                    // Try Newtonsoft.Json as fallback
                     var rolesFromNewtonsoft = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Rol>>(content);
                     if (rolesFromNewtonsoft != null)
                     {

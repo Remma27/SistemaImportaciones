@@ -41,16 +41,13 @@ public class ImportacionService : IImportacionService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
             _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
             
-            // Handle different JSON formats
             if (root.ValueKind == JsonValueKind.Array)
             {
-                // Direct array - new format
                 _logger.LogInformation("Detectado formato de array directo");
                 var importaciones = JsonSerializer.Deserialize<List<Importacion>>(content, options);
                 _logger.LogInformation($"Importaciones deserializadas: {importaciones?.Count ?? 0}");
@@ -58,7 +55,6 @@ public class ImportacionService : IImportacionService
             }
             else if (root.ValueKind == JsonValueKind.Object)
             {
-                // Object with a property - check common patterns
                 if (root.TryGetProperty("value", out JsonElement valueElement))
                 {
                     _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -68,7 +64,6 @@ public class ImportacionService : IImportacionService
                 }
                 else
                 {
-                    // Try Newtonsoft as last resort
                     _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                     try
                     {
@@ -120,7 +115,6 @@ public class ImportacionService : IImportacionService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
@@ -136,7 +130,6 @@ public class ImportacionService : IImportacionService
                 }
                 else
                 {
-                    // Direct object - new format
                     importacion = JsonSerializer.Deserialize<Importacion>(content, options);
                 }
             }
@@ -156,7 +149,6 @@ public class ImportacionService : IImportacionService
         {
             _logger.LogInformation($"Creating importacion: {JsonSerializer.Serialize(importacion)}");
             
-            // Add detailed request logging
             var requestContent = new StringContent(
                 JsonSerializer.Serialize(importacion), 
                 Encoding.UTF8, 
@@ -164,14 +156,12 @@ public class ImportacionService : IImportacionService
             
             _logger.LogInformation($"Request to API: {_apiBaseUrl}Create");
             
-            // Use HttpClient directly for more control
             var response = await _httpClient.PostAsync(_apiBaseUrl + "Create", requestContent);
             var responseContent = await response.Content.ReadAsStringAsync();
             
             _logger.LogInformation($"API response status: {(int)response.StatusCode} {response.StatusCode}");
             _logger.LogInformation($"API response content: {responseContent}");
             
-            // Save the raw response for debugging
             System.IO.File.WriteAllText(
                 Path.Combine(Path.GetTempPath(), $"importacion_response_{DateTime.Now:yyyyMMdd_HHmmss}.json"), 
                 responseContent);
@@ -182,14 +172,12 @@ public class ImportacionService : IImportacionService
                 throw new HttpRequestException($"Error from API: {response.StatusCode}, Details: {responseContent}");
             }
             
-            // Try to parse the response - with extensive error handling
             try {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 
                 using var document = JsonDocument.Parse(responseContent);
                 _logger.LogInformation($"Parsed JSON document with root kind: {document.RootElement.ValueKind}");
                 
-                // Try to extract the created importacion
                 if (document.RootElement.TryGetProperty("value", out var valueElement))
                 {
                     var importacionJson = valueElement.GetRawText();

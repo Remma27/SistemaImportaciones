@@ -11,7 +11,7 @@ namespace API.Services
     {
         private readonly ApiContext _context;
         private readonly ILogger<RolPermisoService> _logger;
-        private bool _tablaRolPermisosExiste = true; // Bandera para evitar intentos repetidos
+        private bool _tablaRolPermisosExiste = true; 
 
         public RolPermisoService(ApiContext context, ILogger<RolPermisoService> logger)
         {
@@ -19,14 +19,12 @@ namespace API.Services
             _logger = logger;
         }
 
-        // Verificar si la tabla RolPermisos existe
         private async Task<bool> VerificarTablaRolPermisosExiste()
         {
-            if (!_tablaRolPermisosExiste) return false; // Si ya sabemos que no existe, no volver a verificar
+            if (!_tablaRolPermisosExiste) return false; 
             
             try
             {
-                // Intenta ejecutar una consulta mínima que fallará si la tabla no existe
                 await _context.RolPermisos.Take(1).CountAsync();
                 return true;
             }
@@ -38,17 +36,14 @@ namespace API.Services
                     _logger.LogError("La tabla 'rol_permisos' no existe en la base de datos. Las consultas relacionadas devolverán resultados vacíos.");
                     return false;
                 }
-                // Es otro tipo de error de base de datos
                 throw;
             }
         }
 
-        // Obtener todos los permisos de un rol
         public async Task<List<Permiso>> ObtenerPermisosPorRolId(int rolId)
         {
             try
             {
-                // Verificar si la tabla existe antes de intentar consultar
                 if (!await VerificarTablaRolPermisosExiste())
                 {
                     _logger.LogWarning("No se pudieron obtener permisos para rol {RolId} porque la tabla 'rolpermisos' no existe", rolId);
@@ -68,17 +63,14 @@ namespace API.Services
             }
         }
 
-        // Verificar si un rol tiene un permiso específico
         public async Task<bool> RolTienePermiso(int rolId, string permisoNombre)
         {
             try
             {
-                // Verificar si la tabla existe antes de intentar consultar
                 if (!await VerificarTablaRolPermisosExiste())
                 {
                     _logger.LogWarning("No se pudo verificar permiso {Permiso} para rol {RolId} porque la tabla 'rolpermisos' no existe", permisoNombre, rolId);
                     
-                    // Para administradores, asumimos que tienen todos los permisos si la tabla no existe
                     var rol = await _context.Roles.FindAsync(rolId);
                     if (rol?.nombre?.Equals("Administrador", StringComparison.OrdinalIgnoreCase) == true)
                     {
@@ -101,7 +93,6 @@ namespace API.Services
             }
         }
 
-        // Obtener lista de todos los roles
         public async Task<List<Rol>> ObtenerTodosLosRoles()
         {
             try
@@ -115,7 +106,6 @@ namespace API.Services
             }
         }
 
-        // Obtener lista de todos los permisos
         public async Task<List<Permiso>> ObtenerTodosLosPermisos()
         {
             try

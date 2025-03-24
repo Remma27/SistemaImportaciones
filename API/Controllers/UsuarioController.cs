@@ -31,7 +31,6 @@ namespace API.Controllers
             _rolPermisoService = rolPermisoService;
         }
 
-        // Helper method to get Costa Rica current time
         private DateTime GetCostaRicaTime()
         {
             try
@@ -41,7 +40,6 @@ namespace API.Controllers
             }
             catch (Exception)
             {
-                // Fallback: Costa Rica is UTC-6, so manually adjust if timezone not found
                 return DateTime.UtcNow.AddHours(-6);
             }
         }
@@ -66,11 +64,9 @@ namespace API.Controllers
 
                 if (usuario.password_hash != null)
                 {
-                    // Guarda una copia del password original para no guardarlo en historial
                     string passwordOriginal = usuario.password_hash;
                     usuario.password_hash = _passwordHashService.HashPassword(usuario.password_hash);
                     
-                    // Verificar si se proporcionó un rol_id, si no, asignar rol por defecto (Operador)
                     if (!usuario.rol_id.HasValue)
                     {
                         var rolOperador = _context.Roles.FirstOrDefault(r => r.nombre == "Operador");
@@ -83,7 +79,6 @@ namespace API.Controllers
                     _context.Usuarios.Add(usuario);
                     _context.SaveChanges();
                     
-                    // Configurar opciones de serialización para prevenir referencias circulares
                     var jsonOptions = new JsonSerializerOptions
                     {
                         ReferenceHandler = ReferenceHandler.Preserve,
@@ -91,7 +86,6 @@ namespace API.Controllers
                         WriteIndented = true
                     };
                     
-                    // Obtener el nombre del rol para el historial
                     string rolNombre = "Sin rol";
                     if (usuario.rol_id.HasValue)
                     {
@@ -102,7 +96,6 @@ namespace API.Controllers
                         }
                     }
                     
-                    // Crear una copia para el historial sin el password
                     var usuarioParaHistorial = new { 
                         Id = usuario.id,
                         Nombre = usuario.nombre,
@@ -111,10 +104,8 @@ namespace API.Controllers
                         Rol = rolNombre
                     };
                     
-                    // Registrar en historial
                     _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {usuario.email} con rol {rolNombre}");
                     
-                    // Crear un DTO para la respuesta sin referencias circulares
                     var usuarioResponse = new {
                         usuario.id,
                         usuario.nombre,
@@ -137,27 +128,23 @@ namespace API.Controllers
             }
         }
 
-        // Endpoint para editar un Usuario existente
         [HttpPut]
         [Authorize(Roles = "Administrador")]
         public JsonResult Edit(Usuario usuario)
         {
             try 
             {
-                // Validaciones básicas
                 if (usuario.id == 0)
                 {
                     return new JsonResult(BadRequest("Debe proporcionar un id válido para editar un usuario."));
                 }
                 
-                // Buscar usuario existente
                 var usuarioInDb = _context.Usuarios.Find(usuario.id);
                 if (usuarioInDb == null)
                 {
                     return new JsonResult(NotFound(new { message = $"Usuario con ID {usuario.id} no encontrado" }));
                 }
 
-                // Registrar estado anterior para historial
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     new { 
@@ -171,24 +158,18 @@ namespace API.Controllers
                     $"Estado anterior de usuario {usuarioInDb.email} (ID: {usuarioInDb.id})"
                 );
                 
-                // IMPORTANTE: Preservar el password_hash existente
-                // Solo actualizamos los campos que se permiten editar desde la gestión de usuarios
+
                 usuarioInDb.nombre = usuario.nombre;
                 usuarioInDb.email = usuario.email;
                 usuarioInDb.activo = usuario.activo;
                 
-                // Solo actualizar rol si viene especificado
                 if (usuario.rol_id.HasValue)
                 {
                     usuarioInDb.rol_id = usuario.rol_id;
                 }
                 
-                // NO tocar el password_hash, dejamos el existente
-                
-                // Guardar cambios
                 _context.SaveChanges();
                 
-                // Registrar estado nuevo para historial
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     new { 
@@ -202,7 +183,6 @@ namespace API.Controllers
                     $"Estado nuevo de usuario {usuarioInDb.email} (ID: {usuarioInDb.id})"
                 );
                 
-                // Crear un DTO para la respuesta sin referencias circulares
                 var usuarioResponse = new {
                     usuarioInDb.id,
                     usuarioInDb.nombre,
@@ -232,7 +212,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound(new { message = $"Usuario con ID {id} no encontrado" }));
                 }
                 
-                // Crear un DTO simplificado para evitar ciclos de referencia
                 var result = new
                 {
                     usuario.id,
@@ -264,7 +243,6 @@ namespace API.Controllers
                 return new JsonResult(NotFound());
             }
             
-            // Crear una copia para el historial sin el password
             var usuarioParaHistorial = new { 
                 Id = result.id,
                 Nombre = result.nombre,
@@ -272,7 +250,6 @@ namespace API.Controllers
                 Activo = result.activo
             };
             
-            // Registrar antes de eliminar
             _historialService.GuardarHistorial("ELIMINAR", usuarioParaHistorial, "Usuarios", $"Eliminación de usuario ID: {id}");
             
             _context.Usuarios.Remove(result);
@@ -285,10 +262,8 @@ namespace API.Controllers
         {
             try 
             {
-                // Obtener los usuarios con sus roles
                 var usuarios = await _context.Usuarios.Include(u => u.Rol).ToListAsync();
                 
-                // Crear un DTO simplificado para evitar ciclos de referencia
                 var result = usuarios.Select(u => new
                 {
                     u.id,
@@ -324,11 +299,9 @@ namespace API.Controllers
 
                 if (model.password_hash != null)
                 {
-                    // Guarda una copia del password original para no guardarlo en historial
                     string passwordOriginal = model.password_hash;
                     model.password_hash = _passwordHashService.HashPassword(model.password_hash);
                     
-                    // Asignar rol por defecto (Operador) para usuarios registrados
                     var rolOperador = _context.Roles.FirstOrDefault(r => r.nombre == "Operador");
                     if (rolOperador != null)
                     {
@@ -338,7 +311,6 @@ namespace API.Controllers
                     _context.Usuarios.Add(model);
                     _context.SaveChanges();
                     
-                    // Obtener el nombre del rol para el historial
                     string rolNombre = "Sin rol";
                     if (model.rol_id.HasValue)
                     {
@@ -349,7 +321,6 @@ namespace API.Controllers
                         }
                     }
                     
-                    // Crear una copia para el historial sin el password
                     var usuarioParaHistorial = new { 
                         Id = model.id,
                         Nombre = model.nombre,
@@ -358,10 +329,8 @@ namespace API.Controllers
                         Rol = rolNombre
                     };
                     
-                    // Registrar en historial con usuario del sistema (ya que estamos en un endpoint no autenticado)
                     _historialService.GuardarHistorial("CREAR", usuarioParaHistorial, "Usuarios", $"Creación de usuario: {model.email} con rol {rolNombre}");
                     
-                    // Crear un DTO para la respuesta sin referencias circulares
                     var usuarioResponse = new {
                         model.id,
                         model.nombre,
@@ -392,7 +361,7 @@ namespace API.Controllers
             {
                 string userEmail = model.Email ?? string.Empty;
                 var usuario = await _context.Usuarios
-                    .Include(u => u.Rol) // Incluir el rol del usuario
+                    .Include(u => u.Rol) 
                     .FirstOrDefaultAsync(u => (u.email ?? string.Empty).ToLower() == userEmail.ToLower());
 
                 if (usuario == null || usuario.password_hash == null ||
@@ -401,7 +370,6 @@ namespace API.Controllers
                     return BadRequest(new { message = "Credenciales inválidas" });
                 }
 
-                // Verificar si el usuario está inactivo
                 if (usuario.activo != true)
                 {
                     _historialService.GuardarHistorial(
@@ -416,13 +384,11 @@ namespace API.Controllers
                 usuario.ultimo_acceso = GetCostaRicaTime();
                 await _context.SaveChangesAsync();
 
-                // Determinar el rol del usuario de forma explícita
-                string rolNombre = "Usuario"; // Valor por defecto
+                string rolNombre = "Usuario"; 
                 bool esAdmin = false;
 
                 if (usuario.rol_id.HasValue)
                 {
-                    // Obtener el rol directamente de la base de datos
                     var rol = await _context.Roles.FindAsync(usuario.rol_id.Value);
                     if (rol != null)
                     {
@@ -431,27 +397,23 @@ namespace API.Controllers
                     }
                 }
 
-                // Lista para almacenar los claims con múltiples formatos de claim de rol para máxima compatibilidad
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, usuario.nombre ?? string.Empty),
                     new Claim(ClaimTypes.Email, usuario.email ?? string.Empty),
                     new Claim(ClaimTypes.NameIdentifier, usuario.id.ToString()),
                     
-                    // Agregar el claim de rol en TODOS los formatos posibles para maximizar compatibilidad
                     new Claim(ClaimTypes.Role, rolNombre),
                     new Claim("role", rolNombre),
                     new Claim("Role", rolNombre),
                     new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", rolNombre)
                 };
                 
-                // Si es admin, asegurar que tenga ese rol explícitamente
                 if (esAdmin)
                 {
                     claims.Add(new Claim("IsAdmin", "true"));
                 }
                 
-                // Agregar permisos según el rol
                 if (usuario.rol_id.HasValue)
                 {
                     try
@@ -462,13 +424,11 @@ namespace API.Controllers
                             claims.Add(new Claim("Permission", permiso.nombre));
                         }
                         
-                        // Si es administrador, añadir todos los permisos posibles
                         if (esAdmin)
                         {
                             var todosLosPermisos = await _context.Permisos.ToListAsync();
                             foreach (var permiso in todosLosPermisos)
                             {
-                                // Evitar duplicados
                                 if (!claims.Any(c => c.Type == "Permission" && c.Value == permiso.nombre))
                                 {
                                     claims.Add(new Claim("Permission", permiso.nombre));
@@ -478,10 +438,7 @@ namespace API.Controllers
                     }
                     catch (Exception)
                     {
-                        // No bloquear el login si hay problemas con los permisos
-                        
-                        // Si es admin, añadir un claim especial que indique que tiene todos los permisos
-                        if (esAdmin)
+                    if (esAdmin)
                         {
                             claims.Add(new Claim("AllPermissions", "true"));
                         }
@@ -490,14 +447,11 @@ namespace API.Controllers
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 
-                // Crear un nuevo ClaimsPrincipal para verificar que IsInRole funcione
                 var principal = new ClaimsPrincipal(claimsIdentity);
                 bool rolFuncionando = principal.IsInRole(rolNombre);
                 
-                // Si el rol no funciona, intentar añadir más claims de forma diferente
                 if (!rolFuncionando)
                 {
-                    // Crear una nueva identidad con el claim de rol explícito
                     var roleIdentity = new ClaimsIdentity();
                     roleIdentity.AddClaim(new Claim(ClaimTypes.Role, rolNombre));
                     principal.AddIdentity(roleIdentity);
@@ -507,17 +461,14 @@ namespace API.Controllers
                 {
                     IsPersistent = model.RememberMe,
                     ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8),
-                    // Añadir indicadores adicionales para el rol
                     Items = { {"role", rolNombre} }
                 };
 
-                // Firmar la autenticación con el principal actualizado
                 await HttpContext.SignInAsync(
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     principal,
                     authProperties);
 
-                // Verificar después de la autenticación si el rol se está reconociendo
                 var currentUser = HttpContext.User;
                 bool adminReconocidoAhora = currentUser.IsInRole("Administrador");
 
@@ -555,7 +506,6 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> CerrarSesion()
         {
-            // Obtener ID de usuario para el historial antes de cerrar sesión
             int userId = 0;
             string userEmail = "desconocido";
             
@@ -566,7 +516,7 @@ namespace API.Controllers
                 
                 if (userIdClaim != null && int.TryParse(userIdClaim.Value, out userId))
                 {
-                    // ID obtenido correctamente
+                    // Obtener el ID del usuario
                 }
                 
                 if (emailClaim != null)
@@ -574,7 +524,6 @@ namespace API.Controllers
                     userEmail = emailClaim.Value;
                 }
                 
-                // Registrar historial de logout
                 _historialService.GuardarHistorial("LOGOUT", new { UserId = userId, Email = userEmail, Time = GetCostaRicaTime() }, 
                     "Autenticación", $"Cierre de sesión: {userEmail}");
             }
@@ -651,12 +600,10 @@ namespace API.Controllers
                     return new JsonResult(NotFound(new { message = $"Usuario con ID {id} no encontrado" }));
                 }
                 
-                // Solo cambiamos el estado activo, no tocamos la contraseña
                 usuarioInDb.activo = activo;
                 
                 _context.SaveChanges();
                 
-                // Registrar en historial
                 _historialService.GuardarHistorial(
                     activo ? "ACTIVAR_USUARIO" : "DESACTIVAR_USUARIO",
                     new { Id = usuarioInDb.id, Nombre = usuarioInDb.nombre, Email = usuarioInDb.email },
@@ -674,7 +621,7 @@ namespace API.Controllers
 
         // Nuevo endpoint para asignar rol a usuario
         [HttpPost]
-        [Authorize(Roles = "Administrador")] // Solo administradores pueden asignar roles
+        [Authorize(Roles = "Administrador")]
         public JsonResult AsignarRol([FromBody] AsignarRolViewModel model)
         {
             try
@@ -698,7 +645,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound(new { message = "Rol no encontrado" }));
                 }
 
-                // Asignar rol y guardar cambios
                 usuario.rol_id = rol.id;
                 _context.SaveChanges();
                 
@@ -734,7 +680,6 @@ namespace API.Controllers
                     return BadRequest(new { message = "Datos inválidos para cambiar contraseña" });
                 }
 
-                // Buscar el usuario
                 var usuario = _context.Usuarios.Find(model.UsuarioId);
                 if (usuario == null)
                 {
@@ -750,7 +695,6 @@ namespace API.Controllers
 
                 Console.WriteLine($"[DEBUG] Creando hash para nueva contraseña del usuario {usuario.email}");
                 
-                // Generar el hash de la nueva contraseña
                 string hashedPassword;
                 try
                 {
@@ -762,7 +706,6 @@ namespace API.Controllers
                     return StatusCode(500, new { message = $"Error al procesar la contraseña: {hashEx.Message}" });
                 }
 
-                // Guardar el estado original para el historial
                 _historialService.GuardarHistorial(
                     "ANTES_CAMBIAR_PASSWORD",
                     new { Id = usuario.id, Nombre = usuario.nombre, Email = usuario.email },
@@ -770,13 +713,11 @@ namespace API.Controllers
                     $"Cambio de contraseña para usuario {usuario.email} (ID: {usuario.id})"
                 );
 
-                // Actualizar la contraseña
                 usuario.password_hash = hashedPassword;
                 _context.SaveChanges();
 
                 Console.WriteLine($"[DEBUG] Contraseña actualizada exitosamente para usuario {usuario.email}");
 
-                // Registrar en historial
                 _historialService.GuardarHistorial(
                     "CAMBIAR_PASSWORD",
                     new { Id = usuario.id, Nombre = usuario.nombre, Email = usuario.email },
@@ -791,7 +732,6 @@ namespace API.Controllers
                 Console.WriteLine($"[ERROR] Error al cambiar contraseña: {ex.Message}");
                 Console.WriteLine($"[ERROR] StackTrace: {ex.StackTrace}");
                 
-                // Verificar si hay inner exception
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine($"[ERROR] Inner Exception: {ex.InnerException.Message}");

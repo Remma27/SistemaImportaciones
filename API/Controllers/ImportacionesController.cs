@@ -23,7 +23,6 @@ namespace API.Controllers
             _logger = logger;
         }
 
-        // Endpoint para crear una nueva Importacion
         [HttpPost]
         [Consumes("application/json")]
         [Authorize(Roles = "Administrador,Operador")]
@@ -36,19 +35,16 @@ namespace API.Controllers
                     return new JsonResult(BadRequest("El id debe ser 0 para crear una nueva importacion."));
                 }
 
-                // Validar datos requeridos
                 if (importacion.idbarco == 0)
                 {
                     return new JsonResult(BadRequest("El barco es requerido."));
                 }
 
-                // Establecer la fecha y hora del sistema automáticamente
                 importacion.fechahorasystema = DateTime.Now;
 
                 _context.Importaciones.Add(importacion);
-                _context.SaveChanges();  // Guardar primero para obtener el ID generado
+                _context.SaveChanges();
                 
-                // Registrar después de guardar para tener el ID generado
                 _historialService.GuardarHistorial("CREAR", importacion, "Importaciones", $"Creación: {importacion.id}");
                 
                 _logger.LogInformation($"Importación creada exitosamente, ID: {importacion.id}");
@@ -81,7 +77,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound());
                 }
                 
-                // Registrar estado anterior claramente
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     importacionInDb, 
@@ -89,17 +84,14 @@ namespace API.Controllers
                     $"Estado anterior de importación ID: {importacionInDb.id}"
                 );
                 
-                // Preservar la fecha original del sistema o actualizarla si es necesario
                 if (importacion.fechahorasystema == null)
                 {
                     importacion.fechahorasystema = importacionInDb.fechahorasystema;
                 }
                 
-                // Aplicar los cambios
                 _context.Entry(importacionInDb).CurrentValues.SetValues(importacion);
                 _context.SaveChanges();
                 
-                // Registrar estado nuevo claramente
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     importacion, 

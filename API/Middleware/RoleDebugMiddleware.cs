@@ -19,7 +19,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
         
         public async Task InvokeAsync(HttpContext context)
         {
-            // Solo diagnosticar si el usuario está autenticado
             if (context.User?.Identity?.IsAuthenticated == true)
             {
                 var userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,10 +33,8 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
                     context.User.IsInRole("Administrador")
                 );
 
-                // Si no tiene roles pero se llama "Christian Ulloa", agregar el rol Administrador
                 if (roles.Count == 0 && userName == "Christian Ulloa") 
                 {
-                    // En caso extremo, agregar la identidad ahora mismo (opción temporal, solo para diagnóstico)
                     var identity = context.User.Identity as ClaimsIdentity;
                     if (identity != null)
                     {
@@ -53,7 +50,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Middleware
         }
     }
     
-    // Extensión para registrar el middleware
     public static class RoleDebugMiddlewareExtensions
     {
         public static IApplicationBuilder UseRoleDebug(this IApplicationBuilder app)

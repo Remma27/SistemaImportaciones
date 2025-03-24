@@ -41,7 +41,6 @@ namespace API.Controllers
                 _context.Empresas.Add(empresa);
                 _context.SaveChanges();
                 
-                // Registrar operación en historial usando el método directo
                 _historialService.GuardarHistorial("CREAR", empresa, "Empresas", $"Creación: {empresa.nombreempresa}");
                 _logger.LogInformation($"Empresa creada con ID: {empresa.id_empresa}, registro en historial completado");
                 
@@ -73,7 +72,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound());
                 }
                 
-                // Registrar estado anterior claramente
                 _historialService.GuardarHistorial(
                     "ANTES_EDITAR", 
                     empresaInDb, 
@@ -81,11 +79,9 @@ namespace API.Controllers
                     $"Estado anterior de empresa {empresaInDb.nombreempresa} (ID: {empresaInDb.id_empresa})"
                 );
                 
-                // Aplicar los cambios
                 _context.Entry(empresaInDb).CurrentValues.SetValues(empresa);
                 _context.SaveChanges();
                 
-                // Registrar estado nuevo claramente
                 _historialService.GuardarHistorial(
                     "DESPUES_EDITAR", 
                     empresa, 
@@ -128,7 +124,6 @@ namespace API.Controllers
                     return new JsonResult(NotFound());
                 }
                 
-                // Registrar antes de eliminar
                 _historialService.GuardarHistorial("ELIMINAR", result, "Empresas", $"Eliminación: {result.id_empresa}");
                 
                 _context.Empresas.Remove(result);

@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Hosting;
-
 namespace Sistema_de_Gestion_de_Importaciones.Extensions
 {
     public static class ApplicationBuilderExtensions
@@ -20,7 +17,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Extensions
             return app;
         }
 
-        // Add middleware to log when routes are not found
         public static WebApplication UseRouteDebugging(this WebApplication app)
         {
             app.Use(async (context, next) =>

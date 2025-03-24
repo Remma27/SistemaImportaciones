@@ -21,7 +21,7 @@ namespace API.Models
         
         [Required]
         [Column("tipo_operacion")]
-        public string TipoOperacion { get; set; } = string.Empty; // "CREATE", "UPDATE", "DELETE"
+        public string TipoOperacion { get; set; } = string.Empty;
         
         [Required]
         [Column("datos_json")]
@@ -29,7 +29,7 @@ namespace API.Models
         
         [Required]
         [Column("fecha_hora")]
-        public DateTime FechaHora { get; set; } // Removed default DateTime.Now
+        public DateTime FechaHora { get; set; }
         
         [Column("descripcion")]
         public string? Descripcion { get; set; }

@@ -25,18 +25,16 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> GetAll()
         {
             try
             {
                 _logger.LogInformation("Obteniendo todos los registros de historial sin filtrado");
                 
-                // Verificar cuántos registros totales hay en la base de datos
                 var totalRegistrosEnBD = await _context.HistorialCambios.CountAsync();
                 _logger.LogInformation($"Total registros en BD: {totalRegistrosEnBD}");
                 
-                // Obtener TODOS los registros directamente sin filtros
                 var registros = await _context.HistorialCambios
                     .AsNoTracking()
                     .OrderByDescending(h => h.FechaHora)
@@ -44,13 +42,11 @@ namespace API.Controllers
 
                 _logger.LogInformation($"Registros recuperados de la base de datos: {registros.Count}");
                 
-                // Obtener todos los usuarios válidos
                 var usuarios = await _context.Usuarios
                     .AsNoTracking()
                     .Select(u => new { u.id, u.nombre })
                     .ToDictionaryAsync(u => u.id, u => u.nombre);
                 
-                // Mapear los resultados
                 var resultadoFinal = registros.Select(h => new
                 {
                     h.Id,
@@ -75,14 +71,13 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
+        [Authorize(Roles = "Administrador")] 
         public async Task<IActionResult> GetById(int id)
         {
             try
             {
                 _logger.LogInformation($"Obteniendo registro de historial con ID: {id}");
                 
-                // Obtener el registro de historial por ID sin usar Include
                 var historial = await _context.HistorialCambios
                     .AsNoTracking()
                     .FirstOrDefaultAsync(h => h.Id == id);
@@ -90,7 +85,6 @@ namespace API.Controllers
                 if (historial == null)
                     return NotFound(new { message = $"No se encontró el registro de historial con id {id}" });
                     
-                // Obtener el nombre del usuario desde la tabla Usuarios
                 string nombreUsuario = "Sistema";
                 if (historial.UsuarioId > 0)
                 {
@@ -126,7 +120,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador")] // Solo administradores pueden gestionar roles
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> GetTablasDisponibles()
         {
             try

@@ -65,7 +65,6 @@ body {
     white-space: nowrap;
 }
 
-/* Mobile dropdown animations */
 @keyframes slideUpFromBottom {
     from { transform: none; }
     to { transform: none; }
@@ -86,11 +85,9 @@ body {
     to { opacity: 1; }
 }
 
-/* Fix Bootstrap dropdown display issues */
 .dropdown-menu {
     margin: 0;
     display: none;
-    /* Remove transitions that might cause glitches */
     transition: none !important;
     transform: none !important;
     animation: none !important;
@@ -100,14 +97,12 @@ body {
     display: block;
 }
 
-/* Ensure no animations interfere with dropdowns */
 .dropdown, .dropup, .dropend, .dropstart,
 .dropdown-toggle, .dropdown-item {
     transition: none !important;
     animation: none !important;
 }
 
-/* Remove animation keyframes that might interfere */
 @keyframes fadeIn {
     from { opacity: 1; }
     to { opacity: 1; }
@@ -118,12 +113,10 @@ body {
     to { opacity: 1; }
 }
 
-/* Remove any interfering animations */
 .dropdown, .dropup, .dropend, .dropstart {
     position: relative;
 }
 
-/* Reset Bootstrap dropdown animations */
 .dropdown-menu {
     margin: 0;
     display: none;

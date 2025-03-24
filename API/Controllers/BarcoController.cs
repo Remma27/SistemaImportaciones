@@ -26,6 +26,7 @@ namespace API.Controllers
         // Endpoint para crear un nuevo Barco
         [HttpPost]
         [Consumes("application/json")]
+        [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Create([FromBody] Barco barco)
         {
             if (barco.id != 0)
@@ -43,6 +44,7 @@ namespace API.Controllers
 
         // Endpoint para editar un Barco existente
         [HttpPut]
+        [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Edit(Barco barco)
         {
             try
@@ -104,6 +106,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
+        [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Delete(int id)
         {
             var barco = _context.Barcos.Find(id);

@@ -6,7 +6,7 @@ using Sistema_de_Gestion_de_Importaciones.ViewModels;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador,Operador, Reporteria")]
     public class InformeGeneralController : Controller
     {
         private readonly IMovimientoService _movimientoService;

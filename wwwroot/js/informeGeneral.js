@@ -243,6 +243,9 @@ $(document).ready(function () {
     $('#toggleUnits').on('click', function () {
         showingMetric = !showingMetric
 
+        // Guardar estado en localStorage
+        localStorage.setItem('showingMetric', showingMetric);
+
         const buttonText = document.getElementById('unitsButtonText')
         buttonText.textContent = showingMetric ? 'Libras' : 'Kilogramos'
 
@@ -272,6 +275,11 @@ $(document).ready(function () {
             }
         }, 50)
     })
+
+    // Registrar evento de salida para restaurar el estado a métrico
+    $(window).on('unload beforeunload', function() {
+        localStorage.setItem('showingMetric', 'true');
+    });
 
     $('form').on('submit', function () {
         const select = this.querySelector('select')

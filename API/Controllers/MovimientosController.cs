@@ -90,6 +90,7 @@ namespace API.Controllers
         // Endpoint para crear un nuevo Movimiento
         [HttpPost]
         [Consumes("application/json")]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create([FromBody] Movimiento movimiento)
         {
             // First clear any model state errors related to fechahorasistema
@@ -136,6 +137,7 @@ namespace API.Controllers
 
         // Endpoint para editar un Movimiento existente
         [HttpPut]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(Movimiento movimiento)
         {
             // First clear any model state errors related to fechahorasistema
@@ -196,6 +198,7 @@ namespace API.Controllers
 
         // Get
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> Get(int id)
         {
             try
@@ -216,6 +219,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -242,6 +246,7 @@ namespace API.Controllers
 
         // GetAll
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> GetAll()
         {
             try
@@ -262,6 +267,7 @@ namespace API.Controllers
 
         // Get All Movimientos por Importacion, de la vista de reporte individual detallado
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> GetAllByImportacion(int importacionId)
         {
             try
@@ -421,6 +427,7 @@ namespace API.Controllers
 
         // Endpoint para obtener el informe general, de la vista de informe general
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> InformeGeneral(int? importacionId)
         {
             try
@@ -519,6 +526,7 @@ namespace API.Controllers
 
         // Endpoint para obtener el registro de requerimientos, de la vista de registro de requerimientos
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> RegistroRequerimientos([FromQuery] int? selectedBarco)
         {
             try
@@ -588,6 +596,7 @@ namespace API.Controllers
 
         // Endpoint para obtener el cálculo de movimientos, segunda tabla de la vista de registro de pesajes de camiones con grana
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> CalculoMovimientos([FromQuery] int importacionId, [FromQuery] int idempresa)
         {
             try
@@ -732,6 +741,7 @@ namespace API.Controllers
 
         // Endpoint para obtener el cálculo de escotillas por empresa, equivalente a la tabla del barco en el sistema de importaciones
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> CalculoEscotillas([FromQuery] int importacionId)
         {
             try
@@ -827,6 +837,7 @@ namespace API.Controllers
 
         //Endpoint para el reporte general de descargas, agrupado por empresa, con sus conversiones en kilos, libras, toneladas y quintales.
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador,Reporteria")]
         public async Task<IActionResult> CalculoEscotillasPorEmpresa([FromQuery] int importacionId)
         {
             try

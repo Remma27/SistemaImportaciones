@@ -22,6 +22,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Index(int? selectedBarco)
         {
             try
@@ -40,6 +41,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create(int? selectedBarco)
         {
             if (!selectedBarco.HasValue)
@@ -67,6 +69,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create(RegistroRequerimientosViewModel viewModel, int? selectedBarco)
         {
             if (viewModel.IdImportacion == null && selectedBarco.HasValue)
@@ -134,6 +137,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int? id, int? selectedBarco)
         {
             if (id == null)
@@ -151,6 +155,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id, RegistroRequerimientosViewModel viewModel, int? selectedBarco)
         {
             try
@@ -199,6 +204,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Delete(int? id, int? selectedBarco)
         {
             if (id == null)
@@ -214,6 +220,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> DeleteConfirmed(int id, int? selectedBarco)
         {
             try

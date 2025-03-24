@@ -9,7 +9,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Administrador,Operador")]
     public class BodegaController : ControllerBase
     {
         private readonly ApiContext _context;

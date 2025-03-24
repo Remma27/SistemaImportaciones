@@ -8,7 +8,7 @@ using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador")]
     public class ImportacionController : Controller
     {
         private readonly IImportacionService _importacionService;

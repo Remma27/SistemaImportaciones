@@ -132,6 +132,11 @@
             
             // Implementación de los dropdowns
             $('.dropdown-toggle').on('click', function(e) {
+                // No modificar el comportamiento de los dropdowns en el navbar
+                if ($(this).closest('.navbar').length) {
+                    return;
+                }
+                
                 e.preventDefault();
                 e.stopPropagation();
                 
@@ -199,7 +204,7 @@
                 });
                 
                 // Crear backdrop con evento de cierre consistente
-                var $backdrop = $('<div class="dropdown-backdrop"></div>');
+                var $backdrop = $('<div class="table-dropdown-backdrop"></div>');
                 $activeBackdrop = $backdrop; // Guardar referencia
                 
                 // Posicionar y mostrar el dropdown según el tamaño de pantalla

@@ -26,6 +26,7 @@ namespace API.Controllers
         // Endpoint para crear una nueva Importacion
         [HttpPost]
         [Consumes("application/json")]
+        [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Create([FromBody] Importacion importacion)
         {
             try
@@ -62,6 +63,7 @@ namespace API.Controllers
 
         // Endpoint para editar una Importacion existente
         [HttpPut]
+        [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Edit(Importacion importacion)
         {
             try
@@ -130,6 +132,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
+        [Authorize(Roles = "Administrador,Operador")]
         public JsonResult Delete(int id)
         {
             try

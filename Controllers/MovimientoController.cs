@@ -30,6 +30,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Crear(Movimiento model)
         {
             if (!ModelState.IsValid)
@@ -51,6 +52,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Editar(int id)
         {
             var movimiento = await _movimientoService.GetByIdAsync(id);
@@ -64,6 +66,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Editar(Movimiento model)
         {
             if (!ModelState.IsValid)
@@ -91,6 +94,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Eliminar(int id)
         {
             var movimiento = await _movimientoService.GetByIdAsync(id);
@@ -104,6 +108,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> EliminarConfirmado(int id)
         {
             try

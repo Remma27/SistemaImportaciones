@@ -73,6 +73,18 @@
         syncAll: function() {
             const showAlternative = this.getToggleState();
             return this.applyToggle(showAlternative);
+        },
+        
+        // Restablecer a métrico
+        resetToMetric: function() {
+            try {
+                localStorage.setItem('showingMetric', 'true');
+                this.applyToggle(false);
+                return true;
+            } catch (e) {
+                console.error('Error reseteando a métrico:', e);
+                return false;
+            }
         }
     };
     
@@ -83,6 +95,19 @@
                 window.azureHelpers.syncAll();
             }
         }, 1000);
+    });
+    
+    // Registrar eventos de salida de página
+    window.addEventListener('beforeunload', function() {
+        if (window.azureHelpers) {
+            window.azureHelpers.resetToMetric();
+        }
+    });
+    
+    window.addEventListener('unload', function() {
+        if (window.azureHelpers) {
+            window.azureHelpers.resetToMetric();
+        }
     });
     
     // Monitorear cambios en localStorage para componentes que no reciben eventos

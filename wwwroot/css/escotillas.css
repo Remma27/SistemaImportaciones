@@ -1,0 +1,736 @@
+/* Estilos base para componentes */
+.text-success { color: #28a745 !important; }
+.text-danger { color: #dc3545 !important; }
+
+/* Estilos para badges */
+.estado-badge, .badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.badge i, .estado-badge i {
+    margin-right: 4px;
+    font-size: 0.85em;
+}
+
+/* Estilos para las cards de escotillas */
+.escotilla-card {
+    background-color: white;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 100%;
+    min-height: clamp(300px, 40vh, 400px);
+    padding: clamp(0.75rem, 2vw, 1.25rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.escotilla-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important;
+}
+
+.escotilla-number {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 0.75rem !important;
+    text-align: center;
+    width: 100%;
+}
+
+/* Estilos para gráficos de donut */
+.donut-chart-container {
+    position: relative;
+    width: clamp(100px, 15vw, 160px);
+    height: clamp(100px, 15vw, 160px);
+    aspect-ratio: 1;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0; /* Evitar que se comprima */
+}
+
+.donut-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+    position: relative;
+    z-index: 1;
+    max-width: 140px;
+    max-height: 140px;
+}
+
+.donut-chart-container .position-absolute {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    text-align: center;
+}
+
+.donut-chart-container .fw-bold {
+    font-size: clamp(1.25rem, 2.5vw, 2rem);
+    line-height: 1.2;
+    margin-bottom: 0.25rem;
+}
+
+.donut-chart-container .badge {
+    font-size: clamp(0.65rem, 1vw, 0.75rem);
+    padding: 0.25em 0.75em;
+    white-space: nowrap;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Sección de detalles de la card */
+.escotilla-card .mt-3.small.text-muted {
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem !important;
+}
+
+.escotilla-card .d-flex.justify-content-between {
+    padding: 0.5rem 0;
+    min-height: 2.25rem;
+    align-items: center;
+    line-height: 1.2;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.escotilla-card .d-flex.justify-content-between:last-child {
+    border-bottom: none;
+}
+
+.escotilla-card .d-flex.justify-content-between span:first-child {
+    flex-shrink: 0;
+    margin-right: 0.5rem;
+}
+
+.escotilla-card .d-flex.justify-content-between span:last-child {
+    text-align: right;
+    word-break: break-word;
+    font-size: 0.9rem;
+}
+
+/* Grid de cards */
+.col-md-6.col-lg-2.text-center {
+    display: flex;
+    padding: 0.75rem;
+}
+
+.col-md-6.col-lg-2.text-center > div {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Estilos para barra de progreso */
+.custom-progress-container {
+    height: 34px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.custom-progress-bar {
+    height: 100%;
+    transition: width 1s ease-in-out;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    color: #000;
+    text-shadow: 0px 0px 3px rgba(255,255,255,0.9);
+}
+
+/* Estilos para cambio de unidades */
+.unit-toggle-element {
+    display: none !important;
+    margin-top: 3px;
+    padding-top: 2px;
+    border-top: 1px dotted rgba(0,0,0,0.1);
+    transition: opacity 0.3s ease;
+}
+
+.unit-toggle-element.show {
+    display: block !important;
+}
+
+.escotilla-card .unit-toggle-element {
+    font-size: 0.75rem !important;
+    color: inherit;
+    opacity: 0.85;
+    line-height: 1.2;
+}
+
+.metric-box .unit-toggle-element {
+    font-size: 0.8rem !important;
+    line-height: 1.3;
+}
+
+.bg-primary .unit-toggle-element,
+.bg-success .unit-toggle-element,
+.bg-danger .unit-toggle-element,
+[style*="background-color"] .unit-toggle-element {
+    border-top-color: rgba(255,255,255,0.2);
+}
+
+tr.unit-toggle-row.show {
+    display: table-row !important;
+}
+
+.escotilla-card .unit-toggle-element.show {
+    display: block !important;
+    margin-top: 3px;
+}
+
+/* Estilos para visualización del barco */
+.barco-visualizacion {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+    padding: 20px;
+}
+
+.barco-container {
+    position: relative;
+    width: 1600px; 
+    height: 437px;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 0 auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: none !important;
+    transform: none !important;
+}
+
+.barco-imagen,
+.escotillas-overlay {
+    min-width: 1600px !important;
+    width: 1600px !important;
+    flex-shrink: 0;
+    transform: none !important;
+}
+
+.barco-imagen {
+    display: block;
+    position: relative;
+    width: 1600px;
+    height: auto;
+    z-index: 1;
+}
+
+.escotillas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1793px;
+    height: 437px;
+    z-index: 2;
+}
+
+/* Estilos para escotillas en el barco */
+.escotilla-indicador {
+    position: absolute;
+    width: 130px;
+    padding: 12px;
+    z-index: 10;
+}
+
+.escotilla-labels {
+    position: absolute !important;
+    top: 202px !important; 
+    left: 227px !important; 
+    z-index: 6 !important;
+    padding: 10px !important;
+    width: 203px !important;
+    font-family: "Consolas", "Monaco", "Lucida Console", monospace !important;
+    font-size: 0.9rem;
+    letter-spacing: -0.5px;
+}
+
+.escotilla-dato {
+    text-align: center;
+    padding-right: 2px;
+}
+
+.escotilla-valor {
+    font-size: 0.9rem;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+}
+
+/* Estilos para el resumen del barco */
+.barco-resumen {
+    position: absolute;
+    bottom: 124px;
+    left: 1217px;
+    width: 320px;
+    padding: 15px;
+    z-index: 20;
+    font-size: 0.9rem;
+}
+
+.barco-resumen .fw-bold {
+    font-weight: bold;
+    color: white !important;
+    font-family: "Consolas", "Monaco", "Lucida Console", monospace !important;
+    letter-spacing: -0.5px;
+}
+
+.barco-resumen-datos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Posiciones específicas de las escotillas */
+#escotilla5 { 
+    top: 215px !important; 
+    left: 421px !important; 
+    position: absolute !important;
+    z-index: 10 !important;
+}
+#escotilla4 { 
+    top: 215px !important; 
+    left: 599px !important; 
+    position: absolute !important;
+    z-index: 10 !important;
+}
+#escotilla3 { 
+    top: 215px !important; 
+    left: 778px !important; 
+    position: absolute !important;
+    z-index: 10 !important;
+}
+#escotilla2 { 
+    top: 215px !important; 
+    left: 943px !important; 
+    position: absolute !important;
+    z-index: 10 !important;
+}
+#escotilla1 { 
+    top: 215px !important; 
+    left: 1085px !important; 
+    position: absolute !important;
+    z-index: 10 !important;
+}
+
+/* Fuentes para elementos del barco */
+.barco-container,
+.escotilla-datos,
+.escotilla-valor,
+.barco-resumen,
+.barco-resumen-datos {
+    font-family: "Consolas", "Monaco", "Lucida Console", monospace !important;
+}
+
+/* Estilos para conversiones */
+.conversiones {
+    position: absolute;
+    top: 24px;
+    left: 1238px;
+    z-index: 30;
+    width: 350px;
+}
+
+.conversiones .unit-toggle-element {
+    padding: 12px 15px;
+    font-family: "Consolas", "Monaco", "Lucida Console", monospace;
+}
+
+.conversiones .text-center {
+    color: #495057;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.conversiones .d-flex {
+    margin-bottom: 8px;
+}
+
+.conversiones .d-flex:last-child {
+    margin-bottom: 0;
+}
+
+.conversiones .text-muted {
+    font-size: 0.85rem;
+    color: #6c757d !important;
+}
+
+.conversiones span:not(.text-muted) {
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+}
+
+.conversiones .border-top {
+    border-color: rgba(0,0,0,0.08) !important;
+}
+
+/* Estilos para botón de descarga */
+.barco-visualizacion #downloadBtn {
+    position: absolute;
+    top: 4px;
+    right: 1417px;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    padding: 5px 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.barco-visualizacion #downloadBtn:hover {
+    background: #f8f9fa;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.barco-visualizacion #downloadBtn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.capturing {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Fix para metric-box */
+.metric-box {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Ajustes para el card-body */
+.card-body {
+    overflow: visible !important;
+}
+
+/* Estilo alternativo horizontal */
+.escotilla-card.horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.escotilla-card.horizontal .escotilla-number {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.escotilla-card.horizontal .donut-chart-container {
+    margin: 0 1rem 0 0;
+}
+
+.escotilla-card.horizontal .mt-3.small.text-muted {
+    flex: 1;
+    margin-top: 0 !important;
+}
+
+/* Media Queries */
+@media (min-width: 1400px) {
+    .donut-chart-container {
+        width: 160px;
+        height: 160px;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 160px;
+        max-height: 160px;
+    }
+    
+    .escotilla-card {
+        min-height: 400px;
+        padding: 1.25rem !important;
+    }
+    
+    .donut-chart-container .fw-bold {
+        font-size: 2rem !important;
+    }
+}
+
+/* Solución para el rango problemático de 1204px a 1756px */
+@media (min-width: 1204px) and (max-width: 1756px) {
+    .col-md-6.col-lg-2.text-center {
+        width: 25%;
+        flex: 0 0 25%;
+        max-width: 25%;
+        padding: 0.6rem;
+    }
+    
+    .escotilla-card {
+        min-height: 360px;
+        padding: 1rem !important;
+    }
+    
+    .donut-chart-container {
+        width: 130px;
+        height: 130px;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 130px;
+        max-height: 130px;
+    }
+    
+    .escotilla-number {
+        font-size: 1rem;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .donut-chart-container .fw-bold {
+        font-size: 1.8rem !important;
+    }
+    
+    .escotilla-card .mt-3.small.text-muted {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 1399.98px) {
+    .col-md-6.col-lg-2.text-center {
+        padding: 0.5rem;
+    }
+    
+    .escotilla-card {
+        padding: 0.75rem !important;
+        min-height: 370px;
+    }
+    
+    .donut-chart-container {
+        width: clamp(90px, 13vw, 140px);
+        height: clamp(90px, 13vw, 140px);
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .col-md-6.col-lg-2.text-center {
+        width: 33.33%;
+        flex: 0 0 33.33%;
+        max-width: 33.33%;
+        padding: 0.6rem;
+    }
+    
+    .escotilla-card {
+        min-height: 350px;
+        padding: 1rem !important;
+    }
+    
+    .donut-chart-container {
+        width: 130px;
+        height: 130px;
+        margin: 0 auto 1rem;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 130px;
+        max-height: 130px;
+    }
+    
+    /* Mejoramos visualización del texto */
+    .escotilla-card .d-flex.justify-content-between span:last-child {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .col-md-6.col-lg-2.text-center {
+        width: 50%; 
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .row.g-4.justify-content-center {
+        justify-content: center !important;
+    }
+    
+    .escotilla-card {
+        min-height: 340px;
+        padding: 1rem !important;
+        margin-bottom: 20px;
+    }
+    
+    .donut-chart-container {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 120px;
+        max-height: 120px;
+    }
+    
+    .donut-chart-container .fw-bold {
+        font-size: 1.5rem !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .col-md-6.col-lg-2.text-center {
+        width: 50%;
+        flex: 0 0 50%;
+        max-width: 50%;
+        padding: 0.5rem;
+    }
+    
+    .escotilla-card {
+        min-height: 330px;
+        padding: 0.75rem !important;
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .escotilla-number {
+        margin-bottom: 0.5rem;
+    }
+    
+    .donut-chart-container {
+        width: 110px;
+        height: 110px;
+        margin: 0 1rem 0.75rem 0;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 110px;
+        max-height: 110px;
+    }
+    
+    .donut-chart-container .fw-bold {
+        font-size: 1.35rem !important;
+    }
+    
+    .donut-chart-container .badge {
+        font-size: 0.6rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+    
+    .escotilla-card .d-flex.justify-content-between {
+        padding: 0.35rem 0;
+        min-height: 2rem;
+    }
+    
+    .escotilla-card .d-flex.justify-content-between span {
+        font-size: 0.8rem;
+    }
+    
+    .col-md-4 .metric-box {
+        padding: 10px !important;
+    }
+    
+    .barco-visualizacion {
+        padding: 10px;
+    }
+    
+    .barco-container {
+        height: auto;
+        min-height: 300px;
+    }
+    
+    .card-body.p-4 {
+        padding: 1rem !important;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .col-md-6.col-lg-2.text-center {
+        width: 100%;
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .escotilla-card {
+        min-height: 0;
+        padding: 1rem !important;
+        margin-bottom: 1rem;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .escotilla-number {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .donut-chart-container {
+        width: 100px;
+        height: 100px;
+        margin: 0 1rem 0 0;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 100px;
+        max-height: 100px;
+    }
+    
+    .escotilla-card .mt-3.small.text-muted {
+        flex: 1;
+        margin-top: 0 !important;
+    }
+    
+    .donut-chart-container .fw-bold {
+        font-size: 1.25rem !important;
+    }
+    
+    .escotilla-card .d-flex.justify-content-between {
+        padding: 0.3rem 0;
+        min-height: 2rem;
+    }
+}
+
+@media (max-width: 359.98px) {
+    .escotilla-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .donut-chart-container {
+        width: 120px;
+        height: 120px;
+        margin: 1rem auto;
+    }
+    
+    .donut-chart-container canvas {
+        max-width: 120px;
+        max-height: 120px;
+    }
+}

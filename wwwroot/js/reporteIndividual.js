@@ -30,6 +30,11 @@ $(document).ready(function () {
         adjustTableHeight()
     })
 
+    // Registrar evento para restablecer a métrico al salir de la página
+    $(window).on('beforeunload', function() {
+        localStorage.setItem('showingMetric', 'true');
+    });
+    
     // Función para manejar el botón de mostrar/ocultar conversiones
     $('#btnToggleConversiones').on('click', function () {
         // Toggle the visibility class on conversion columns

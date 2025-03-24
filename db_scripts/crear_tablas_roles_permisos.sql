@@ -33,7 +33,6 @@ INSERT INTO roles (id, nombre, descripcion)
 VALUES 
     (1, 'Administrador', 'Acceso completo al sistema'),
     (2, 'Operador', 'Acceso a operaciones básicas'),
-    (3, 'Usuario', 'Acceso limitado solo lectura');
 
 -- Insertar permisos básicos
 INSERT INTO permisos (nombre, clave, descripcion)
@@ -85,3 +84,15 @@ WHERE clave LIKE '%.ver' OR clave = 'informes.ver';
 -- y Operador al resto (si hay usuarios sin rol asignado)
 UPDATE usuarios SET rol_id = 1 WHERE id = 1 AND rol_id IS NULL;
 UPDATE usuarios SET rol_id = 2 WHERE id > 1 AND rol_id IS NULL;
+
+-- Insertar el nuevo rol "Reportería"
+INSERT INTO roles (nombre, descripcion)
+VALUES ('Reportería', 'Acceso solo a reportes e informes del sistema');
+
+-- Obtener el ID del rol recién creado (asumiendo que es el siguiente tras los existentes)
+SET @rol_reporteria_id = LAST_INSERT_ID();
+
+-- Asignar solo el permiso de ver informes al rol de Reportería
+INSERT INTO rol_permisos (rol_id, permiso_id)
+SELECT @rol_reporteria_id, id FROM permisos 
+WHERE clave = 'informes.ver';

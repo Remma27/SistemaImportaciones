@@ -277,7 +277,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 return Task.CompletedTask;
             }
 
-            context.Response.Redirect(options.AccessDeniedPath);
+            // Check if the user is authenticated
+            if (context.HttpContext.User.Identity?.IsAuthenticated == true)
+            {
+                // Redirect to Home/Index if authenticated but doesn't have sufficient permissions
+                context.Response.Redirect("/Home/Index");
+            }
+            else
+            {
+                // If not authenticated, redirect to the login page
+                context.Response.Redirect(options.AccessDeniedPath);
+            }
+            
             return Task.CompletedTask;
         };
     })

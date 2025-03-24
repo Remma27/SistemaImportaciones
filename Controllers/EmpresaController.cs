@@ -19,6 +19,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _logger = logger;
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Index()
         {
             try
@@ -35,6 +36,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public IActionResult Create()
         {
             return View();
@@ -42,6 +44,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create(Empresa empresa)
         {
             if (ModelState.IsValid)
@@ -63,6 +66,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -84,6 +88,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id, [Bind("id_empresa,nombreempresa,estatus")] Empresa empresa)
         {
             if (id != empresa.id_empresa)
@@ -110,6 +115,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Delete(int id)
         {
             var empresa = await _empresaService.GetByIdAsync(id);
@@ -122,6 +128,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> DeleteConfirmed([Bind(Prefix = "id_empresa")] int id)
         {
             try

@@ -33,6 +33,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             _memoryCache = memoryCache;
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Index(int? selectedBarco, int? empresaId, bool refreshData = false)
         {
             ViewData["FullWidth"] = true;
@@ -119,6 +120,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private async Task LoadTabla1Data(RegistroPesajesViewModel viewModel, int importacionId, int empresaId, bool refreshData = false)
         {
             try
@@ -162,6 +164,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private async Task LoadTabla2Data(RegistroPesajesViewModel viewModel, int importacionId, bool refreshData)
         {
             try
@@ -200,6 +203,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private async Task LoadEscotillasData(RegistroPesajesViewModel viewModel, int importacionId, bool refreshData)
         {
             try
@@ -252,6 +256,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private void SetDefaultEscotillasValues(RegistroPesajesViewModel viewModel, string estado)
         {
             viewModel.EscotillasData = new List<EscotillaViewModel>();
@@ -264,6 +269,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             viewModel.NombreBarco = "Sin nombre"; // Add this line
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private async Task PopulateDropdowns(int? selectedBarco, int? empresaId)
         {
             try
@@ -291,12 +297,14 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private async Task<Dictionary<int, string>> GetBodegasDictionaryAsync()
         {
             var bodegas = await _bodegaService.GetAllAsync();
             return bodegas.ToDictionary(b => b.id, b => b.bodega ?? "Sin nombre");
         }
 
+        [Authorize(Roles = "Administrador,Operador")]
         private static List<TotalesPorBodegaViewModel> CalculateTotalesPorBodega(List<Movimiento> calculo, Dictionary<int, string> bodegasDict)
         {
             var bodegasTotales = bodegasDict.ToDictionary(
@@ -323,6 +331,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create(RegistroPesajesIndividual viewModel)
         {
             try
@@ -370,6 +379,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id, RegistroPesajesIndividual viewModel)
         {
             try
@@ -422,6 +432,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Edit(int id, int selectedBarco, int empresaId)
         {
             try
@@ -469,6 +480,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> DeleteConfirmed(int id, int selectedBarco, int empresaId)
         {
             try
@@ -495,6 +507,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Delete(int id, int selectedBarco, int empresaId)
         {
             try
@@ -537,6 +550,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador, Reporteria")]
         public async Task<IActionResult> ReporteGeneral(int? selectedBarco)
         {
             var watch = Stopwatch.StartNew();
@@ -576,6 +590,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador, Reporteria")]
         public async Task<IActionResult> ReporteIndividual(string selectedBarco, int? barcoId, string returnController = "RegistroPesajes", string returnAction = "Index")
         {
             try
@@ -659,6 +674,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Operador")]
         public async Task<IActionResult> Create(int selectedBarco, int empresaId)
         {
             try

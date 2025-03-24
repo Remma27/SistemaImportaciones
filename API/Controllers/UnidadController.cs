@@ -9,7 +9,7 @@ namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Administrador,Operador")]
     public class UnidadController : ControllerBase
     {
         private readonly ApiContext _context;

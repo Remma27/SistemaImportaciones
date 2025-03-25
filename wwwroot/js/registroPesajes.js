@@ -355,24 +355,69 @@ function processTableRow(row, headerInfo) {
     return rowData
 }
 
-function extraerNumero(texto) {
-    // Normalización avanzada de formatos
-    const normalizado = texto
-        .replace(/\s/g, '') // Eliminar espacios
-        .replace(/[^\d.,-]/g, '') // Limpiar caracteres no numéricos
-        .replace(/(\..*)\./g, '$1') // Eliminar puntos decimales múltiples
-        .replace(/,(\d{3})/g, '$1') // Eliminar comas como separadores de miles
-
-    // Detección de formato
-    const esEuropeo = /,\d+$/.test(normalizado)
-    const esAmericano = /\.\d+$/.test(normalizado)
-
-    // Conversión a formato numérico
-    let valor = normalizado
-        .replace(esEuropeo ? /\./g : /,/g, '') // Eliminar separadores de miles
-        .replace(esEuropeo ? ',' : '.', '.') // Decimales
-
-    return parseFloat(valor) || 0
+// Improved number extraction and formatting for international compatibility
+function extraerNumero(texto, mantenerDecimales = false) {
+    if (!texto) return 0;
+    
+    // Check for negative numbers (both - and parentheses format)
+    const esNegativo = texto.toString().trim().startsWith('-') || 
+                       (texto.toString().trim().includes('(') && 
+                        texto.toString().trim().includes(')'));
+    
+    let cleaned = texto.toString()
+        .trim()
+        .replace(/[\$€\s]/g, '')  // Remove currency symbols and spaces
+        .replace(/\(([^)]+)\)/, '-$1');  // Convert (123) to -123
+    
+    if (cleaned === '' || cleaned === '-') return 0;
+    
+    // Detect number format - handle both European and American formats
+    const tieneComaDecimal = cleaned.match(/,\d+$/);
+    const tienePuntoDecimal = cleaned.match(/\.\d+$/);
+    
+    // Try to intelligently detect the format
+    const esEuropeo = tieneComaDecimal && !tienePuntoDecimal;
+    const esAmericano = tienePuntoDecimal && !tieneComaDecimal;
+    
+    if (esEuropeo) {
+        // European format: 1.234,56 -> 1234.56
+        cleaned = cleaned
+            .replace(/\.(?=.*,)/g, '')  // Remove thousand separators
+            .replace(',', '.');         // Convert decimal separator
+    } else if (esAmericano) {
+        // American format: 1,234.56 -> 1234.56
+        cleaned = cleaned.replace(/,/g, '');
+    } else if (cleaned.includes(',')) {
+        // If only comma exists, treat as decimal separator
+        cleaned = cleaned.replace(',', '.');
+    }
+    
+    // Clean up multiple decimal points if they somehow remain
+    const decimalPoints = cleaned.match(/\./g) || [];
+    if (decimalPoints.length > 1) {
+        cleaned = cleaned.replace(/\./g, (match, index, string) => 
+            index === string.lastIndexOf('.') ? '.' : '');
+    }
+    
+    let valor = parseFloat(cleaned);
+    
+    // Ensure negative values
+    if (esNegativo && valor > 0) {
+        valor = -valor;
+    }
+    
+    if (!mantenerDecimales) {
+        return isNaN(valor) ? 0 : valor;
+    }
+    
+    // Preserve original decimal places if requested
+    const decimalMatch = texto.toString().match(/[.,](\d+)(?!\d)/);
+    if (decimalMatch && decimalMatch[1]) {
+        const decimales = decimalMatch[1].length;
+        return isNaN(valor) ? 0 : Number(valor.toFixed(decimales));
+    }
+    
+    return isNaN(valor) ? 0 : valor;
 }
 
 function formatNumbersInExcelSheet(worksheet, data) {
@@ -646,275 +691,6 @@ function handleEmpresaChange(selectElement) {
     setTimeout(() => {
         $('#selectionForm').submit()
     }, 100)
-}
-
-function exportResumenAgregadoToExcel(tableId, filename) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    try {
-        console.log("Iniciando exportación a Excel...");
-        const wb = XLSX.utils.book_new();
-        const data = [];
-        const columnTypes = [];
-        const colWidths = [];
-
-        // Reset column visibility detection state
-        const isShowingAlternative = isUnitToggleVisible();
-        console.log("Showing alternative units:", isShowingAlternative);
-
-        // Get all columns, considering both visible and toggled columns
-        const allColumns = Array.from(table.querySelectorAll('thead th'))
-            .map((header, index) => ({
-                index,
-                header,
-                visible: isElementVisible(header) || 
-                         (header.classList && header.classList.contains('unit-toggle-columns') && isShowingAlternative),
-                shouldExport: isElementVisible(header, true),
-                text: header.textContent.trim()
-            }))
-            .filter(col => col.shouldExport);
-
-        console.log("Columns to export:", allColumns.length);
-        
-        // Process headers
-        const headerRow = [];
-        allColumns.forEach((col, idx) => {
-            const text = col.text;
-            console.log(`Column ${idx}: ${text}, visible: ${col.visible}, shouldExport: ${col.shouldExport}`);
-            
-            if (col.header.classList && col.header.classList.contains('unit-toggle-columns')) {
-                // For unit toggle columns, include both libras and quintales
-                headerRow.push(`${text} (Libras)`);
-                headerRow.push(`${text} (Quintales)`);
-                columnTypes.push('libras', 'quintales');
-                colWidths.push(16, 14);
-                return;
-            }
-            
-            if (text.startsWith("Desc.") || text.startsWith("Falt.")) {
-                const [_, unit] = text.match(/\((Quintales|Libras|Kg|Ton)\)/) || [];
-                headerRow.push(text);
-                
-                const widthMap = {
-                    'Quintales': 18,    
-                    'Libras': 14,
-                    'Kg': 10,
-                    'Ton': 12
-                };
-                
-                columnTypes.push(unit?.toLowerCase() || 'number');
-                colWidths.push(widthMap[unit] || 15);
-            }
-            else if (text === 'Placa' || text === '% Desc.') {
-                headerRow.push(text);
-                columnTypes.push(text === 'Placa' ? 'placa' : 'percentage');
-                colWidths.push(text === 'Placa' ? 12 : 10);
-            }
-            else if (text.includes('Falt.') || text.includes('Cam.')) {
-                // Explicitly mark camiones faltantes as numeric
-                headerRow.push(text);
-                columnTypes.push('number');
-                colWidths.push(10);
-            }
-            else {
-                headerRow.push(text);
-                columnTypes.push(text === 'Empresa' || text.includes('Bodega') ? 'text' : 'number');
-                colWidths.push(calculateHeaderWidth(text));
-            }
-        });
-
-        data.push(headerRow);
-        console.log("Header row:", headerRow);
-
-        // Process body rows
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const rowData = [];
-            
-            allColumns.forEach((colConfig, configIndex) => {
-                // Handle unit-toggle columns specially
-                if (colConfig.header.classList && colConfig.header.classList.contains('unit-toggle-columns')) {
-                    const cell = row.cells[colConfig.index];
-                    if (!cell) {
-                        rowData.push(0, 0);
-                        return;
-                    }
-                    
-                    // Get libras and quintales values
-                    const lbsText = cell.querySelector('.top-value')?.textContent.trim() || '';
-                    const qqText = cell.querySelector('.bottom-value')?.textContent.trim() || '';
-                    
-                    // Extract numbers preserving negative signs
-                    rowData.push(extraerNumero(lbsText), extraerNumero(qqText));
-                    return;
-                }
-                
-                const cell = row.cells[colConfig.index];
-                if (!cell) {
-                    rowData.push('');
-                    return;
-                }
-
-                const headerText = colConfig.text;
-                let value;
-
-                // Special handling for negative numbers in certain columns
-                if (headerText.includes('Falt.') || headerText.includes('Cam.')) {
-                    value = extraerNumero(cell.textContent);
-                    
-                    // Ensure negative values are preserved
-                    if (cell.textContent.includes('-') || 
-                        cell.textContent.includes('(') && cell.textContent.includes(')')) {
-                        // Already handled in extraerNumero with improved logic
-                    }
-                }
-                else if (headerText === '% Desc.') {
-                    value = extraerNumero(cell.textContent) / 100;
-                }
-                else if (headerText === 'Placa') {
-                    value = cell.textContent.trim();
-                }
-                else if (headerText.startsWith("Desc.") || headerText.startsWith("Falt.") || 
-                         headerText.includes("Req.") || headerText.includes("Kg") || 
-                         headerText.includes("Ton")) {
-                    value = extraerNumero(cell.textContent, true);
-                    
-                    // Apply specific rounding based on unit type
-                    const tipo = columnTypes[configIndex];
-                    if (tipo === 'quintales' || tipo === 'ton') {
-                        value = Math.round(value * 100) / 100;
-                    } else if (tipo === 'libras' || tipo === 'kg') {
-                        value = Math.round(value);
-                    }
-                }
-                else if (headerText === 'Empresa' || headerText.includes('Bodega')) {
-                    value = cell.textContent.trim();
-                }
-                else {
-                    // Try to detect numeric values
-                    const cellText = cell.textContent.trim();
-                    if (cellText.match(/^[\d.,\-]+$/) || 
-                        (cellText.startsWith('(') && cellText.endsWith(')') && cellText.match(/[\d.,]+/))) {
-                        value = extraerNumero(cellText);
-                    } else {
-                        value = cellText;
-                    }
-                }
-                
-                rowData.push(value);
-            });
-
-            data.push(rowData);
-        });
-
-        // Process footer rows (totals)
-        const footerRows = table.querySelectorAll('tfoot tr');
-        footerRows.forEach(footerRow => {
-            if (footerRow.classList.contains('no-export') || 
-                footerRow.classList.contains('table-purple')) {
-                return;
-            }
-            
-            const rowData = [];
-            let foundTotal = false;
-            
-            allColumns.forEach((colConfig, configIndex) => {
-                // Handle unit-toggle columns specially
-                if (colConfig.header.classList && colConfig.header.classList.contains('unit-toggle-columns')) {
-                    const cell = footerRow.cells[colConfig.index];
-                    if (!cell) {
-                        rowData.push(0, 0);
-                        return;
-                    }
-                    
-                    // Get libras and quintales values from footer
-                    const lbsText = cell.querySelector('.top-value')?.textContent.trim() || '';
-                    const qqText = cell.querySelector('.bottom-value')?.textContent.trim() || '';
-                    
-                    rowData.push(extraerNumero(lbsText), extraerNumero(qqText));
-                    return;
-                }
-                
-                const cell = footerRow.cells[colConfig.index];
-                if (!cell) {
-                    rowData.push('');
-                    return;
-                }
-
-                const headerText = colConfig.text;
-                
-                // Specific handling for special cells in totals row
-                if ((headerText === 'Empresa' || headerText.includes('Bodega') || configIndex === 0) && !foundTotal) {
-                    foundTotal = true;
-                    rowData.push(cell.textContent.trim() || 'Totales');
-                }
-                else if (headerText === 'Guía' || headerText === 'Camión' || headerText === 'Placa') {
-                    rowData.push(''); // Empty cells for these columns in totals
-                }
-                else if (headerText === '% Desc.') {
-                    rowData.push(extraerNumero(cell.textContent) / 100);
-                }
-                else if (headerText.includes('Falt.') || headerText.includes('Cam.')) {
-                    // Special handling for potentially negative values
-                    rowData.push(extraerNumero(cell.textContent));
-                }
-                else if (headerText.startsWith("Desc.") || headerText.startsWith("Falt.") || 
-                        headerText.includes("Req.") || headerText.includes("Kg") || 
-                        headerText.includes("Ton")) {
-                    rowData.push(extraerNumero(cell.textContent));
-                }
-                else {
-                    // Default case
-                    const cellText = cell.textContent.trim();
-                    if (cellText.match(/^[\d.,\-]+$/) || 
-                        (cellText.startsWith('(') && cellText.endsWith(')') && cellText.match(/[\d.,]+/))) {
-                        rowData.push(extraerNumero(cellText));
-                    } else {
-                        rowData.push(cellText);
-                    }
-                }
-            });
-            
-            data.push(rowData);
-        });
-
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        
-        // Format cells
-        data.forEach((row, rowIndex) => {
-            row.forEach((value, colIndex) => {
-                if (rowIndex === 0) return; // Skip headers
-
-                const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
-                if (!ws[cellRef]) return;
-
-                const headerText = data[0][colIndex];
-                const tipo = columnTypes[colIndex];
-                
-                formatExcelCell(ws, cellRef, value, headerText, tipo);
-                
-                // Add bold style for headers
-                if (rowIndex === 0) {
-                    if (!ws[cellRef].s) ws[cellRef].s = {};
-                    ws[cellRef].s.font = { bold: true };
-                }
-            });
-        });
-
-        // Set column widths
-        ws['!cols'] = colWidths.map(w => ({ wch: w }));
-
-        XLSX.utils.book_append_sheet(wb, ws, 'Resumen');
-        
-        const dateStr = new Date().toISOString().slice(0, 10);
-        XLSX.writeFile(wb, `${filename}_${dateStr}.xlsx`);
-        console.log("Exportación completada con éxito");
-    } catch (error) {
-        console.error('Error detallado al exportar a Excel:', error);
-        console.error('Stack trace:', error.stack);
-        alert('Error al exportar a Excel: ' + error.message);
-    }
 }
 
 function updateAllExcelButtonStates() {
@@ -1653,4 +1429,384 @@ function formatExcelCell(ws, cellRef, value, headerText) {
 
 function getFormatRule(headerText) {
     return Object.entries(columnFormatRules).find(([key]) => headerText.includes(key))?.[1]
+}
+
+function exportResumenAgregadoToExcel(tableId, filename) {
+    const table = document.getElementById(tableId)
+    if (!table) {
+        alert('Tabla no encontrada')
+        return
+    }
+
+    try {
+        const wb = XLSX.utils.book_new()
+        
+        // Get visible columns and their header texts
+        const headerCells = table.querySelectorAll('thead th')
+        const columns = Array.from(headerCells).filter(cell => {
+            return isElementVisible(cell) && 
+                  !cell.classList.contains('no-export') && 
+                  !cell.textContent.includes('Acciones')
+        })
+        
+        const headers = []
+        const columnTypes = []
+        
+        // Process headers, correctly handling unit-toggle columns that contain both libras and quintales
+        columns.forEach(col => {
+            const text = col.textContent.trim()
+            
+            if (col.classList.contains('unit-toggle-columns')) {
+                // For dual-value columns, add both libras and quintales headers
+                headers.push(`${text} (Libras)`, `${text} (Quintales)`)
+                columnTypes.push('libras', 'quintales')
+            } else {
+                headers.push(text)
+                if (text.includes('% Desc.') || text.includes('Porcentaje')) 
+                    columnTypes.push('percentage')
+                else if (text.includes('Peso') || text.includes('Kg') || text.includes('Ton')) 
+                    columnTypes.push('weight')
+                else
+                    columnTypes.push('text')
+            }
+        })
+        
+        const data = [headers]
+        
+        // Process body rows
+        const bodyRows = table.querySelectorAll('tbody tr')
+        bodyRows.forEach(row => {
+            if (row.classList.contains('no-export')) return
+            
+            const cells = row.querySelectorAll('td')
+            if (cells.length === 0) return
+            
+            const rowData = []
+            columns.forEach((col, idx) => {
+                const cellIdx = Array.from(headerCells).indexOf(col)
+                if (cellIdx >= 0 && cellIdx < cells.length) {
+                    const cell = cells[cellIdx]
+                    if (!isElementVisible(cell)) {
+                        // If it's a dual column, add empty values for both
+                        if (col.classList.contains('unit-toggle-columns')) {
+                            rowData.push('', '')
+                        } else {
+                            rowData.push('')
+                        }
+                        return
+                    }
+                    
+                    // Handle unit-toggle columns with dual values
+                    if (col.classList.contains('unit-toggle-columns')) {
+                        // Extract both the libras and quintales values
+                        const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
+                        const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+                        
+                        // Add both values to the row
+                        rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
+                    } else {
+                        // Handle other columns
+                        const type = columnTypes[rowData.length] // Use current length as index
+                        let value = cell.textContent.trim()
+                        
+                        if (type === 'percentage') {
+                            rowData.push(extraerNumero(value) / 100)
+                        }
+                        else if (type === 'weight') {
+                            rowData.push(extraerNumero(value))
+                        }
+                        else {
+                            rowData.push(value)
+                        }
+                    }
+                } else {
+                    // If it's a dual column, add empty values for both
+                    if (col.classList.contains('unit-toggle-columns')) {
+                        rowData.push('', '')
+                    } else {
+                        rowData.push('')
+                    }
+                }
+            })
+            
+            data.push(rowData)
+        })
+        
+        // Process footer rows (totals)
+        const footerRows = table.querySelectorAll('tfoot tr')
+        footerRows.forEach(footerRow => {
+            if (footerRow.classList.contains('no-export') || 
+                footerRow.classList.contains('table-purple')) {
+                return
+            }
+            
+            const rowData = []
+            columns.forEach((col, idx) => {
+                const cellIdx = Array.from(headerCells).indexOf(col)
+                if (cellIdx >= 0 && cellIdx < footerRow.cells.length) {
+                    const cell = footerRow.cells[cellIdx]
+                    if (!isElementVisible(cell)) {
+                        // If it's a dual column, add empty values for both
+                        if (col.classList.contains('unit-toggle-columns')) {
+                            rowData.push('', '')
+                        } else {
+                            rowData.push('')
+                        }
+                        return
+                    }
+                    
+                    // Handle unit-toggle columns with dual values in footer
+                    if (col.classList.contains('unit-toggle-columns')) {
+                        const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
+                        const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+                        
+                        rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
+                    } else {
+                        const type = columnTypes[rowData.length] // Use current length as index
+                        let value = cell.textContent.trim()
+                        
+                        if (type === 'percentage') {
+                            rowData.push(extraerNumero(value) / 100)
+                        }
+                        else if (type === 'libras' || type === 'quintales' || type === 'weight') {
+                            rowData.push(extraerNumero(value))
+                        }
+                        else {
+                            rowData.push(value)
+                        }
+                    }
+                } else {
+                    // If it's a dual column, add empty values for both
+                    if (col.classList.contains('unit-toggle-columns')) {
+                        rowData.push('', '')
+                    } else {
+                        rowData.push('')
+                    }
+                }
+            })
+            
+            data.push(rowData)
+        })
+        
+        const ws = XLSX.utils.aoa_to_sheet(data)
+        
+        // Format cells
+        data.forEach((row, rowIndex) => {
+            row.forEach((value, colIndex) => {
+                if (rowIndex === 0) return // Skip headers
+                
+                const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex })
+                if (!ws[cellRef]) return
+                
+                const headerText = data[0][colIndex]
+                const tipo = columnTypes[colIndex]
+                
+                if (typeof value === 'number') {
+                    ws[cellRef].t = 'n'
+                    
+                    if (tipo === 'percentage') {
+                        ws[cellRef].z = '0.00%'
+                    } else if (tipo === 'quintales') {
+                        ws[cellRef].z = '#,##0.00'
+                    } else if (tipo === 'libras') {
+                        ws[cellRef].z = '#,##0'  // No decimals for libras
+                    } else if (tipo === 'weight') {
+                        ws[cellRef].z = '#,##0.00'
+                    } else {
+                        ws[cellRef].z = '#,##0.00'
+                    }
+                }
+            })
+        })
+        
+        // Set column widths
+        const colWidths = calcResumenColumnWidths(data, columnTypes)
+        ws['!cols'] = colWidths
+        
+        // Add workbook options to ensure consistent decimal handling
+        const workbookOpts = {
+            bookType: 'xlsx',
+            bookSST: false,
+            type: 'binary'
+        };
+        
+        XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
+        
+        const dateStr = new Date().toISOString().slice(0, 10)
+        XLSX.writeFile(wb, `${filename}_${dateStr}.xlsx`, workbookOpts)
+        console.log("Exportación completada con éxito")
+    } catch (error) {
+        console.error('Error detallado al exportar a Excel:', error)
+        console.error('Stack trace:', error.stack)
+        alert('Error al exportar a Excel: ' + error.message)
+    }
+}
+
+// Also update the standard exportTableToExcel function for consistency
+function exportTableToExcel(tableId, filename) {
+    const table = document.getElementById(tableId)
+    if (!table) {
+        alert('Tabla no encontrada')
+        return
+    }
+
+    try {
+        const wb = XLSX.utils.book_new()
+        const data = []
+        const headers = []
+        const columnRules = []
+
+        // Configuración de formatos
+        const columnFormatRules = {
+            // Porcentajes
+            '% Desc.': { type: 'percentage', decimals: 2 },
+            Porcentaje: { type: 'percentage', decimals: 2 },
+
+            // Unidades de peso
+            Libras: { type: 'weight', unit: 'lbs', decimals: 0 },
+            Quintales: { type: 'weight', unit: 'qq', decimals: 2 },
+            Kg: { type: 'weight', unit: 'kg', decimals: 0 },
+            Ton: { type: 'weight', unit: 'ton', decimals: 3 },
+
+            // Campos especiales
+            Guía: { type: 'text', format: 'guia' },
+            'Guía Alterna': { type: 'text', format: 'guia' },
+            Placa: { type: 'text', format: 'placa' },
+            'Placa Alterna': { type: 'text', format: 'placa' },
+
+            // Numéricos
+            Peso: { type: 'number', format: 'comma', decimals: 2 },
+            Faltante: { type: 'number', format: 'comma', decimals: 2 },
+            Requerido: { type: 'number', format: 'comma', decimals: 2 },
+        }
+
+        // Procesar encabezados
+        const headerCells = Array.from(table.querySelectorAll('thead th')).filter(
+            cell => isElementVisible(cell) && !cell.classList.contains('no-export'),
+        )
+
+        headerCells.forEach(cell => {
+            const headerText = cell.textContent.trim()
+
+            // Manejar columnas de conversión
+            if (cell.classList.contains('unit-toggle-columns') && isElementVisible(cell)) {
+                headers.push(`${headerText} (Libras)`, `${headerText} (Quintales)`)
+                columnRules.push({ ...columnFormatRules['Libras'] }, { ...columnFormatRules['Quintales'] })
+            } else {
+                headers.push(headerText)
+                columnRules.push(getFormatRule(headerText, columnFormatRules))
+            }
+        })
+
+        data.push(headers)
+
+        // Procesar filas del cuerpo
+        const bodyRows = table.querySelectorAll('tbody tr')
+        bodyRows.forEach(row => {
+            const rowData = []
+            const cells = Array.from(row.querySelectorAll('td')).filter(
+                cell => isElementVisible(cell) && !cell.closest('.no-export'),
+            )
+
+            cells.forEach((cell, index) => {
+                const headerRule = columnRules[index]
+                let cellValue = cell.textContent.trim()
+
+                // Manejar celdas especiales
+                if (cell.classList.contains('unit-toggle-columns')) {
+                    const lbs = cell.querySelector('.top-value')?.textContent.trim() || '0'
+                    const qq = cell.querySelector('.bottom-value')?.textContent.trim() || '0'
+
+                    rowData.push(applyNumberFormat(lbs, headerRule), applyNumberFormat(qq, columnRules[index + 1]))
+                    return
+                }
+
+                // Manejar campos con valores alternos
+                if (cell.querySelector('.data-alt-guia') || cell.querySelector('.data-alt-placa')) {
+                    const main = cell.querySelector('div > span')?.textContent.trim() || ''
+                    const alt = cell.querySelector('.data-alt-guia, .data-alt-placa')?.textContent.trim() || ''
+
+                    rowData.push(main)
+                    if (headerRule?.type === 'text') {
+                        rowData.push(alt || '-')
+                    }
+                    return
+                }
+
+                // Aplicar formato según tipo
+                if (headerRule) {
+                    switch (headerRule.type) {
+                        case 'percentage':
+                            rowData.push(extraerNumero(cellValue) / 100)
+                            break
+
+                        case 'weight':
+                        case 'number':
+                            rowData.push(applyNumberFormat(cellValue, headerRule))
+                            break
+
+                        default:
+                            rowData.push(cellValue)
+                    }
+                } else {
+                    rowData.push(cellValue)
+                }
+            })
+
+            data.push(rowData)
+        })
+
+        // Procesar totales
+        const footerRows = table.querySelectorAll('tfoot tr')
+        footerRows.forEach(row => {
+            if (row.classList.contains('no-export')) return
+
+            const rowData = []
+            const cells = Array.from(row.querySelectorAll('td')).filter(
+                cell => isElementVisible(cell) && !cell.closest('.no-export'),
+            )
+
+            cells.forEach((cell, index) => {
+                const headerRule = columnRules[index]
+                const cellValue = cell.textContent.trim()
+
+                if (headerRule?.type === 'percentage') {
+                    rowData.push(extraerNumero(cellValue) / 100)
+                } else if (headerRule?.type === 'number' || headerRule?.type === 'weight') {
+                    rowData.push(applyNumberFormat(cellValue, headerRule))
+                } else {
+                    rowData.push(cellValue)
+                }
+            })
+
+            data.push(rowData)
+        })
+
+        // Crear hoja de cálculo
+        const ws = XLSX.utils.aoa_to_sheet(data)
+
+        // Aplicar formatos
+        data.forEach((row, rowIndex) => {
+            row.forEach((value, colIndex) => {
+                const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex })
+                formatExcelCell(ws, cellRef, value, headers[colIndex], columnRules[colIndex])
+            })
+        })
+
+        // Configurar anchos de columna
+        ws['!cols'] = calculateColumnWidths(headers, columnRules).map(w => ({ wch: w }))
+
+        // Add workbook options to ensure consistent decimal handling
+        const workbookOpts = {
+            bookType: 'xlsx',
+            bookSST: false,
+            type: 'binary'
+        };
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Datos')
+        XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`, workbookOpts)
+    } catch (error) {
+        console.error('Error en exportación:', error)
+        alert(`Error al exportar: ${error.message}`)
+    }
 }

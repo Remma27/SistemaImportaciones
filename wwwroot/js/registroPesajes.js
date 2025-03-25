@@ -371,24 +371,37 @@ function extraerNumero(texto, mantenerDecimales = false) {
     
     if (cleaned === '' || cleaned === '-') return 0;
     
-    // Detect number format - handle both European and American formats
-    const tieneComaDecimal = cleaned.match(/,\d+$/);
-    const tienePuntoDecimal = cleaned.match(/\.\d+$/);
+    // IMPROVED: Detect numbers with thousands separators like 9,318,790
+    const comas = cleaned.match(/,/g) || [];
+    const puntos = cleaned.match(/\./g) || [];
     
-    // Try to intelligently detect the format
-    const esEuropeo = tieneComaDecimal && !tienePuntoDecimal;
-    const esAmericano = tienePuntoDecimal && !tieneComaDecimal;
+    // Check for American format (thousands with commas, decimal with period)
+    // For example: 9,318,790 or 9,318,790.25
+    const esFormatoAmericano = 
+        (comas.length > 1) || // Multiple commas indicate thousands separators
+        (comas.length === 1 && cleaned.match(/,\d{3}($|\D)/)) || // Comma followed by exactly 3 digits
+        (puntos.length === 1 && cleaned.match(/\.\d{1,2}$/)); // Period followed by 1-2 digits at the end
     
-    if (esEuropeo) {
-        // European format: 1.234,56 -> 1234.56
-        cleaned = cleaned
-            .replace(/\.(?=.*,)/g, '')  // Remove thousand separators
-            .replace(',', '.');         // Convert decimal separator
-    } else if (esAmericano) {
-        // American format: 1,234.56 -> 1234.56
+    // Check for European format (thousands with periods, decimal with comma)
+    // For example: 9.318.790 or 9.318.790,25
+    const esFormatoEuropeo = 
+        (puntos.length > 1) || // Multiple periods indicate thousands separators
+        (puntos.length === 1 && cleaned.match(/\.\d{3}($|\D)/)) || // Period followed by exactly 3 digits
+        (comas.length === 1 && cleaned.match(/,\d{1,2}$/)); // Comma followed by 1-2 digits at the end
+    
+    // Handle American format (9,318,790)
+    if (esFormatoAmericano) {
+        // Remove all commas (thousands separators)
         cleaned = cleaned.replace(/,/g, '');
-    } else if (cleaned.includes(',')) {
-        // If only comma exists, treat as decimal separator
+    }
+    // Handle European format (9.318.790,25)
+    else if (esFormatoEuropeo) {
+        cleaned = cleaned
+            .replace(/\.(?=.*,)/g, '')  // Remove periods (thousands separators)
+            .replace(',', '.');         // Convert decimal comma to period
+    }
+    // If there is only one comma or period, treat as decimal separator
+    else if (cleaned.includes(',')) {
         cleaned = cleaned.replace(',', '.');
     }
     
@@ -1561,7 +1574,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
                         const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
                         
-                        // IMPORTANT: Use the improved number extraction for large numbers
                         rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
                     } else {
                         const type = columnTypes[rowData.length] // Use current length as index
@@ -1571,7 +1583,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                             rowData.push(extraerNumero(value) / 100)
                         }
                         else if (type === 'libras' || type === 'quintales' || type === 'weight') {
-                            // IMPORTANT: For weight columns, ensure correct number parsing
                             rowData.push(extraerNumero(value))
                         }
                         else {
@@ -1607,15 +1618,15 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                 if (typeof value === 'number') {
                     ws[cellRef].t = 'n'
                     
-                    // IMPORTANT: Format numbers in a way that Excel will display correctly
+                    // IMPROVED: Format numbers in a way that Excel will display correctly
                     if (tipo === 'percentage') {
                         ws[cellRef].z = '0.00%'
                     } else if (tipo === 'quintales') {
                         ws[cellRef].z = '#,##0.00' // Format with 2 decimals
                     } else if (tipo === 'libras') {
-                        // IMPORTANT: For large numbers, use a format that won't cause misinterpretation
+                        // CRITICAL FIX FOR LARGE NUMBERS:
                         ws[cellRef].z = '#,##0'    // No decimals for libras
-                        // If it's a large number (>1000), ensure it's formatted correctly
+                        // For large numbers, ensure they're stored as integers
                         if (value > 1000) {
                             ws[cellRef].v = Math.round(value) // Round to ensure no decimal issues
                         }
@@ -1632,12 +1643,11 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         const colWidths = calcResumenColumnWidths(data, columnTypes)
         ws['!cols'] = colWidths
         
-        // IMPORTANT: Add explicit workbook options to ensure consistent number handling
+        // Force Excel to interpret numbers as numbers with these options
         const workbookOpts = {
             bookType: 'xlsx',
             bookSST: false,
             type: 'binary',
-            // Force Excel to interpret numbers as numbers, not as dates or other formats
             cellDates: false,
             cellNF: false,
             cellStyles: true

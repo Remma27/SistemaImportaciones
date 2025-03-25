@@ -410,11 +410,7 @@ function formatNumbersInExcelSheet(worksheet, data) {
                         t: 'n',
                         z: isPercentageColumn
                             ? '0.00%'
-                            : isWeightColumn
-                            ? numValue >= 1000
-                                ? '#,##0.00'
-                                : '0.00'
-                            : '#,##0.00',
+                            : '#,##0.00',  // Always use 2 decimal places
                     }
                 }
             }
@@ -424,11 +420,7 @@ function formatNumbersInExcelSheet(worksheet, data) {
                     t: 'n',
                     z: isPercentageColumn
                         ? '0.00%'
-                        : isWeightColumn
-                        ? cellValue >= 1000
-                            ? '#,##0.00'
-                            : '0.00'
-                        : '#,##0.00',
+                        : '#,##0.00',  // Always use 2 decimal places
                 }
 
                 if (isPercentageColumn && cellValue < 1) {
@@ -836,7 +828,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                     } else if (columnType === 'quintales') {
                         ws[cellRef].z = '#,##0.00';
                     } else if (columnType === 'libras') {
-                        ws[cellRef].z = '#,##0';
+                        ws[cellRef].z = '#,##0.00'; 
                     } else if (columnType === 'weight') {
                         ws[cellRef].z = '#,##0.00';
                     } else {
@@ -1157,10 +1149,6 @@ $(document).ready(function () {
                             
                             if (headerText.includes('Porcentaje')) {
                                 ws[cellRef].z = '0.00%';
-                            } else if (headerText.includes('Libras') || 
-                                       headerText.includes('Quintales') || 
-                                       headerText.includes('Peso')) {
-                                ws[cellRef].z = '#,##0.00';
                             } else {
                                 ws[cellRef].z = '#,##0.00';
                             }

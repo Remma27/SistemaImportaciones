@@ -67,20 +67,32 @@ $(document).ready(function () {
         
         const columnTypes = [];
         const headerRow = clonedTable.querySelector('thead tr');
+        let quintalesCols = [];
+        let librasCols = [];
+        
         if (headerRow) {
             const headerCells = headerRow.querySelectorAll('th');
-            headerCells.forEach(cell => {
+            headerCells.forEach((cell, index) => {
                 const headerText = cell.innerText.trim();
                 if (headerText.includes('%')) {
                     columnTypes.push('percentage');
                 } else if (
                     headerText.includes('Peso') || headerText.includes('Kg') ||
-                    headerText.includes('Ton') || headerText.includes('Libras') ||
-                    headerText.includes('Quintales') ||
+                    headerText.includes('Ton') || 
                     headerText.toLowerCase().includes('cantidad por retirar') ||
                     headerText.toLowerCase().includes('cantidad retirada')
                 ) {
                     columnTypes.push('numeric');
+                } else if (
+                    headerText.includes('Quintales')
+                ) {
+                    columnTypes.push('quintales');
+                    quintalesCols.push(index);
+                } else if (
+                    headerText.includes('Libras')
+                ) {
+                    columnTypes.push('libras');
+                    librasCols.push(index);
                 } else {
                     columnTypes.push('text');
                 }
@@ -98,7 +110,16 @@ $(document).ready(function () {
                 if (cell && typeof cell.v === 'string') {
                     const cellText = cell.v.trim();
                     const colType = columnTypes[C - range.s.c];
-                    if (colType === 'numeric') {
+                    
+                    if (colType === 'quintales' || colType === 'libras') {
+                        let num = cellText.replace(/\./g, '').replace(',', '.');
+                        num = parseFloat(num);
+                        if (!isNaN(num)) {
+                            cell.v = num;
+                            cell.t = 'n';
+                            cell.z = '#,##0.00'; 
+                        }
+                    } else if (colType === 'numeric') {
                         let num = cellText.replace(/\./g, '').replace(',', '.');
                         num = parseFloat(num);
                         if (!isNaN(num)) {

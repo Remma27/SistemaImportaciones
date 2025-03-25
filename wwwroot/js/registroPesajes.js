@@ -1008,7 +1008,6 @@ $(document).ready(function () {
 function exportTableToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
-        alert('Tabla no encontrada')
         return
     }
 
@@ -1232,7 +1231,6 @@ function calculateColumnWidths(headers, rules) {
 function exportResumenAgregadoToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
-        alert('Tabla no encontrada')
         return
     }
 
@@ -1519,7 +1517,6 @@ function extractPercentage(text) {
 function exportTableToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
-        alert('Tabla no encontrada')
         return
     }
 

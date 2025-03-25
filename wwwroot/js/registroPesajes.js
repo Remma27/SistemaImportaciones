@@ -1502,7 +1502,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
                         const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
                         
-                        // Add both values to the row
+                        // IMPORTANT: Use the improved number extraction for large numbers
                         rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
                     } else {
                         // Handle other columns
@@ -1512,7 +1512,8 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         if (type === 'percentage') {
                             rowData.push(extraerNumero(value) / 100)
                         }
-                        else if (type === 'weight') {
+                        else if (type === 'weight' || type === 'libras') {
+                            // IMPORTANT: For weight columns, ensure correct number parsing
                             rowData.push(extraerNumero(value))
                         }
                         else {
@@ -1560,6 +1561,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
                         const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
                         
+                        // IMPORTANT: Use the improved number extraction for large numbers
                         rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
                     } else {
                         const type = columnTypes[rowData.length] // Use current length as index
@@ -1569,6 +1571,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                             rowData.push(extraerNumero(value) / 100)
                         }
                         else if (type === 'libras' || type === 'quintales' || type === 'weight') {
+                            // IMPORTANT: For weight columns, ensure correct number parsing
                             rowData.push(extraerNumero(value))
                         }
                         else {
@@ -1590,7 +1593,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         
         const ws = XLSX.utils.aoa_to_sheet(data)
         
-        // Format cells
+        // Format cells with explicit number formats to ensure proper display
         data.forEach((row, rowIndex) => {
             row.forEach((value, colIndex) => {
                 if (rowIndex === 0) return // Skip headers
@@ -1604,16 +1607,22 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                 if (typeof value === 'number') {
                     ws[cellRef].t = 'n'
                     
+                    // IMPORTANT: Format numbers in a way that Excel will display correctly
                     if (tipo === 'percentage') {
                         ws[cellRef].z = '0.00%'
                     } else if (tipo === 'quintales') {
-                        ws[cellRef].z = '#,##0.00'
+                        ws[cellRef].z = '#,##0.00' // Format with 2 decimals
                     } else if (tipo === 'libras') {
-                        ws[cellRef].z = '#,##0'  // No decimals for libras
+                        // IMPORTANT: For large numbers, use a format that won't cause misinterpretation
+                        ws[cellRef].z = '#,##0'    // No decimals for libras
+                        // If it's a large number (>1000), ensure it's formatted correctly
+                        if (value > 1000) {
+                            ws[cellRef].v = Math.round(value) // Round to ensure no decimal issues
+                        }
                     } else if (tipo === 'weight') {
-                        ws[cellRef].z = '#,##0.00'
+                        ws[cellRef].z = '#,##0.00' // Format with 2 decimals
                     } else {
-                        ws[cellRef].z = '#,##0.00'
+                        ws[cellRef].z = '#,##0.00' // Default format
                     }
                 }
             })
@@ -1623,11 +1632,15 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         const colWidths = calcResumenColumnWidths(data, columnTypes)
         ws['!cols'] = colWidths
         
-        // Add workbook options to ensure consistent decimal handling
+        // IMPORTANT: Add explicit workbook options to ensure consistent number handling
         const workbookOpts = {
             bookType: 'xlsx',
             bookSST: false,
-            type: 'binary'
+            type: 'binary',
+            // Force Excel to interpret numbers as numbers, not as dates or other formats
+            cellDates: false,
+            cellNF: false,
+            cellStyles: true
         };
         
         XLSX.utils.book_append_sheet(wb, ws, 'Resumen')

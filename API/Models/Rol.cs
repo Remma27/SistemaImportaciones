@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace API.Models
@@ -17,7 +16,6 @@ namespace API.Models
         [StringLength(255)]
         public string? descripcion { get; set; }
         
-        // Añadir JsonIgnore para evitar referencias circulares
         [JsonIgnore]
         public virtual ICollection<Usuario>? Usuarios { get; set; }
         

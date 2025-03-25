@@ -79,12 +79,6 @@
                                 <span>Agregar</span>
                             </button>
 
-                            <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
-                                id="btnReporteEscotillas"
-                                class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")"
-                                title="Reporte Escotillas por Empresa">
-                                <i class="fas fa-chart-column"></i>
-                            </a>
                             @{
                                 var hasTableData = Model.Tabla2Data != null && Model.Tabla2Data.Any();
                                 var enableDetailButton = isBarcoSelected && hasTableData;
@@ -94,6 +88,13 @@
                                 class="btn btn-dark action-btn @(!enableDetailButton ? "disabled" : "")"
                                 title="Vista detallada">
                                 <i class="fas fa-table-cells"></i>
+                            </a>
+
+                            <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = Context.Request.Query["selectedBarco"] }): "#")"
+                                id="btnReporteEscotillas"
+                                class="btn btn-teal action-btn @(!isBarcoSelected ? "disabled" : "")"
+                                title="Reporte Escotillas por Empresa">
+                                <i class="fas fa-chart-column"></i>
                             </a>
 
                             <button id="btnToggleUnidad" class="btn btn-warning action-btn" title="Mostrar en Libras">

@@ -18,7 +18,6 @@ namespace API.Models
         [StringLength(255)]
         public string? descripcion { get; set; }
         
-        // Relación con roles (un permiso puede estar en muchos roles)
         public virtual ICollection<RolPermiso>? RolPermisos { get; set; }
     }
 }

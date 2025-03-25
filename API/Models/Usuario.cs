@@ -16,7 +16,6 @@ namespace API.Models
         [Required]
         public string? email { get; set; }
         
-        // Quitar la anotación [Required] para permitir actualizaciones parciales
         public string? password_hash { get; set; }
         
         public DateTime? fecha_creacion { get; set; }

@@ -17,8 +17,5 @@ namespace API.Models
 
         public double? totalcargakilos { get; set; }
         public int? idusuario { get; set; }
-
-        [ForeignKey("idusuario")]
-        public virtual Usuario? Usuario { get; set; }
     }
 }

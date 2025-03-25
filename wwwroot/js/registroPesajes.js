@@ -200,9 +200,44 @@ function getHeaderStructure(headerCells) {
     const columnMapping = []
     let outputColIndex = 0
 
+    // Verificar si al menos una columna de conversión está visible
     const conversionesVisibles = document.querySelector('.unit-toggle-columns.visible') !== null
 
     headerCells.forEach((cell, index) => {
+        // Mejorar verificación de visibilidad comprobando CSS y DOM
+        const $cell = $(cell);
+        const isHidden = !$cell.is(':visible') || 
+                         cell.offsetParent === null || 
+                         $cell.css('display') === 'none' || 
+                         $cell.hasClass('d-none') ||
+                         $cell.closest('th, td').css('display') === 'none';
+        
+        // Si la celda es una columna toggle, verificar si esa columna en particular está visible
+        if (cell.classList.contains('unit-toggle-columns')) {
+            // Solo excluir si (1) no hay ninguna visible o (2) esta específica no está visible
+            const thisColumnVisible = cell.classList.contains('visible');
+            if (!conversionesVisibles || (conversionesVisibles && !thisColumnVisible)) {
+                excludeColumnIndices.push(index);
+                columnMapping[index] = -1;
+                return;
+            }
+            
+            // Si es visible, agregar las dos columnas (libras y quintales)
+            const headerName = cell.textContent.trim()
+            headerRow.push(`${headerName} (Libras)`)
+            headerRow.push(`${headerName} (Quintales)`)
+            columnMapping[index] = [outputColIndex, outputColIndex + 1]
+            outputColIndex += 2
+            return;
+        }
+        
+        // Para las otras columnas, continuar con la lógica existente
+        if (isHidden) {
+            excludeColumnIndices.push(index)
+            columnMapping[index] = -1
+            return
+        }
+
         const headerText = cell.innerText.trim()
 
         if (headerText === 'Acciones') {
@@ -227,24 +262,9 @@ function getHeaderStructure(headerCells) {
             return
         }
 
-        if (cell.classList.contains('unit-toggle-columns')) {
-            if (conversionesVisibles) {
-                const headerName = cell.textContent.trim()
-
-                headerRow.push(`${headerName} (Libras)`)
-                headerRow.push(`${headerName} (Quintales)`)
-
-                columnMapping[index] = [outputColIndex, outputColIndex + 1]
-                outputColIndex += 2
-            } else {
-                excludeColumnIndices.push(index)
-                columnMapping[index] = -1
-            }
-        } else {
-            headerRow.push(headerText)
-            columnMapping[index] = outputColIndex
-            outputColIndex++
-        }
+        headerRow.push(headerText)
+        columnMapping[index] = outputColIndex
+        outputColIndex++
     })
 
     return {
@@ -265,9 +285,22 @@ function processTableRow(row, headerInfo) {
         const cell = cells[j]
         const colspan = parseInt(cell.getAttribute('colspan') || '1')
 
+        // Verificar si la columna actual está excluida
         if (excludeColumnIndices.includes(colIndex)) {
             colIndex += colspan
             continue
+        }
+
+        // Verificar si la celda está oculta
+        const $cell = $(cell);
+        const isHidden = !$cell.is(':visible') || 
+                         cell.offsetParent === null || 
+                         $cell.css('display') === 'none' ||
+                         $cell.hasClass('d-none');
+        
+        if (isHidden) {
+            colIndex += colspan
+            continue;
         }
 
         if (cell.classList.contains('unit-toggle-columns')) {
@@ -409,7 +442,7 @@ function formatNumbersInExcelSheet(worksheet, data) {
 }
 
 function calculateColumnWidths(data) {
-    const colWidths = data[0].map(header => Math.max(10, header.length * 1.2));
+    const colWidths = data[0].map(header => Math.max(12, header.length * 1.2));
     
     for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
         const row = data[rowIdx];
@@ -423,8 +456,9 @@ function calculateColumnWidths(data) {
             let displayWidth;
             
             if (typeof cellValue === 'number') {
+                // Dar más espacio a las celdas numéricas para evitar que se compriman
                 const numStr = cellValue.toLocaleString('es-GT');
-                displayWidth = numStr.length + 1;  
+                displayWidth = numStr.length + 2;  // Añadir más padding
             } else {
                 displayWidth = String(cellValue).length;
             }
@@ -441,10 +475,18 @@ function calculateColumnWidths(data) {
         } else if (header.includes('Guía') || header.includes('Placa')) {
             return { wch: Math.max(width, 15) }; 
         } else if (header.includes('%')) {
-            return { wch: Math.min(width + 2, 12) }; 
-        } else if (header.includes('Libras') || header.includes('Quintales') || 
-                  header.includes('Kg') || header.includes('Ton')) {
-            return { wch: Math.min(width + 3, 15) }; 
+            return { wch: Math.min(Math.max(width, 10), 12) }; 
+        } else if (header.includes('Libras')) {
+            // Columnas de libras tienden a tener números más grandes
+            return { wch: Math.min(Math.max(width, 12), 16) }; 
+        } else if (header.includes('Quintales')) {
+            // Columnas de quintales suelen necesitar espacio para decimales
+            return { wch: Math.min(Math.max(width, 10), 14) }; 
+        } else if (header.includes('Kg') || header.includes('Ton')) {
+            return { wch: Math.min(Math.max(width, 12), 15) }; 
+        } else if (header.includes('Peso')) {
+            // Columnas de peso necesitan espacio adicional
+            return { wch: Math.min(Math.max(width, 12), 16) };
         }
         
         return { wch: Math.min(Math.max(width, 8), 25) };
@@ -648,6 +690,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
 
         const data = []
 
+        // Verificar si hay al menos una columna de conversión visible
         const conversionesVisibles = document.querySelector('.unit-toggle-columns.visible') !== null
 
         const headerRow = []
@@ -656,31 +699,50 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         const columnTypes = [] 
 
         headerCells.forEach((cell, index) => {
+            // Comprobar si es una columna de conversión y si está visible
             if (cell.classList.contains('unit-toggle-columns')) {
-                if (conversionesVisibles) {
-                    const headerName =
-                        cell.querySelector('div:first-child')?.textContent.trim() || cell.textContent.split('\n')[0].trim()
-                    headerRow.push(`${headerName} (Quintales)`)
+                // Solo incluir si esta columna específica está visible
+                if (cell.classList.contains('visible')) {
+                    const headerName = cell.querySelector('div:first-child')?.textContent.trim() || 
+                                      cell.textContent.split('\n')[0].trim()
+                    
+                    // Corregir el orden para que coincida con la otra función (Libras, Quintales)
                     headerRow.push(`${headerName} (Libras)`)
+                    headerRow.push(`${headerName} (Quintales)`)
                     unitToggleColumns.push(index)
-                    columnTypes.push('quintales')
                     columnTypes.push('libras')
+                    columnTypes.push('quintales')
                 }
-            } else if (cell.textContent.includes('Acciones')) {
+                return;
+            }
+            
+            // Para otras columnas, mantener lógica original
+            const $cell = $(cell);
+            // Error de sintaxis corregido - paréntesis extra eliminado
+            const isHidden = !$cell.is(':visible') || 
+                             cell.offsetParent === null || 
+                             $cell.css('display') === 'none' ||
+                             $cell.hasClass('d-none');
+            
+            if (isHidden) {
+                return;
+            }
+            
+            if (cell.textContent.includes('Acciones')) {
                 return
+            }
+            
+            const headerText = cell.textContent.trim();
+            headerRow.push(headerText)
+            
+            if (headerText.includes('%')) {
+                columnTypes.push('percentage')
+            } else if (headerText.includes('Kg') || headerText.includes('Ton')) {
+                columnTypes.push('weight')
+            } else if (headerText === 'Empresa') {
+                columnTypes.push('text')
             } else {
-                const headerText = cell.textContent.trim();
-                headerRow.push(headerText)
-                
-                if (headerText.includes('%')) {
-                    columnTypes.push('percentage')
-                } else if (headerText.includes('Kg') || headerText.includes('Ton')) {
-                    columnTypes.push('weight')
-                } else if (headerText === 'Empresa') {
-                    columnTypes.push('text')
-                } else {
-                    columnTypes.push('numeric')
-                }
+                columnTypes.push('numeric')
             }
         })
 
@@ -726,15 +788,16 @@ function exportResumenAgregadoToExcel(tableId, filename) {
 
             cells.forEach((cell, index) => {
                 if (unitToggleColumns.includes(index)) {
-                    if (conversionesVisibles) {
-                        const qqText = cell.querySelector('.top-value')?.textContent.trim() || ''
-                        const lbsText = cell.querySelector('.bottom-value')?.textContent.trim() || ''
-
-                        const qqProcessed = processNumericText(qqText.replace('qq', '').trim())
-                        rowData.push(qqProcessed.isNumeric ? qqProcessed.value : qqProcessed.text)
+                    if (cell.classList.contains('visible') || conversionesVisibles) {
+                        // Intercambiar el orden para que coincida con los encabezados
+                        const lbsText = cell.querySelector('.top-value')?.textContent.trim() || ''
+                        const qqText = cell.querySelector('.bottom-value')?.textContent.trim() || ''
 
                         const lbsProcessed = processNumericText(lbsText.replace('lbs', '').trim())
                         rowData.push(lbsProcessed.isNumeric ? lbsProcessed.value : lbsProcessed.text)
+                        
+                        const qqProcessed = processNumericText(qqText.replace('qq', '').trim())
+                        rowData.push(qqProcessed.isNumeric ? qqProcessed.value : qqProcessed.text)
                     }
                 } else {
                     if (headerRow[rowData.length] !== "Acciones") { 
@@ -795,7 +858,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
             }
         }
 
-        ws['!cols'] = calculateColumnWidths(data);
+        ws['!cols'] = calcResumenColumnWidths(data, columnTypes);
 
         XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
 
@@ -933,133 +996,184 @@ $(document).ready(function () {
 
             try {
                 const wb = XLSX.utils.book_new()
-
-                const headers = [
-                    '#',
-                    'Esc.',
-                    'Bodega',
-                    'Guía',
-                    'Guía Alterna',
-                    'Placa',
-                    'Placa Alterna',
-                    'Peso Requerido',
-                    'Peso Entregado',
-                    'Entreg. (Lbs)',
-                    'Entreg. (Qq)',
-                    'Peso Faltante',
-                    'Porcentaje',
-                ]
-
-                const data = [headers]
+                
+                const headerCells = tabla.querySelectorAll('thead th')
+                const visibleColumns = []
+                const columnHeaders = []
+                
+                const conversionesVisibles = document.querySelector('.unit-toggle-columns.visible') !== null
+                
+                headerCells.forEach((cell, index) => {
+                    const $cell = $(cell);
+                    
+                    if (cell.classList.contains('unit-toggle-columns')) {
+                        if (cell.classList.contains('visible')) {
+                            visibleColumns.push(index);
+                            const headerText = cell.textContent.trim();
+                            columnHeaders.push(`${headerText} (Libras)`, `${headerText} (Quintales)`);
+                        }
+                        return;
+                    }
+                    
+                    const isHidden = !$cell.is(':visible') || 
+                                     cell.offsetParent === null || 
+                                     $cell.css('display') === 'none' || 
+                                     $cell.hasClass('d-none') ||
+                                     $cell.closest('th, td').css('display') === 'none';
+                    
+                    if (!isHidden && !cell.textContent.includes('Acciones')) {
+                        visibleColumns.push(index);
+                        let headerText = cell.textContent.trim();
+                        
+                        if (headerText === 'Guía') {
+                            columnHeaders.push('Guía', 'Guía Alterna');
+                        } else if (headerText === 'Placa') {
+                            columnHeaders.push('Placa', 'Placa Alterna');
+                        } else {
+                            columnHeaders.push(headerText);
+                        }
+                    }
+                });
+                
+                const data = [columnHeaders]
 
                 const bodyRows = tabla.querySelectorAll('tbody tr')
 
                 Array.from(bodyRows).forEach((row, idx) => {
                     try {
                         const cells = row.querySelectorAll('td')
-                        if (cells.length < 9) return
-
-                        const numfila = cells[0].textContent.trim()
-
-                        const escotilla = cells[1].textContent.trim()
-
-                        const bodega = cells[2].textContent.trim()
-
-                        const guia =
-                            cells[3].querySelector('div > span')?.textContent.trim() || cells[3].textContent.trim()
-                        const guiaAlt = cells[3].querySelector('.data-alt-guia')?.textContent.trim() || ''
-
-                        const placa =
-                            cells[4].querySelector('div > span')?.textContent.trim() || cells[4].textContent.trim()
-                        const placaAlt = cells[4].querySelector('.data-alt-placa')?.textContent.trim() || ''
-
-                        const pesoRequerido = extraerNumero(cells[5].textContent)
-                        const pesoEntregado = extraerNumero(cells[6].textContent)
-
-                        let libras = 0,
-                            quintales = 0
-                        const conversionCell = cells[7]
-                        if (conversionCell) {
-                            const lbsText = conversionCell.querySelector('.top-value')?.textContent || ''
-                            const qqText = conversionCell.querySelector('.bottom-value')?.textContent || ''
-                            libras = extraerNumero(lbsText)
-                            quintales = extraerNumero(qqText)
-                        }
-
-                        const pesoFaltante = extraerNumero(cells[8].textContent)
-                        const porcentaje = extraerNumero(cells[9].textContent) / 100
-
-                        const rowData = [
-                            numfila,
-                            escotilla,
-                            bodega,
-                            guia,
-                            guiaAlt,
-                            placa,
-                            placaAlt,
-                            pesoRequerido,
-                            pesoEntregado,
-                            libras,
-                            quintales,
-                            pesoFaltante,
-                            porcentaje,
-                        ]
-
-                        data.push(rowData)
-                    } catch (rowError) {}
-                })
+                        if (cells.length < Math.min(9, visibleColumns.length)) return
+                        
+                        const rowData = []
+                        
+                        visibleColumns.forEach((colIndex) => {
+                            if (colIndex >= cells.length) return;
+                            
+                            const cell = cells[colIndex];
+                            const $cell = $(cell);
+                            const isHidden = !$cell.is(':visible') || 
+                                            cell.offsetParent === null || 
+                                            $cell.css('display') === 'none' ||
+                                            $cell.hasClass('d-none');
+                            
+                            if (isHidden) return;
+                            
+                            if (headerCells[colIndex].textContent.trim() === 'Guía') {
+                                const guia = cell.querySelector('div > span')?.textContent.trim() || cell.textContent.trim();
+                                const guiaAlt = cell.querySelector('.data-alt-guia')?.textContent.trim() || '';
+                                rowData.push(guia, guiaAlt !== '' ? guiaAlt : '-');
+                            } 
+                            else if (headerCells[colIndex].textContent.trim() === 'Placa') {
+                                const placa = cell.querySelector('div > span')?.textContent.trim() || cell.textContent.trim();
+                                const placaAlt = cell.querySelector('.data-alt-placa')?.textContent.trim() || '';
+                                rowData.push(placa, placaAlt !== '' ? placaAlt : '-');
+                            }
+                            else if (cell.classList.contains('unit-toggle-columns') && conversionesVisibles) {
+                                const lbsText = cell.querySelector('.top-value')?.textContent || '';
+                                const qqText = cell.querySelector('.bottom-value')?.textContent || '';
+                                rowData.push(extraerNumero(lbsText), extraerNumero(qqText));
+                            }
+                            else {
+                                const cellText = cell.textContent.trim();
+                                if (['Peso Requerido', 'Peso Entregado', 'Peso Faltante'].includes(headerCells[colIndex].textContent.trim())) {
+                                    rowData.push(extraerNumero(cellText));
+                                }
+                                else if (headerCells[colIndex].textContent.trim().includes('Porcentaje')) {
+                                    rowData.push(extraerNumero(cellText) / 100);
+                                }
+                                else {
+                                    rowData.push(cellText);
+                                }
+                            }
+                        });
+                        
+                        data.push(rowData);
+                    } catch (rowError) {
+                        console.error('Error procesando fila:', rowError);
+                    }
+                });
 
                 const footerRow = tabla.querySelector('tfoot tr')
                 if (footerRow) {
                     const cells = footerRow.querySelectorAll('td')
-
-                    const totalRow = Array(headers.length).fill('')
-                    totalRow[0] = ''
-                    totalRow[1] = ''
-                    totalRow[2] = 'Totales'
-                    totalRow[3] = ''
-                    totalRow[4] = ''
-                    totalRow[5] = ''
-                    totalRow[6] = ''
-
-                    totalRow[7] = extraerNumero(cells[5]?.textContent || '0') 
-                    totalRow[8] = extraerNumero(cells[6]?.textContent || '0') 
-
-                    const conversionCell = cells[7]
-                    if (conversionCell) {
-                        totalRow[9] = extraerNumero(conversionCell.querySelector('.top-value')?.textContent || '0')
-                        totalRow[10] = extraerNumero(conversionCell.querySelector('.bottom-value')?.textContent || '0')
-                    }
-
-                    totalRow[11] = extraerNumero(cells[8]?.textContent || '0')
-                    totalRow[12] = extraerNumero(cells[9]?.textContent || '0') / 100
-
-                    data.push(totalRow)
+                    const totalRow = Array(columnHeaders.length).fill('')
+                    
+                    let currentCol = 0;
+                    visibleColumns.forEach((colIndex) => {
+                        if (colIndex >= cells.length) return;
+                        
+                        const cell = cells[colIndex];
+                        const $cell = $(cell);
+                        const isHidden = !$cell.is(':visible') || 
+                                        cell.offsetParent === null || 
+                                        $cell.css('display') === 'none' ||
+                                        $cell.hasClass('d-none');
+                        
+                        if (isHidden) return;
+                        
+                        if (headerCells[colIndex].textContent.trim() === 'Bodega') {
+                            totalRow[currentCol] = 'Totales';
+                            currentCol++;
+                        }
+                        else if (headerCells[colIndex].textContent.trim() === 'Guía' || 
+                                 headerCells[colIndex].textContent.trim() === 'Placa') {
+                            totalRow[currentCol] = '';
+                            totalRow[currentCol + 1] = '';
+                            currentCol += 2;
+                        }
+                        else if (cell.classList.contains('unit-toggle-columns') && conversionesVisibles) {
+                            totalRow[currentCol] = extraerNumero(cell.querySelector('.top-value')?.textContent || '0');
+                            totalRow[currentCol + 1] = extraerNumero(cell.querySelector('.bottom-value')?.textContent || '0');
+                            currentCol += 2;
+                        }
+                        else if (['Peso Requerido', 'Peso Entregado', 'Peso Faltante'].includes(headerCells[colIndex].textContent.trim())) {
+                            totalRow[currentCol] = extraerNumero(cell.textContent || '0');
+                            currentCol++;
+                        }
+                        else if (headerCells[colIndex].textContent.trim().includes('Porcentaje')) {
+                            totalRow[currentCol] = extraerNumero(cell.textContent || '0') / 100;
+                            currentCol++;
+                        }
+                        else {
+                            totalRow[currentCol] = cell.textContent.trim();
+                            currentCol++;
+                        }
+                    });
+                    
+                    data.push(totalRow);
                 }
 
                 const ws = XLSX.utils.aoa_to_sheet(data)
 
                 for (let i = 1; i < data.length; i++) {
-                    for (let j of [7, 8, 9, 10, 11]) {
+                    for (let j = 0; j < data[i].length; j++) {
                         const cellRef = XLSX.utils.encode_cell({ r: i, c: j })
-                        if (ws[cellRef] && typeof data[i][j] === 'number') {
-                            ws[cellRef].t = 'n'
-                            ws[cellRef].z = '#,##0.00'
+                        if (!ws[cellRef]) continue;
+                        
+                        if (typeof data[i][j] === 'number') {
+                            ws[cellRef].t = 'n';
+                            
+                            const headerText = data[0][j] || '';
+                            
+                            if (headerText.includes('Porcentaje')) {
+                                ws[cellRef].z = '0.00%';
+                            } else if (headerText.includes('Libras') || 
+                                       headerText.includes('Quintales') || 
+                                       headerText.includes('Peso')) {
+                                ws[cellRef].z = '#,##0.00';
+                            } else {
+                                ws[cellRef].z = '#,##0.00';
+                            }
                         }
-                    }
-
-                    const percentRef = XLSX.utils.encode_cell({ r: i, c: 12 })
-                    if (ws[percentRef] && typeof data[i][12] === 'number') {
-                        ws[percentRef].t = 'n'
-                        ws[percentRef].z = '0.00%'
                     }
                 }
 
-                ws['!cols'] = headers.map(h => ({ wch: Math.max(h.length * 1.2, 10) }))
+                ws['!cols'] = calcColumnWidths(data);
 
                 XLSX.utils.book_append_sheet(wb, ws, 'Registros Individuales')
                 XLSX.writeFile(wb, 'Registros_Individuales_' + new Date().toISOString().slice(0, 10) + '.xlsx')
             } catch (error) {
+                console.error('Error completo:', error);
                 alert('Error durante la exportación: ' + error.message)
             }
         })
@@ -1073,3 +1187,107 @@ $(document).ready(function () {
     window.exportTableToExcel = exportTableToExcel
     window.extraerNumero = extraerNumero
 })
+
+
+function calcColumnWidths(data) {
+    const colWidths = data[0].map(header => Math.max(12, header.length * 1.2));
+    
+    for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
+        const row = data[rowIdx];
+        for (let colIdx = 0; colIdx < row.length; colIdx++) {
+            const cellValue = row[colIdx];
+            if (cellValue === undefined || cellValue === null || cellValue === '') continue;
+            
+            let displayWidth;
+            
+            if (typeof cellValue === 'number') {
+                const numStr = cellValue.toLocaleString('es-GT');
+                displayWidth = numStr.length + 2; 
+            } else {
+                displayWidth = String(cellValue).length;
+            }
+            
+            colWidths[colIdx] = Math.max(colWidths[colIdx], displayWidth);
+        }
+    }
+    
+    return colWidths.map((width, idx) => {
+        const header = data[0][idx] || '';
+        
+        if (header.includes('Bodega')) {
+            return { wch: Math.max(width, 15) };
+        } else if (header.includes('Guía') || header.includes('Placa')) {
+            return { wch: Math.max(width, 15) };
+        } else if (header.includes('Porcentaje')) {
+            return { wch: Math.min(Math.max(width, 10), 12) };
+        } else if (header.includes('Libras')) {
+            return { wch: Math.min(Math.max(width, 12), 16) };
+        } else if (header.includes('Quintales')) {
+            return { wch: Math.min(Math.max(width, 10), 14) };
+        } else if (header.includes('Peso')) {
+            return { wch: Math.min(Math.max(width, 12), 16) };
+        } else if (header.includes('Esc')) {
+            return { wch: Math.min(Math.max(width, 6), 8) };
+        } else if (header === '#') {
+            return { wch: 5 };
+        }
+        
+        return { wch: Math.min(Math.max(width, 8), 20) };
+    });
+}
+
+function calcResumenColumnWidths(data, columnTypes) {
+    const colWidths = data[0].map(header => Math.max(12, header.length * 1.2));
+    
+    for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
+        const row = data[rowIdx];
+        for (let colIdx = 0; colIdx < row.length; colIdx++) {
+            const cellValue = row[colIdx];
+            if (cellValue === undefined || cellValue === null || cellValue === '') continue;
+            
+            let displayWidth;
+            
+            if (typeof cellValue === 'number') {
+                let numStr;
+                const colType = columnTypes[colIdx] || '';
+                
+                if (colType === 'percentage') {
+                    numStr = (cellValue * 100).toFixed(2) + '%';
+                } else if (colType === 'quintales') {
+                    numStr = cellValue.toLocaleString('es-GT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                } else if (colType === 'libras') {
+                    numStr = cellValue.toLocaleString('es-GT', {maximumFractionDigits: 0});
+                } else {
+                    numStr = cellValue.toLocaleString('es-GT');
+                }
+                
+                displayWidth = numStr.length + 2;
+            } else {
+                displayWidth = String(cellValue).length;
+            }
+            
+            colWidths[colIdx] = Math.max(colWidths[colIdx], displayWidth);
+        }
+    }
+    
+    return colWidths.map((width, idx) => {
+        const header = data[0][idx] || '';
+        const colType = columnTypes[idx] || '';
+        
+        if (header.includes('Empresa')) {
+            return { wch: Math.max(width, 25) };
+        } else if (colType === 'percentage') {
+            return { wch: Math.min(Math.max(width, 10), 12) };
+        } else if (colType === 'quintales') {
+            return { wch: Math.min(Math.max(width, 10), 14) };
+        } else if (colType === 'libras') {
+            return { wch: Math.min(Math.max(width, 12), 16) };
+        } else if (colType === 'weight') {
+            return { wch: Math.min(Math.max(width, 12), 16) };
+        } else if (colType === 'text') {
+            return { wch: Math.min(Math.max(width, 8), 30) };
+        }
+        
+        return { wch: Math.min(Math.max(width, 8), 20) };
+    });
+}

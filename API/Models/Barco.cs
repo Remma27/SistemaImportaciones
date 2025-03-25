@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API.Models
 {
@@ -18,9 +17,6 @@ namespace API.Models
         public decimal? escotilla6 { get; set; }
         public decimal? escotilla7 { get; set; }
         public int? idusuario { get; set; }
-
-        [ForeignKey("idusuario")]
-        public virtual Usuario? Usuario { get; set; }
 
         public Dictionary<int, decimal> ObtenerCapacidadesEscotillas()
         {

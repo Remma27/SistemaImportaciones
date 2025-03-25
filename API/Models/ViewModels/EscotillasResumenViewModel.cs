@@ -12,17 +12,7 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
         public decimal PorcentajeTotal { get; set; }
         public string EstadoGeneral { get; set; } = string.Empty;
         public decimal TotalKilosRequeridos { get; set; }
-        public string NombreBarco { get; set; } = string.Empty; // Agregar esta propiedad
+        public string NombreBarco { get; set; } = string.Empty;
 
-    }
-
-    public class EscotillaResumenViewModel
-    {
-        public int NumeroEscotilla { get; set; }
-        public decimal CapacidadKg { get; set; }
-        public decimal DescargaRealKg { get; set; }
-        public decimal DiferenciaKg { get; set; }
-        public decimal Porcentaje { get; set; }
-        public string Estado { get; set; } = string.Empty;
     }
 }

@@ -36,10 +36,6 @@
 
                 <div class="col-12 col-md-8 d-flex justify-content-center justify-content-md-end">
                     <div class="action-buttons-responsive">
-                        <button class="btn btn-light btn-action" id="btnToggleUnidad" title="Alternar unidades"
-                            style="min-width: 110px;" disabled="@(modelData?.Any() != true)">
-                            <i class="fas fa-weight me-1"></i><span class="button-text">Libras</span>
-                        </button>
 
                         @{
                             int barcoId = 0;
@@ -56,12 +52,18 @@
                             title="Vista detallada">
                             <i class="fas fa-table-cells"></i>
                         </a>
+                        
                         <a href="@(isBarcoSelected ? Url.Action("ReporteGeneral", "RegistroPesajes", new { selectedBarco = selectedBarco, returnController = "InformeGeneral", returnAction = "Index" }) : "#")"
                             id="btnReporteEscotillas"
                             class="btn btn-teal btn-action @(!isBarcoSelected ? "disabled" : "")"
                             title="Reporte Escotillas por Empresa">
                             <i class="fas fa-chart-column"></i>
                         </a>
+
+                        <button class="btn btn-light btn-action" id="btnToggleUnidad" title="Alternar unidades"
+                            style="min-width: 110px;" disabled="@(modelData?.Any() != true)">
+                            <i class="fas fa-weight me-1"></i><span class="button-text">Libras</span>
+                        </button>
                     </div>
                 </div>
             </div>

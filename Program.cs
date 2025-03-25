@@ -24,7 +24,6 @@ using MySqlConnector;
 using Sistema_de_Gestion_de_Importaciones.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using API.Services;
-using Serilog;
 using HistorialService = Sistema_de_Gestion_de_Importaciones.Services.HistorialService;
 using System.Security.Claims;
 

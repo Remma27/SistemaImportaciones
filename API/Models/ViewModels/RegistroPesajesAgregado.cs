@@ -1,8 +1,8 @@
 namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 {
-    public class Tabla2DataViewModel
+    public class RegistroPesajesAgregado
     {
-        public required string Agroindustria { get; set; }
+        public string Agroindustria { get; set; } = string.Empty;
         public decimal KilosRequeridos { get; set; }
         public decimal ToneladasRequeridas { get; set; }
         public decimal DescargaKilos { get; set; }

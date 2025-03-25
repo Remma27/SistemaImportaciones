@@ -27,7 +27,6 @@ namespace Sistema_de_Gestion_de_Importaciones.ViewModels
 
         [Required(ErrorMessage = "La cantidad de camiones es obligatoria")]
         [Display(Name = "Cantidad de Camiones")]
-        //[Range(1, int.MaxValue, ErrorMessage = "La cantidad de camiones debe ser al menos 1")]
         public int CantidadCamiones { get; set; }
         public string Importacion { get; set; } = string.Empty;
         public string Empresa { get; set; } = string.Empty;

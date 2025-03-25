@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -33,8 +32,5 @@ namespace API.Models
         
         [Column("descripcion")]
         public string? Descripcion { get; set; }
-        
-        [ForeignKey("UsuarioId")]
-        public virtual Usuario? Usuario { get; set; }
     }
 }

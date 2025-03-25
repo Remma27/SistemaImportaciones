@@ -347,26 +347,28 @@ function processTableRow(row, headerInfo) {
 }
 
 function extraerNumero(texto) {
-    if (!texto) return 0
+    if (!texto) return 0;
 
-    let cleaned = texto.toString().replace(/\s/g, '')
-
-    if (cleaned.includes('.') && cleaned.includes(',')) {
-        cleaned = cleaned.replace(/\./g, '').replace(',', '.')
-    } else if (cleaned.includes('.') && !cleaned.includes(',')) {
-
-        const parts = cleaned.split('.')
-        if (parts.length > 2 || (parts.length === 2 && parts[1].length !== 2)) {
-            cleaned = cleaned.replace(/\./g, '')
-        }
-    } else if (cleaned.includes(',')) {
-        cleaned = cleaned.replace(',', '.')
+    let cleaned = texto.toString().trim().replace(/[$€\s]/g, '');
+    
+    const formatoEuropeo = /^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(cleaned) || 
+                          (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1 && cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.'));
+    
+    const formatoAmericano = /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(cleaned) || 
+                           (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1 && cleaned.lastIndexOf('.') > cleaned.lastIndexOf(','));
+    
+    if (formatoEuropeo) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (formatoAmericano) {
+        cleaned = cleaned.replace(/,/g, '');
+    } else if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') === -1) {
+        cleaned = cleaned.replace(',', '.');
     }
-
-    cleaned = cleaned.replace(/[^\d.\-]/g, '')
-
-    const value = parseFloat(cleaned)
-    return isNaN(value) ? 0 : value
+    
+    cleaned = cleaned.replace(/[^\d.\-]/g, '');
+    
+    const value = parseFloat(cleaned);
+    return isNaN(value) ? 0 : value;
 }
 
 function formatNumbersInExcelSheet(worksheet, data) {
@@ -741,36 +743,27 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         data.push(headerRow)
 
         function processNumericText(text) {
-            const originalText = text.trim()
+            const originalText = text.trim();
 
             if (!originalText || originalText === '-') {
-                return { text: originalText, value: '', isNumeric: false }
+                return { text: originalText, value: '', isNumeric: false };
             }
 
             const numberPattern = /[-+]?[\d.,]+/;
             const match = originalText.match(numberPattern);
             
             if (!match) {
-                return { text: originalText, value: '', isNumeric: false }
+                return { text: originalText, value: '', isNumeric: false };
             }
             
             const numStr = match[0];
+            const value = extraerNumero(numStr);
             
-            const isEuropeanFormat = /\d{1,3}(?:\.\d{3})+(?:,\d+)?/.test(numStr);
-
-            let numericValue;
-            if (isEuropeanFormat) {
-                numericValue = numStr.replace(/\./g, '').replace(',', '.')
-            } else {
-                numericValue = numStr.replace(',', '.')
-            }
-
-            const value = parseFloat(numericValue);
             return {
                 text: originalText,
                 value: isNaN(value) ? '' : value,
                 isNumeric: !isNaN(value)
-            }
+            };
         }
 
         const rows = table.querySelectorAll('tbody tr')

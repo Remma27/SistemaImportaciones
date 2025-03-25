@@ -130,17 +130,28 @@ $(document).ready(function () {
         function extractNumber(text) {
             if (!text || text === '-') return null;
             
-            let numStr = text.replace(/[^\d.,\-]/g, '');
+            let cleaned = text.toString().trim().replace(/[$€\s]/g, '');
             
-            if (numStr === '') return null;
+            if (cleaned === '') return null;
             
-            if (numStr.includes('.') && numStr.includes(',')) {
-                return parseFloat(numStr.replace(/\./g, '').replace(',', '.'));
-            } else if (numStr.includes(',')) {
-                return parseFloat(numStr.replace(',', '.'));
-            } else {
-                return parseFloat(numStr);
+            const formatoEuropeo = /^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(cleaned) || 
+                                  (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1 && cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.'));
+            
+            const formatoAmericano = /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(cleaned) || 
+                                   (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1 && cleaned.lastIndexOf('.') > cleaned.lastIndexOf(','));
+            
+            if (formatoEuropeo) {
+                cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+            } else if (formatoAmericano) {
+                cleaned = cleaned.replace(/,/g, '');
+            } else if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') === -1) {
+                cleaned = cleaned.replace(',', '.');
             }
+            
+            cleaned = cleaned.replace(/[^\d.\-]/g, '');
+            
+            const value = parseFloat(cleaned);
+            return isNaN(value) ? null : value;
         }
         
         for (let i = 1; i < ws_data.length; i++) {

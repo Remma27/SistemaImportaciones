@@ -112,24 +112,21 @@ $(document).ready(function () {
                     const colType = columnTypes[C - range.s.c];
                     
                     if (colType === 'quintales' || colType === 'libras') {
-                        let num = cellText.replace(/\./g, '').replace(',', '.');
-                        num = parseFloat(num);
+                        let num = extraerNumeroRobusto(cellText);
                         if (!isNaN(num)) {
                             cell.v = num;
                             cell.t = 'n';
                             cell.z = '#,##0.00'; 
                         }
                     } else if (colType === 'numeric') {
-                        let num = cellText.replace(/\./g, '').replace(',', '.');
-                        num = parseFloat(num);
+                        let num = extraerNumeroRobusto(cellText);
                         if (!isNaN(num)) {
                             cell.v = num;
                             cell.t = 'n';
                             cell.z = '#,##0.00';
                         }
                     } else if (colType === 'percentage') {
-                        let num = cellText.replace('%', '').replace(/\./g, '').replace(',', '.');
-                        num = parseFloat(num);
+                        let num = extraerNumeroRobusto(cellText.replace('%', ''));
                         if (!isNaN(num)) {
                             cell.v = num / 100;
                             cell.t = 'n';
@@ -161,4 +158,26 @@ $(document).ready(function () {
         
         XLSX.writeFile(wb, nombreArchivo);
     });
+    
+    function extraerNumeroRobusto(texto) {
+        if (!texto || texto === '-' || texto === '') return NaN;
+        
+        let cleaned = texto.toString().trim().replace(/[$€\s]/g, '');
+        
+        const formatoEuropeo = /^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(cleaned) || 
+                              (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1 && cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.'));
+        
+        const formatoAmericano = /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(cleaned) || 
+                               (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1 && cleaned.lastIndexOf('.') > cleaned.lastIndexOf(','));
+        
+        if (formatoEuropeo) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (formatoAmericano) {
+            cleaned = cleaned.replace(/,/g, '');
+        } else if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') === -1) {
+            cleaned = cleaned.replace(',', '.');
+        }
+
+        return parseFloat(cleaned);
+    }
 });

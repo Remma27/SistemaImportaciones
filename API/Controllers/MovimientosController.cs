@@ -206,7 +206,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador, Operador")]
         public async Task<IActionResult> Delete(int id)
         {
             try

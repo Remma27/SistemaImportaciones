@@ -124,7 +124,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public JsonResult Delete(int id)
         {
             try

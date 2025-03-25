@@ -8,7 +8,7 @@ using Sistema_de_Gestion_de_Importaciones.Extensions;
 
 namespace Sistema_de_Gestion_de_Importaciones.Controllers
 {
-    [Authorize(Roles = "Administrador")]
+    [Authorize(Roles = "Administrador, Operador")]
     public class ImportacionController : Controller
     {
         private readonly IImportacionService _importacionService;
@@ -151,6 +151,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             var importacion = await _importacionService.GetByIdAsync(id);
@@ -163,6 +164,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try

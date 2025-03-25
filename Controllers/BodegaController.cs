@@ -113,7 +113,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(updatedBodega);
         }
 
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             var bodega = await _bodegaService.GetByIdAsync(id);
@@ -126,7 +126,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try

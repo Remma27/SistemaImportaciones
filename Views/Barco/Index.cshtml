@@ -87,10 +87,13 @@
                                                         class="btn btn-warning btn-sm">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
-                                                    <a asp-action="Delete" asp-route-id="@barco.id"
-                                                        class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
+                                                    @if (User.IsInRole("Administrador"))
+                                                    {
+                                                        <a asp-action="Delete" asp-route-id="@barco.id"
+                                                            class="btn btn-danger btn-sm">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    }
                                                 </div>
                                             </td>
                                         </tr>

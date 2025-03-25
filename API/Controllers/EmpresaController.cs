@@ -112,6 +112,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
+        [Authorize(Roles = "Administrador")]
         public IActionResult Delete(int id)
         {
             try

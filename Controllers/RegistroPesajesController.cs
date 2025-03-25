@@ -469,7 +469,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador, Operador")]
         public async Task<IActionResult> DeleteConfirmed(int id, int selectedBarco, int empresaId)
         {
             try
@@ -495,7 +495,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador")]
+        [Authorize(Roles = "Administrador, Operador")]
         public async Task<IActionResult> Delete(int id, int selectedBarco, int empresaId)
         {
             try

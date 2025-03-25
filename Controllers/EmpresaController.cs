@@ -115,7 +115,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             var empresa = await _empresaService.GetByIdAsync(id);
@@ -128,7 +128,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed([Bind(Prefix = "id_empresa")] int id)
         {
             try

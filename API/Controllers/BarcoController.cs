@@ -101,7 +101,7 @@ namespace API.Controllers
 
         // Delete
         [HttpDelete]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public JsonResult Delete(int id)
         {
             var barco = _context.Barcos.Find(id);

@@ -113,7 +113,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             return View(barco);
         }
 
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             var barco = await _barcoService.GetByIdAsync(id);
@@ -127,7 +127,7 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ActionName("Delete")]
-        [Authorize(Roles = "Administrador,Operador")]
+        [Authorize(Roles = "Administrador")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try

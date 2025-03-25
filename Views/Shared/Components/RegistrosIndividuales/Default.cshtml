@@ -65,14 +65,14 @@
                                             <span class="d-none data-alt-placa">@item.PlacaAlterna</span>
                                         </td>
                                         <td class="text-end">@item.PesoRequerido.ToString("N0")</td>
-                                        <td class="text-end">@item.PesoEntregado.ToString("N0")</td>
+                                        <td class="text-end" data-raw-value="@item.PesoEntregado">@item.PesoEntregado.ToString("N0")</td>
                                         <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                            <span class="top-value">@((item.PesoEntregado * 2.20462M).ToString("N0")) lbs</span>
+                                            <span class="top-value" data-raw-value="@(item.PesoEntregado * 2.20462M)">@((item.PesoEntregado * 2.20462M).ToString("N0")) lbs</span>
                                             <span class="divider"></span>
-                                            <span class="bottom-value">@((item.PesoEntregado / 45.359237M).ToString("N2")) qq</span>
+                                            <span class="bottom-value" data-raw-value="@(item.PesoEntregado / 45.359237M)">@((item.PesoEntregado / 45.359237M).ToString("N2")) qq</span>
                                         </td>
-                                        <td class="text-end">@item.PesoFaltante.ToString("N0")</td>
-                                        <td class="text-end">@item.Porcentaje.ToString("N2")%</td>
+                                        <td class="text-end" data-raw-value="@item.PesoFaltante">@item.PesoFaltante.ToString("N0")</td>
+                                        <td class="text-end" data-raw-value="@item.Porcentaje">@item.Porcentaje.ToString("N2")%</td>
                                         <td>
                                             <div class="btn-group" role="group">
                                                 @if (item.PesoRequerido == 0)

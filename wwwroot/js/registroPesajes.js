@@ -1228,222 +1228,7 @@ function calculateColumnWidths(headers, rules) {
     })
 }
 
-// Función mejorada de extracción numérica
-function extraerNumero(texto) {
-    const cleanText = texto
-        .toString()
-        .replace(/[^\d.,\-()]/g, '')
-        .replace(/\s/g, '')
-        .replace(/\((.*)\)/, '-$1')
-        .replace(/(\d)\.(?=\d{3})/g, '$1')
-
-    const isEuropean = /,\d+$/.test(cleanText)
-    const parts = cleanText.split(isEuropean ? /[.,]/ : /[,.]/)
-
-    let integer = parts[0].replace(/\D/g, '')
-    let decimal = parts[1] || ''
-
-    if (isEuropean) {
-        decimal = parts[1] || ''
-        integer = integer.replace(/\./g, '')
-    }
-
-    const number = parseFloat(`${integer}.${decimal}`)
-    return cleanText.startsWith('-') ? -number : number
-}
-function calcColumnWidths(data) {
-    const colWidths = data[0].map(header => Math.max(12, header.length * 1.2))
-
-    for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
-        const row = data[rowIdx]
-        for (let colIdx = 0; colIdx < row.length; colIdx++) {
-            const cellValue = row[colIdx]
-            if (cellValue === undefined || cellValue === null || cellValue === '') continue
-
-            let displayWidth
-
-            if (typeof cellValue === 'number') {
-                const numStr = cellValue.toLocaleString('es-GT')
-                displayWidth = numStr.length + 2
-            } else {
-                displayWidth = String(cellValue).length
-            }
-
-            colWidths[colIdx] = Math.max(colWidths[colIdx], displayWidth)
-        }
-    }
-
-    return colWidths.map((width, idx) => {
-        const header = data[0][idx] || ''
-
-        if (header.includes('Bodega')) {
-            return { wch: Math.max(width, 15) }
-        } else if (header.includes('Guía') || header.includes('Placa')) {
-            return { wch: Math.max(width, 15) }
-        } else if (header.includes('Porcentaje')) {
-            return { wch: Math.min(Math.max(width, 10), 12) }
-        } else if (header.includes('Libras')) {
-            return { wch: Math.min(Math.max(width, 12), 16) }
-        } else if (header.includes('Quintales')) {
-            return { wch: Math.min(Math.max(width, 10), 14) }
-        } else if (header.includes('Peso')) {
-            return { wch: Math.min(Math.max(width, 12), 16) }
-        } else if (header.includes('Esc')) {
-            return { wch: Math.min(Math.max(width, 6), 8) }
-        } else if (header === '#') {
-            return { wch: 5 }
-        }
-
-        return { wch: Math.min(Math.max(width, 8), 20) }
-    })
-}
-
-function calcResumenColumnWidths(data, columnTypes) {
-    const colWidths = data[0].map(header => Math.max(12, header.length * 1.2))
-
-    for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
-        const row = data[rowIdx]
-        for (let colIdx = 0; colIdx < row.length; colIdx++) {
-            const cellValue = row[colIdx]
-            if (cellValue === undefined || cellValue === null || cellValue === '') continue
-
-            let displayWidth
-
-            if (typeof cellValue === 'number') {
-                let numStr
-                const colType = columnTypes[colIdx] || ''
-
-                if (colType === 'percentage') {
-                    numStr = (cellValue * 100).toFixed(2) + '%'
-                } else if (colType === 'quintales') {
-                    numStr = cellValue.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                } else if (colType === 'libras') {
-                    numStr = cellValue.toLocaleString('es-GT', { maximumFractionDigits: 0 })
-                } else {
-                    numStr = cellValue.toLocaleString('es-GT')
-                }
-
-                displayWidth = numStr.length + 2
-            } else {
-                displayWidth = String(cellValue).length
-            }
-
-            colWidths[colIdx] = Math.max(colWidths[colIdx], displayWidth)
-        }
-    }
-
-    return colWidths.map((width, idx) => {
-        const header = data[0][idx] || ''
-        const colType = columnTypes[idx] || ''
-
-        if (header.includes('Empresa')) {
-            return { wch: Math.max(width, 25) }
-        } else if (colType === 'percentage') {
-            return { wch: Math.min(Math.max(width, 10), 12) }
-        } else if (colType === 'quintales') {
-            return { wch: Math.min(Math.max(width, 10), 14) }
-        } else if (colType === 'libras') {
-            return { wch: Math.min(Math.max(width, 12), 16) }
-        } else if (colType === 'weight') {
-            return { wch: Math.min(Math.max(width, 12), 16) }
-        } else if (colType === 'text') {
-            return { wch: Math.min(Math.max(width, 8), 30) }
-        }
-
-        return { wch: Math.min(Math.max(width, 8), 20) }
-    })
-}
-
-// Function to determine if an element should be considered for export
-function shouldExportColumn(headerText) {
-    // Columns that should always be included in export
-    const criticalColumns = [
-        'Empresa', 'Bodega', 'Guía', 'Camión', 'Placa', 
-        'Req.', 'Ent.', 'Falt.', '% Desc.',
-        'Peso', 'Peso Kg', 'Peso Ton'
-    ];
-    
-    // Check if the header contains any of the critical column names
-    return criticalColumns.some(name => headerText.includes(name));
-}
-
-// Función mejorada de visibilidad que también incluye la lógica de exportación
-function isElementVisible(el) {
-    if (!el) return false
-
-    // Verificar cadena completa de elementos padres
-    let current = el
-    while (current) {
-        if (getComputedStyle(current).display === 'none') return false
-        current = current.parentElement
-    }
-
-    return el.offsetWidth > 0 && el.offsetHeight > 0 && getComputedStyle(el).visibility === 'visible'
-}
-
-// Actualizar todas las verificaciones de visibilidad
-const isHidden = !isElementVisible(cell)
-
-// Función para calcular el ancho de las columnas basado en el encabezado
-function calculateHeaderWidth(headerText) {
-    const defaultWidths = {
-        'Empresa': 25,
-        'Guía': 18,
-        'Placa': 12,
-        '% Desc.': 10,
-        'Falt. (Kg)': 10,
-        'Falt. (Ton)': 12,
-        'Desc. Qq / Lbs (Quintales)': 18,
-        'Falt. Qq / Lbs (Libras)': 16
-    };
-    return defaultWidths[headerText] || Math.min(Math.max(headerText.length * 1.2, 12), 20);
-}
-
-// Function to determine if the unit toggle is showing alternative units (libras/quintales)
-function isUnitToggleVisible() {
-    // Check if any unit-toggle column is visible
-    const visibleToggleColumns = document.querySelector('.unit-toggle-columns.visible') !== null;
-    
-    // Or check if we've stored a preference for alternative units
-    const showingMetricSetting = localStorage.getItem('showingMetric');
-    const usingAlternativeUnits = showingMetricSetting === 'false';
-    
-    // Return true if either condition is met
-    return visibleToggleColumns || usingAlternativeUnits;
-}
-
-function formatExcelCell(ws, cellRef, value, headerText) {
-    const rule = getFormatRule(headerText)
-
-    if (!rule || typeof value !== 'number') return
-
-    switch (rule.type) {
-        case 'percentage':
-            ws[cellRef].z = '0.00%'
-            ws[cellRef].v = value / 100
-            break
-
-        case 'weight':
-            ws[cellRef].z = rule.decimals > 0 ? `#,##0.${'0'.repeat(rule.decimals)}` : '#,##0'
-            break
-
-        case 'currency':
-            ws[cellRef].z = `"${rule.symbol}"#,##0.${'0'.repeat(rule.decimals)}`
-            break
-
-        case 'number':
-            ws[cellRef].z = rule.format === 'comma' ? '#,##0' : '0.00'
-            break
-
-        default:
-            ws[cellRef].z = '#,##0.00'
-    }
-}
-
-function getFormatRule(headerText) {
-    return Object.entries(columnFormatRules).find(([key]) => headerText.includes(key))?.[1]
-}
-
+// Función mejorada para exportar el resumen agregado que utiliza valores raw
 function exportResumenAgregadoToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
@@ -1465,12 +1250,11 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         const headers = []
         const columnTypes = []
         
-        // Process headers, correctly handling unit-toggle columns that contain both libras and quintales
+        // Process headers, correctly handling unit-toggle columns
         columns.forEach(col => {
             const text = col.textContent.trim()
             
             if (col.classList.contains('unit-toggle-columns')) {
-                // For dual-value columns, add both libras and quintales headers
                 headers.push(`${text} (Libras)`, `${text} (Quintales)`)
                 columnTypes.push('libras', 'quintales')
             } else {
@@ -1500,7 +1284,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                 if (cellIdx >= 0 && cellIdx < cells.length) {
                     const cell = cells[cellIdx]
                     if (!isElementVisible(cell)) {
-                        // If it's a dual column, add empty values for both
                         if (col.classList.contains('unit-toggle-columns')) {
                             rowData.push('', '')
                         } else {
@@ -1509,32 +1292,50 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         return
                     }
                     
-                    // Handle unit-toggle columns with dual values
+                    // IMPORTANTE: Usar data-raw-value para valores numéricos cuando esté disponible
                     if (col.classList.contains('unit-toggle-columns')) {
-                        // Extract both the libras and quintales values
-                        const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
-                        const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+                        const lbsElement = cell.querySelector('.top-value')
+                        const qqElement = cell.querySelector('.bottom-value')
                         
-                        // IMPORTANT: Use the improved number extraction for large numbers
-                        rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
+                        // Usar data-raw-value o extraer números como respaldo
+                        const lbsValue = lbsElement?.getAttribute('data-raw-value') || 
+                                         lbsElement?.textContent.trim() || '0'
+                        const qqValue = qqElement?.getAttribute('data-raw-value') || 
+                                        qqElement?.textContent.trim() || '0'
+                        
+                        // Convertir a números
+                        rowData.push(parseFloat(lbsValue) || 0, parseFloat(qqValue) || 0)
                     } else {
-                        // Handle other columns
-                        const type = columnTypes[rowData.length] // Use current length as index
-                        let value = cell.textContent.trim()
+                        const rawValue = cell.getAttribute('data-raw-value')
+                        const type = columnTypes[rowData.length]
                         
-                        if (type === 'percentage') {
-                            rowData.push(extraerNumero(value) / 100)
-                        }
-                        else if (type === 'weight' || type === 'libras') {
-                            // IMPORTANT: For weight columns, ensure correct number parsing
-                            rowData.push(extraerNumero(value))
-                        }
-                        else {
-                            rowData.push(value)
+                        if (rawValue !== null && rawValue !== undefined) {
+                            // Usar el valor raw para valores numéricos
+                            if (type === 'percentage') {
+                                rowData.push(parseFloat(rawValue) / 100)
+                            } 
+                            else if (type === 'weight' || type === 'libras' || type === 'quintales' || 
+                                     type === 'number') {
+                                rowData.push(parseFloat(rawValue))
+                            }
+                            else {
+                                rowData.push(rawValue)
+                            }
+                        } else {
+                            // Fallback a texto si no hay data-raw-value
+                            const value = cell.textContent.trim()
+                            if (type === 'percentage') {
+                                rowData.push(extractPercentage(value))
+                            }
+                            else if (type === 'weight' || type === 'libras') {
+                                rowData.push(extractNumber(value))
+                            }
+                            else {
+                                rowData.push(value)
+                            }
                         }
                     }
                 } else {
-                    // If it's a dual column, add empty values for both
                     if (col.classList.contains('unit-toggle-columns')) {
                         rowData.push('', '')
                     } else {
@@ -1546,7 +1347,7 @@ function exportResumenAgregadoToExcel(tableId, filename) {
             data.push(rowData)
         })
         
-        // Process footer rows (totals)
+        // Process footer rows similarly
         const footerRows = table.querySelectorAll('tfoot tr')
         footerRows.forEach(footerRow => {
             if (footerRow.classList.contains('no-export') || 
@@ -1560,7 +1361,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                 if (cellIdx >= 0 && cellIdx < footerRow.cells.length) {
                     const cell = footerRow.cells[cellIdx]
                     if (!isElementVisible(cell)) {
-                        // If it's a dual column, add empty values for both
                         if (col.classList.contains('unit-toggle-columns')) {
                             rowData.push('', '')
                         } else {
@@ -1569,28 +1369,46 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         return
                     }
                     
-                    // Handle unit-toggle columns with dual values in footer
+                    // IMPORTANTE: Usar data-raw-value para valores numéricos cuando esté disponible
                     if (col.classList.contains('unit-toggle-columns')) {
-                        const lbsValue = cell.querySelector('.top-value')?.textContent.trim() || ''
-                        const qqValue = cell.querySelector('.bottom-value')?.textContent.trim() || ''
+                        const lbsElement = cell.querySelector('.top-value')
+                        const qqElement = cell.querySelector('.bottom-value')
                         
-                        rowData.push(extraerNumero(lbsValue), extraerNumero(qqValue))
+                        const lbsValue = lbsElement?.getAttribute('data-raw-value') || 
+                                         lbsElement?.textContent.trim() || '0'
+                        const qqValue = qqElement?.getAttribute('data-raw-value') || 
+                                        qqElement?.textContent.trim() || '0'
+                        
+                        rowData.push(parseFloat(lbsValue) || 0, parseFloat(qqValue) || 0)
                     } else {
-                        const type = columnTypes[rowData.length] // Use current length as index
-                        let value = cell.textContent.trim()
+                        const rawValue = cell.getAttribute('data-raw-value')
+                        const type = columnTypes[rowData.length]
                         
-                        if (type === 'percentage') {
-                            rowData.push(extraerNumero(value) / 100)
-                        }
-                        else if (type === 'libras' || type === 'quintales' || type === 'weight') {
-                            rowData.push(extraerNumero(value))
-                        }
-                        else {
-                            rowData.push(value)
+                        if (rawValue !== null && rawValue !== undefined) {
+                            if (type === 'percentage') {
+                                rowData.push(parseFloat(rawValue) / 100)
+                            } 
+                            else if (type === 'weight' || type === 'libras' || type === 'quintales' || 
+                                     type === 'number') {
+                                rowData.push(parseFloat(rawValue))
+                            }
+                            else {
+                                rowData.push(rawValue)
+                            }
+                        } else {
+                            const value = cell.textContent.trim()
+                            if (type === 'percentage') {
+                                rowData.push(extractPercentage(value))
+                            }
+                            else if (type === 'weight' || type === 'libras') {
+                                rowData.push(extractNumber(value))
+                            }
+                            else {
+                                rowData.push(value)
+                            }
                         }
                     }
                 } else {
-                    // If it's a dual column, add empty values for both
                     if (col.classList.contains('unit-toggle-columns')) {
                         rowData.push('', '')
                     } else {
@@ -1604,53 +1422,49 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         
         const ws = XLSX.utils.aoa_to_sheet(data)
         
-        // Format cells with explicit number formats to ensure proper display
+        // Aplicar formatos explícitos a todas las celdas numéricas
         data.forEach((row, rowIndex) => {
+            if (rowIndex === 0) return // Skip headers
+            
             row.forEach((value, colIndex) => {
-                if (rowIndex === 0) return // Skip headers
-                
                 const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex })
                 if (!ws[cellRef]) return
                 
-                const headerText = data[0][colIndex]
                 const tipo = columnTypes[colIndex]
                 
+                // Si es un número, garantizar el formato correcto
                 if (typeof value === 'number') {
-                    ws[cellRef].t = 'n'
+                    ws[cellRef].t = 'n' // Forzar tipo numérico
                     
-                    // IMPROVED: Format numbers in a way that Excel will display correctly
                     if (tipo === 'percentage') {
                         ws[cellRef].z = '0.00%'
                     } else if (tipo === 'quintales') {
-                        ws[cellRef].z = '#,##0.00' // Format with 2 decimals
+                        ws[cellRef].z = '#,##0.00'
                     } else if (tipo === 'libras') {
-                        // CRITICAL FIX FOR LARGE NUMBERS:
-                        ws[cellRef].z = '#,##0'    // No decimals for libras
-                        // For large numbers, ensure they're stored as integers
-                        if (value > 1000) {
-                            ws[cellRef].v = Math.round(value) // Round to ensure no decimal issues
-                        }
+                        ws[cellRef].z = '#,##0'
+                        // Para números grandes, asegurar formato entero
+                        ws[cellRef].v = Math.round(value) 
                     } else if (tipo === 'weight') {
-                        ws[cellRef].z = '#,##0.00' // Format with 2 decimals
+                        ws[cellRef].z = '#,##0.00'
                     } else {
-                        ws[cellRef].z = '#,##0.00' // Default format
+                        ws[cellRef].z = '#,##0.00'
                     }
                 }
             })
         })
         
-        // Set column widths
-        const colWidths = calcResumenColumnWidths(data, columnTypes)
-        ws['!cols'] = colWidths
+        // Configurar anchos de columna
+        ws['!cols'] = calcResumenColumnWidths(data, columnTypes)
         
-        // Force Excel to interpret numbers as numbers with these options
+        // Opciones explícitas para garantizar formato numérico
         const workbookOpts = {
             bookType: 'xlsx',
             bookSST: false,
             type: 'binary',
             cellDates: false,
             cellNF: false,
-            cellStyles: true
+            cellStyles: true,
+            numbers: { general: '#,##0.00' }
         };
         
         XLSX.utils.book_append_sheet(wb, ws, 'Resumen')
@@ -1665,7 +1479,43 @@ function exportResumenAgregadoToExcel(tableId, filename) {
     }
 }
 
-// Also update the standard exportTableToExcel function for consistency
+// Funciones de extracción mejoradas
+function extractNumber(text) {
+    // Eliminar todo excepto dígitos, puntos, comas y signo negativo
+    const cleanText = text.replace(/[^\d.,\-]/g, '');
+    
+    // Identificar si hay separadores de miles (comas o puntos seguidos de 3 dígitos)
+    const hasThousandsSeparators = /[.,]\d{3}(?=[.,]|$)/.test(cleanText);
+    
+    let result;
+    
+    if (hasThousandsSeparators) {
+        // Si hay separadores de miles, eliminarlos todos y usar solo el último como decimal
+        const lastSeparatorIndex = Math.max(cleanText.lastIndexOf(','), cleanText.lastIndexOf('.'));
+        if (lastSeparatorIndex > 0) {
+            result = cleanText.substring(0, lastSeparatorIndex).replace(/[.,]/g, '') + 
+                    '.' + 
+                    cleanText.substring(lastSeparatorIndex + 1);
+        } else {
+            result = cleanText.replace(/[.,]/g, '');
+        }
+    } else {
+        // Si no hay separadores de miles, reemplazar posible coma decimal por punto
+        result = cleanText.replace(',', '.');
+    }
+    
+    // Parsear y devolver como número
+    return parseFloat(result) || 0;
+}
+
+function extractPercentage(text) {
+    // Eliminar símbolo de porcentaje y espacios
+    const cleaned = text.replace(/[%\s]/g, '');
+    // Extraer número y dividir por 100
+    return extractNumber(cleaned) / 100;
+}
+
+// Actualizar también la función estándar de exportación a Excel
 function exportTableToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
@@ -1833,3 +1683,234 @@ function exportTableToExcel(tableId, filename) {
         alert(`Error al exportar: ${error.message}`)
     }
 }
+
+// Actualizar la función para los registros individuales:
+$('#btnExportarExcelIndividuales').on('click', function () {
+    // ...existing code...
+    
+    // Al procesar celdas:
+    const rawValue = cell.getAttribute('data-raw-value');
+    if (rawValue !== null && rawValue !== undefined) {
+        rowData.push(parseFloat(rawValue));
+    } else {
+        // Fallback a extracción normal
+        const cellText = cell.textContent.trim();
+        // ...existing code...
+    }
+    
+    // ...existing code...
+});
+
+// Añadir la función que falta para calcular los anchos de columna en el resumen agregado
+function calcResumenColumnWidths(data, columnTypes) {
+    const colWidths = data[0].map(header => Math.max(12, header.length * 1.2));
+
+    for (let rowIdx = 1; rowIdx < data.length; rowIdx++) {
+        const row = data[rowIdx];
+        for (let colIdx = 0; colIdx < row.length; colIdx++) {
+            const cellValue = row[colIdx];
+            if (cellValue === undefined || cellValue === null || cellValue === '') continue;
+
+            let displayWidth;
+
+            if (typeof cellValue === 'number') {
+                let numStr;
+                const colType = columnTypes[colIdx] || '';
+
+                if (colType === 'percentage') {
+                    numStr = (cellValue * 100).toFixed(2) + '%';
+                } else if (colType === 'quintales') {
+                    numStr = cellValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                } else if (colType === 'libras') {
+                    // Usar formato que garantice números enteros para libras
+                    numStr = Math.round(cellValue).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                } else {
+                    numStr = cellValue.toLocaleString('en-US');
+                }
+
+                displayWidth = numStr.length + 2;
+            } else {
+                displayWidth = String(cellValue).length;
+            }
+
+            colWidths[colIdx] = Math.max(colWidths[colIdx], displayWidth);
+        }
+    }
+
+    return colWidths.map((width, idx) => {
+        const header = data[0][idx] || '';
+        const colType = columnTypes[idx] || '';
+
+        // Ajustes específicos para tipos de columnas
+        if (header.includes('Empresa')) {
+            return { wch: Math.max(width, 25) };
+        } else if (colType === 'percentage') {
+            return { wch: Math.min(Math.max(width, 10), 12) };
+        } else if (colType === 'quintales') {
+            return { wch: Math.min(Math.max(width, 10), 14) };
+        } else if (colType === 'libras') {
+            return { wch: Math.min(Math.max(width, 12), 16) };
+        } else if (colType === 'weight') {
+            return { wch: Math.min(Math.max(width, 12), 16) };
+        } else if (colType === 'text') {
+            return { wch: Math.min(Math.max(width, 8), 30) };
+        }
+
+        return { wch: Math.min(Math.max(width, 8), 20) };
+    });
+}
+
+// También debemos definir las funciones extractNumber y extractPercentage que son usadas en exportResumenAgregadoToExcel
+function extractNumber(text) {
+    if (!text) return 0;
+    
+    // Eliminar todo excepto dígitos, puntos, comas y signo negativo
+    const cleanText = text.replace(/[^\d.,\-]/g, '');
+    
+    // Identificar si hay separadores de miles (comas o puntos seguidos de 3 dígitos)
+    const hasThousandsSeparators = /[.,]\d{3}(?=[.,]|$)/.test(cleanText);
+    
+    let result;
+    
+    if (hasThousandsSeparators) {
+        // Si hay separadores de miles, eliminarlos todos y usar solo el último como decimal
+        const lastSeparatorIndex = Math.max(cleanText.lastIndexOf(','), cleanText.lastIndexOf('.'));
+        if (lastSeparatorIndex > 0) {
+            result = cleanText.substring(0, lastSeparatorIndex).replace(/[.,]/g, '') + 
+                    '.' + 
+                    cleanText.substring(lastSeparatorIndex + 1);
+        } else {
+            result = cleanText.replace(/[.,]/g, '');
+        }
+    } else {
+        // Si no hay separadores de miles, reemplazar posible coma decimal por punto
+        result = cleanText.replace(',', '.');
+    }
+    
+    // Parsear y devolver como número
+    return parseFloat(result) || 0;
+}
+
+function extractPercentage(text) {
+    if (!text) return 0;
+    // Eliminar símbolo de porcentaje y espacios
+    const cleaned = text.replace(/[%\s]/g, '');
+    // Extraer número y dividir por 100
+    return extractNumber(cleaned) / 100;
+}
+
+// Implementar la función calcColumnWidths faltante para manejo de columnas en Excel
+function calcColumnWidths(data) {
+    // Si no hay datos, devolver una configuración predeterminada
+    if (!data || data.length === 0 || !data[0]) {
+        return [{ wch: 10 }]; // Ancho de columna predeterminado
+    }
+
+    // Obtener los encabezados de la primera fila
+    const headers = data[0];
+    // Inicializar los anchos con un valor basado en la longitud del texto del encabezado
+    const widths = headers.map(header => ({ 
+        wch: Math.min(Math.max(String(header).length * 1.2, 10), 30) 
+    }));
+
+    // Ajustar anchos basado en el contenido de todas las filas
+    for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        for (let j = 0; j < row.length && j < widths.length; j++) {
+            const cellValue = row[j];
+            if (cellValue === null || cellValue === undefined) continue;
+            
+            // Calcular el ancho necesario para este valor
+            let valueWidth;
+            if (typeof cellValue === 'number') {
+                // Para números, convertir a string con formato y calcular longitud
+                const formatted = cellValue.toLocaleString('en-US');
+                valueWidth = formatted.length + 1; // +1 para espacio extra
+            } else {
+                // Para strings, usar longitud directamente
+                valueWidth = String(cellValue).length;
+            }
+            
+            // Actualizar el ancho si este valor requiere más espacio
+            widths[j].wch = Math.max(widths[j].wch, Math.min(valueWidth * 1.1, 50));
+        }
+    }
+
+    return widths;
+}
+
+// También podemos definir una función alternativa para btn individuales
+function calcIndividualesColumnWidths(data) {
+    // Similar a calcColumnWidths pero con reglas específicas para la tabla de registros individuales
+    const colWidths = [];
+    
+    if (!data || data.length === 0) return colWidths;
+    
+    const headers = data[0];
+    
+    for (let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        let width = Math.max(String(header).length * 1.3, 10);
+        
+        // Reglas personalizadas para columnas específicas
+        if (header.includes('#')) {
+            width = 6;
+        } else if (header.includes('Esc')) {
+            width = 8;
+        } else if (header.includes('Bodega')) {
+            width = 16;
+        } else if (header.includes('Guía')) {
+            width = 18;
+        } else if (header.includes('Placa')) {
+            width = 12;
+        } else if (header.includes('Peso')) {
+            width = 14;
+        } else if (header.includes('Porcentaje')) {
+            width = 10;
+        } else if (header.includes('Libras')) {
+            width = 14;
+        } else if (header.includes('Quintales')) {
+            width = 12;
+        }
+        
+        // Limitar el ancho máximo
+        width = Math.min(width, 30);
+        
+        colWidths.push({ wch: width });
+    }
+    
+    // Refinar anchos basados en los datos
+    for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        for (let j = 0; j < row.length && j < colWidths.length; j++) {
+            const value = row[j];
+            if (!value && value !== 0) continue;
+            
+            let valueWidth = typeof value === 'string' ? value.length : String(value).length;
+            // Limitar el incremento de ancho por datos muy largos
+            colWidths[j].wch = Math.min(
+                Math.max(colWidths[j].wch, valueWidth * 1.1),
+                50 // Ancho máximo absoluto
+            );
+        }
+    }
+    
+    return colWidths;
+}
+
+// Asegurémonos de que el código que llama a calcColumnWidths esté utilizando la nueva función
+$('#btnExportarExcelIndividuales').off('click').on('click', function() {
+    // ...existing code...
+    
+    try {
+        // ...existing code...
+        
+        // Corregir línea que puede estar causando el error
+        ws['!cols'] = calcColumnWidths(data); // Usar la nueva función definida
+        
+        // ...existing code...
+    } catch (error) {
+        console.error('Error completo:', error);
+        alert('Error durante la exportación: ' + error.message);
+    }
+});

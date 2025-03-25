@@ -440,6 +440,8 @@ builder.Services.AddAntiforgery(options =>
 
 builder.Services.AddSingleton<IAuthorizationHandler, API.Handlers.CustomRoleHandler>();
 
+builder.Services.ConfigureCulture();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -486,6 +488,8 @@ app.Use(async (context, next) =>
 
 app.UseMiddleware<SessionExpirationMiddleware>();
 app.UseMiddleware<ApiLoggingMiddleware>();
+
+app.UseCultureConfiguration();
 
 app.MapControllerRoute(
     name: "mvc",

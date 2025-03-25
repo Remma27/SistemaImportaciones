@@ -50,22 +50,22 @@
                             {
                                 <tr>
                                     <td>@item.Agroindustria</td>
-                                    <td class="text-end">@item.KilosRequeridos.ToString("N0")</td>
-                                    <td class="text-end">@item.ToneladasRequeridas.ToString("N2")</td>
-                                    <td class="text-end">@item.DescargaKilos.ToString("N0")</td>
+                                    <td class="text-end" data-raw-value="@item.KilosRequeridos">@item.KilosRequeridos.ToString("N0")</td>
+                                    <td class="text-end" data-raw-value="@item.ToneladasRequeridas">@item.ToneladasRequeridas.ToString("N2")</td>
+                                    <td class="text-end" data-raw-value="@item.DescargaKilos">@item.DescargaKilos.ToString("N0")</td>
                                     <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                        <span class="top-value">@((item.DescargaKilos / 45.359237M).ToString("N2")) qq</span>
+                                        <span class="top-value" data-raw-value="@(item.DescargaKilos / 45.359237M)">@((item.DescargaKilos / 45.359237M).ToString("N2")) qq</span>
                                         <span class="divider"></span>
-                                        <span class="bottom-value">@Math.Round(item.DescargaKilos * 2.20462M).ToString("N0") lbs</span>
+                                        <span class="bottom-value" data-raw-value="@(item.DescargaKilos * 2.20462M)">@Math.Round(item.DescargaKilos * 2.20462M).ToString("N0") lbs</span>
                                     </td>
-                                    <td class="text-end">@item.FaltanteKilos.ToString("N0")</td>
-                                    <td class="text-end">@item.ToneladasFaltantes.ToString("N2")</td>
+                                    <td class="text-end" data-raw-value="@item.FaltanteKilos">@item.FaltanteKilos.ToString("N0")</td>
+                                    <td class="text-end" data-raw-value="@item.ToneladasFaltantes">@item.ToneladasFaltantes.ToString("N2")</td>
                                     <td class="text-end unit-toggle-columns conversion-cell dual-value-cell">
-                                        <span class="top-value">@((item.FaltanteKilos / 45.359237M).ToString("N2")) qq</span>
+                                        <span class="top-value" data-raw-value="@(item.FaltanteKilos / 45.359237M)">@((item.FaltanteKilos / 45.359237M).ToString("N2")) qq</span>
                                         <span class="divider"></span>
-                                        <span class="bottom-value">@Math.Round(item.FaltanteKilos * 2.20462M).ToString("N0") lbs</span>
+                                        <span class="bottom-value" data-raw-value="@(item.FaltanteKilos * 2.20462M)">@Math.Round(item.FaltanteKilos * 2.20462M).ToString("N0") lbs</span>
                                     </td>
-                                    <td class="text-end" style="background-color: @(
+                                    <td class="text-end" data-raw-value="@item.CamionesFaltantes" style="background-color: @(
                                         (item.CamionesFaltantes >= 0.8M && item.CamionesFaltantes <= 3.0M) ? "rgb(255,105,97)" :
                                         (item.CamionesFaltantes > 3.0M && item.CamionesFaltantes <= 7.0M) ? "rgb(253,253,150)" :
                                         (item.CamionesFaltantes < 0.8M) ? "rgb(205,205,205)" :

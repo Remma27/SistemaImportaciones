@@ -173,12 +173,35 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 this.Success("Importación eliminada correctamente.");
                 return RedirectToAction(nameof(Index));
             }
+            catch (HttpRequestException ex) when (ex.Message.Contains("400") && 
+                (ex.Message.Contains("movimientos") || ex.Message.Contains("asociados")))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar importación con ID: {id} que tiene movimientos asociados");
+                this.Warning("No se puede eliminar esta importación porque tiene movimientos asociados.");
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("asociados") || 
+                ex.Message.Contains("movimientos") || ex.Message.Contains("relacionada"))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar importación con ID: {id} con relaciones");
+                this.Warning(ex.Message);
+                return RedirectToAction(nameof(Index));
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al eliminar la empresa con ID {Id}", id);
-                var importacion = await _importacionService.GetByIdAsync(id);
-                this.Error("Ocurrió un error al eliminar la importación: " + ex.Message);
-                return View("Delete", importacion);
+                _logger.LogError(ex, "Error al eliminar la importación con ID {Id}", id);
+                
+                try
+                {
+                    var importacion = await _importacionService.GetByIdAsync(id);
+                    this.Error($"Error al eliminar la importación: {ex.Message}");
+                    return View("Delete", importacion);
+                }
+                catch
+                {
+                    this.Error($"Error al eliminar la importación: {ex.Message}");
+                    return RedirectToAction(nameof(Index));
+                }
             }
         }
     }

@@ -113,7 +113,6 @@
                                 <div class="form-group">
                                     <div class="form-check form-switch">
                                         @{
-                                            // Convertimos el bool? a bool para evitar el error
                                             bool isActive = Model.activo.HasValue ? Model.activo.Value : false;
                                         }
                                         <input type="checkbox" name="activo" class="form-check-input" id="activo" value="true" @(isActive ? "checked" : "") />
@@ -212,11 +211,9 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
-        // Initialize tooltips
         $(function () {
             $('[data-bs-toggle="tooltip"]').tooltip();
             
-            // Add confirmation message before submitting form
             $("#btnGuardarCambios").click(function(e) {
                 if (!confirm("¿Estás seguro de que deseas guardar los cambios?")) {
                     e.preventDefault();

@@ -13,7 +13,6 @@
 
 <div class="container-fluid px-4">
     <div class="table-responsive-custom">
-        <!-- Header Card - Keep styling here since it's not a component -->
         <div class="card mb-4">
             <div class="card-header bg-gradient bg-primary text-white py-3">
                 <div class="row align-items-center">
@@ -108,10 +107,8 @@
         </div>
     </div>
 
-    <!-- Tables Container - Remove card styling since components have their own -->
     <div class="row g-4">
 
-        <!-- Tabla 1: Registros Individuales -->
         @await Component.InvokeAsync("RegistrosIndividuales",
         new
         {
@@ -120,7 +117,6 @@
             empresaId = ViewContext.HttpContext.Request.Query["empresaId"].ToString()
         })
 
-        <!-- Tabla 3: Totales por Bodega -->
         @{
             var empresaSeleccionadaId = Context.Request.Query["empresaId"].ToString();
             var empresasList = (IEnumerable<SelectListItem>)ViewBag.Empresas;
@@ -139,10 +135,8 @@
             @await Component.InvokeAsync("TotalesPorBodega", new { model = Model.TotalesPorBodega })
         }
 
-        <!-- Resumen Agregado -->
         @await Component.InvokeAsync("ResumenAgregado", new { model = Model.Tabla2Data })
 
-        <!-- Resumen General y Escotillas -->
         @await Component.InvokeAsync("ResumenGeneralEscotillas", new {
         model = Model.EscotillasData,
                 capacidadTotal = Model.CapacidadTotal,
@@ -151,7 +145,7 @@
                 porcentajeTotal = Model.PorcentajeTotal,
                 estadoGeneral = Model.EstadoGeneral,
                 kilosRequeridos = Model.TotalKilosRequeridos,
-                nombreBarco = Model.NombreBarco // Agregar esta línea
+                nombreBarco = Model.NombreBarco
                 })
     </div>
 </div>

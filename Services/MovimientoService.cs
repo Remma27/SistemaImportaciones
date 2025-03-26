@@ -216,13 +216,55 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError($"Error al eliminar: Status={response.StatusCode}, Content={content}");
-                    throw new HttpRequestException($"Error al eliminar el movimiento: {response.StatusCode}");
+                    
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        try
+                        {
+                            using (JsonDocument doc = JsonDocument.Parse(content))
+                            {
+                                if (doc.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                                {
+                                    string mensaje = messageElement.GetString() ?? "No se puede eliminar el movimiento";
+                                    
+                                    if (mensaje.Contains("relacionado") || mensaje.Contains("asociado") || 
+                                        mensaje.Contains("depende") || mensaje.Contains("utilizado"))
+                                    {
+                                        _logger.LogWarning($"Movimiento con ID={id} tiene dependencias: {mensaje}");
+                                        throw new InvalidOperationException(mensaje);
+                                    }
+                                    
+                                    throw new InvalidOperationException(mensaje);
+                                }
+                            }
+                        }
+                        catch (JsonException jsonEx)
+                        {
+                            _logger.LogError(jsonEx, $"Error al analizar la respuesta JSON: {content}");
+                        }
+                        
+                        if (content.Contains("relacionado") || content.Contains("asociado") || 
+                            content.Contains("depende") || content.Contains("utilizado"))
+                        {
+                            throw new InvalidOperationException("No se puede eliminar este movimiento porque está relacionado con otros registros.");
+                        }
+                    }
+                    
+                    throw new HttpRequestException($"Error al eliminar el movimiento: {response.StatusCode}, {content}");
                 }
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (HttpRequestException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar el movimiento {id}");
-                throw;
+                throw new Exception($"Error al eliminar el movimiento: {ex.Message}", ex);
             }
         }
 

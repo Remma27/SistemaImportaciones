@@ -72,10 +72,9 @@
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="form-check form-switch">
-                                    @{
-// Garantizar un valor no nullable para el checkbox
-bool isActive = Model?.activo.HasValue == true ? Model.activo.Value : true;
-}
+                                @{
+                                    bool isActive = Model?.activo.HasValue == true ? Model.activo.Value : true;
+                                }
                                     <input type="checkbox" id="activo" name="activo" class="form-check-input" value="true" checked />
                                     <label for="activo" class="form-check-label">Usuario Activo</label>
                                 </div>

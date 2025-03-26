@@ -40,16 +40,13 @@ public class BarcoService : IBarcoService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
             _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
             
-            // Handle different JSON formats
             if (root.ValueKind == JsonValueKind.Array)
             {
-                // Direct array - new format
                 _logger.LogInformation("Detectado formato de array directo");
                 var barcos = JsonSerializer.Deserialize<List<Barco>>(content, options);
                 _logger.LogInformation($"Barcos deserializados: {barcos?.Count ?? 0}");
@@ -57,7 +54,6 @@ public class BarcoService : IBarcoService
             }
             else if (root.ValueKind == JsonValueKind.Object)
             {
-                // Object with a property - check common patterns
                 if (root.TryGetProperty("value", out JsonElement valueElement))
                 {
                     _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -67,7 +63,6 @@ public class BarcoService : IBarcoService
                 }
                 else
                 {
-                    // Try Newtonsoft as last resort
                     _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                     try
                     {
@@ -119,7 +114,6 @@ public class BarcoService : IBarcoService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
@@ -135,7 +129,6 @@ public class BarcoService : IBarcoService
                 }
                 else
                 {
-                    // Direct object - new format
                     barco = JsonSerializer.Deserialize<Barco>(content, options);
                 }
             }
@@ -219,13 +212,66 @@ public class BarcoService : IBarcoService
 
     public async Task DeleteAsync(int id)
     {
-        var url = _apiBaseUrl + $"Delete?id={id}";
-        _logger.LogInformation($"Eliminando barco con ID={id}");
-        var response = await _httpClient.DeleteAsync(url);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogError($"Error al eliminar el barco con ID={id}");
-            throw new HttpRequestException($"Error al eliminar el barco con ID={id}");
+            var url = _apiBaseUrl + $"Delete?id={id}";
+            _logger.LogInformation($"Eliminando barco con ID={id}");
+            
+            var response = await _httpClient.DeleteAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning($"Error al eliminar barco: Status={response.StatusCode}, Content={content}");
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    try
+                    {
+                        using (JsonDocument doc = JsonDocument.Parse(content))
+                        {
+                            if (doc.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                            {
+                                string mensaje = messageElement.GetString() ?? "No se puede eliminar el barco";
+                                
+                                if (mensaje.Contains("importaciones") || mensaje.Contains("asociadas"))
+                                {
+                                    _logger.LogWarning($"Barco con ID={id} tiene importaciones asociadas");
+                                    throw new InvalidOperationException(mensaje);
+                                }
+                                
+                                throw new InvalidOperationException(mensaje);
+                            }
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        _logger.LogError(jsonEx, $"Error al analizar la respuesta JSON: {content}");
+                    }
+                    
+                    if (content.Contains("importaciones") || content.Contains("asociadas"))
+                    {
+                        throw new InvalidOperationException("No se puede eliminar este barco porque tiene importaciones asociadas.");
+                    }
+                }
+                
+                throw new HttpRequestException($"Error al eliminar barco: {response.StatusCode}, {content}");
+            }
+            
+            _logger.LogInformation($"Barco con ID={id} eliminado exitosamente");
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (HttpRequestException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error inesperado al eliminar el barco con ID={id}");
+            throw new Exception($"Error al eliminar el barco: {ex.Message}", ex);
         }
     }
 }

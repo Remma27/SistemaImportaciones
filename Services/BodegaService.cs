@@ -40,16 +40,13 @@ public class BodegaService : IBodegaService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
             _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
             
-            // Handle different JSON formats
             if (root.ValueKind == JsonValueKind.Array)
             {
-                // Direct array - new format
                 _logger.LogInformation("Detectado formato de array directo");
                 var bodegas = JsonSerializer.Deserialize<List<Empresa_Bodegas>>(content, options);
                 _logger.LogInformation($"Bodegas deserializadas: {bodegas?.Count ?? 0}");
@@ -57,7 +54,6 @@ public class BodegaService : IBodegaService
             }
             else if (root.ValueKind == JsonValueKind.Object)
             {
-                // Object with a property - check common patterns
                 if (root.TryGetProperty("value", out JsonElement valueElement))
                 {
                     _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -67,7 +63,6 @@ public class BodegaService : IBodegaService
                 }
                 else
                 {
-                    // Try Newtonsoft as last resort
                     _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                     try
                     {
@@ -118,7 +113,6 @@ public class BodegaService : IBodegaService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
@@ -134,7 +128,6 @@ public class BodegaService : IBodegaService
                 }
                 else
                 {
-                    // Direct object - new format
                     bodega = JsonSerializer.Deserialize<Empresa_Bodegas>(content, options);
                 }
             }
@@ -217,13 +210,68 @@ public class BodegaService : IBodegaService
 
     public async Task DeleteAsync(int id)
     {
-        var url = _apiBaseUrl + $"Delete?id={id}";
-        _logger.LogInformation($"Iniciando solicitud DeleteAsync para la bodega {id}");
-        var response = await _httpClient.DeleteAsync(url);
-        if (!response.IsSuccessStatusCode)
+        try
         {
+            var url = _apiBaseUrl + $"Delete?id={id}";
+            _logger.LogInformation($"Eliminando bodega con ID={id}");
+            
+            var response = await _httpClient.DeleteAsync(url);
             var content = await response.Content.ReadAsStringAsync();
-            throw new HttpRequestException($"Error al eliminar la bodega: Status={response.StatusCode}. Detalles: {content}");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning($"Error al eliminar bodega: Status={response.StatusCode}, Content={content}");
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    try
+                    {
+                        using (JsonDocument doc = JsonDocument.Parse(content))
+                        {
+                            if (doc.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                            {
+                                string mensaje = messageElement.GetString() ?? "No se puede eliminar la bodega";
+                                
+                                if (mensaje.Contains("movimientos") || mensaje.Contains("asociados") || 
+                                    mensaje.Contains("relacionada") || mensaje.Contains("utilizada"))
+                                {
+                                    _logger.LogWarning($"Bodega con ID={id} tiene movimientos o pesajes asociados");
+                                    throw new InvalidOperationException(mensaje);
+                                }
+                                
+                                throw new InvalidOperationException(mensaje);
+                            }
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        _logger.LogError(jsonEx, $"Error al analizar la respuesta JSON: {content}");
+                    }
+                    
+                    if (content.Contains("movimientos") || content.Contains("asociados") || 
+                        content.Contains("relacionada") || content.Contains("utilizada"))
+                    {
+                        throw new InvalidOperationException("No se puede eliminar esta bodega porque está siendo utilizada en movimientos.");
+                    }
+                }
+                
+                throw new HttpRequestException($"Error al eliminar bodega: {response.StatusCode}, {content}");
+            }
+            
+            _logger.LogInformation($"Bodega con ID={id} eliminada exitosamente");
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (HttpRequestException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error inesperado al eliminar la bodega con ID={id}");
+            throw new Exception($"Error al eliminar la bodega: {ex.Message}", ex);
         }
     }
 }

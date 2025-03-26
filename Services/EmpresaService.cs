@@ -28,7 +28,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 var content = await response.Content.ReadAsStringAsync();
 
                 _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
-                // Log first 100 chars of content for debugging
                 _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
 
                 if (!response.IsSuccessStatusCode)
@@ -42,16 +41,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Analyze JSON structure
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - our new format
                     _logger.LogInformation("Detectado formato de array directo");
                     var empresas = JsonSerializer.Deserialize<List<Empresa>>(content, options);
                     _logger.LogInformation($"Empresas deserializadas: {empresas?.Count ?? 0}");
@@ -59,7 +55,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -69,7 +64,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     }
                     else
                     {
-                        // Try Newtonsoft as last resort
                         _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                         try
                         {
@@ -175,13 +169,68 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
 
         public async Task DeleteAsync(int id)
         {
-            var url = _apiBaseUrl + $"Delete?id={id}";
-            _logger.LogInformation($"Eliminando empresa con URL: {url}");
-            var response = await _httpClient.DeleteAsync(url);
-            if (!response.IsSuccessStatusCode)
+            try
             {
+                var url = _apiBaseUrl + $"Delete?id={id}";
+                _logger.LogInformation($"Eliminando empresa con ID={id}, URL: {url}");
+                
+                var response = await _httpClient.DeleteAsync(url);
                 var content = await response.Content.ReadAsStringAsync();
-                throw new HttpRequestException($"Error al eliminar: Status={response.StatusCode}. Detalles: {content}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning($"Error al eliminar empresa: Status={response.StatusCode}, Content={content}");
+                    
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        try
+                        {
+                            using (JsonDocument doc = JsonDocument.Parse(content))
+                            {
+                                if (doc.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                                {
+                                    string mensaje = messageElement.GetString() ?? "No se puede eliminar la empresa";
+                                    
+                                    if (mensaje.Contains("importaciones") || mensaje.Contains("movimientos") || 
+                                        mensaje.Contains("asociada") || mensaje.Contains("relacionada"))
+                                    {
+                                        _logger.LogWarning($"Empresa con ID={id} tiene relaciones: {mensaje}");
+                                        throw new InvalidOperationException(mensaje);
+                                    }
+                                    
+                                    throw new InvalidOperationException(mensaje);
+                                }
+                            }
+                        }
+                        catch (JsonException jsonEx)
+                        {
+                            _logger.LogError(jsonEx, $"Error al analizar la respuesta JSON: {content}");
+                        }
+                        
+                        if (content.Contains("importaciones") || content.Contains("movimientos") || 
+                            content.Contains("asociada") || content.Contains("relacionada"))
+                        {
+                            throw new InvalidOperationException("No se puede eliminar esta empresa porque tiene importaciones o movimientos asociados.");
+                        }
+                    }
+                    
+                    throw new HttpRequestException($"Error al eliminar empresa: {response.StatusCode}, {content}");
+                }
+                
+                _logger.LogInformation($"Empresa con ID={id} eliminada exitosamente");
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
+            }
+            catch (HttpRequestException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error inesperado al eliminar la empresa con ID={id}");
+                throw new Exception($"Error al eliminar la empresa: {ex.Message}", ex);
             }
         }
     }

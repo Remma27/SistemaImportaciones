@@ -60,7 +60,6 @@
         }
     }
     
-    // Helper para determinar si es el usuario del sistema
     bool EsUsuarioSistema() => Model.UsuarioId == 1;
 }
 
@@ -94,7 +93,6 @@
                 
                 <div class="card-body p-4">
                     <div class="row">
-                        <!-- Información General -->
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="detail-section h-100">
                                 <h5 class="mb-3"><i class="fas fa-tags me-2"></i>Información General</h5>
@@ -133,7 +131,6 @@
                             </div>
                         </div>
                         
-                        <!-- Información de Usuario -->
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="detail-section h-100">
                                 <h5 class="mb-3"><i class="fas fa-user me-2"></i>Información de Usuario</h5>
@@ -166,7 +163,6 @@
                             </div>
                         </div>
                         
-                        <!-- Descripción -->
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="detail-section h-100">
                                 <h5 class="mb-3"><i class="fas fa-clipboard me-2"></i>Descripción</h5>
@@ -186,7 +182,6 @@
                         </div>
                     </div>
                     
-                    <!-- Datos JSON -->
                     <div class="row mt-3">
                         <div class="col-12">
                             <div class="card">
@@ -255,7 +250,6 @@
 
 @section Scripts {
     <script>
-        // Función para formatear y colorear el JSON si es posible
         $(document).ready(function() {
             try {
                 const jsonContent = document.getElementById('jsonContent').textContent;
@@ -267,12 +261,10 @@
             }
         });
         
-        // Función para copiar JSON al portapapeles
         function copyJsonToClipboard() {
             const jsonContent = document.getElementById('jsonContent').textContent;
             navigator.clipboard.writeText(jsonContent)
                 .then(() => {
-                    // Mostrar mensaje de éxito
                     const toast = document.createElement('div');
                     toast.className = 'position-fixed bottom-0 end-0 p-3 m-3 bg-success text-white rounded';
                     toast.style.zIndex = '9999';

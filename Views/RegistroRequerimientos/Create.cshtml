@@ -41,7 +41,6 @@
                         method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-                        <!-- Hidden fields for critical values -->
                         <input type="hidden" asp-for="IdImportacion" value="@ViewBag.IdImportacion" />
                         <input type="hidden" name="selectedBarco" value="@ViewBag.IdImportacion" />
                         <input type="hidden" asp-for="TipoTransaccion" value="1" />
@@ -104,7 +103,6 @@
 
 @section Scripts {
     <script>
-        // Highlight fields with validation errors
         document.addEventListener('DOMContentLoaded', function() {
             const invalidFields = document.querySelectorAll('.input-validation-error');
             invalidFields.forEach(field => {

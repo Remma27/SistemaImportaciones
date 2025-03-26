@@ -1,14 +1,13 @@
 @model HistorialResponseViewModel
 @{
     ViewData["Title"] = "Historial del Sistema";
-    ViewData["FullWidth"] = true; // Use full width container
+    ViewData["FullWidth"] = true; 
 }
 
 <link rel="stylesheet" href="~/css/historial.css" asp-append-version="true" />
 <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
 
 <div class="container-fluid historial-container">
-    <!-- Título y breadcrumbs -->
     <div class="row mb-4">
         <div class="col-12">
             <nav aria-label="breadcrumb">
@@ -23,7 +22,6 @@
         </div>
     </div>
 
-    <!-- Filtros -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="filter-container">
@@ -88,7 +86,6 @@
         </div>
     </div>
 
-    <!-- Tabla de Historial - Simplified for better responsiveness -->
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -109,7 +106,6 @@
                         Desliza horizontalmente para ver toda la información
                     </div>
                     
-                    <!-- Use native scrolling instead of DataTables responsive -->
                     <div class="table-responsive">
                         <table id="tablaHistorial" class="table table-striped table-hover table-sm nowrap" width="100%">
                             <thead>
@@ -223,11 +219,9 @@
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Limpiar almacenamiento anterior
             localStorage.removeItem('DataTables_tablaHistorial_/HistorialView/Index');
             sessionStorage.removeItem('DataTables_tablaHistorial_/HistorialView/Index');
             
-            // Inicializar DataTable con mejor configuración para tablets
             var table = $('#tablaHistorial').DataTable({
                 "destroy": true,
                 "paging": true,
@@ -238,7 +232,7 @@
                 "searching": true,
                 "info": true,
                 "autoWidth": false,
-                "scrollX": true, // Habilitar scroll horizontal en lugar de responsive
+                "scrollX": true,
                 "language": {
                     "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json",
                     "emptyTable": "No hay registros disponibles",
@@ -256,7 +250,6 @@
                 ]
             });
             
-            // Mejorar la experiencia al hacer clic en una fila
             $('#tablaHistorial tbody').on('click', 'tr', function() {
                 var id = $(this).data('id');
                 if (id) {
@@ -264,10 +257,8 @@
                 }
             });
             
-            // CSS para indicar que las filas son clickeables
             $('#tablaHistorial tbody tr').css('cursor', 'pointer');
             
-            // Filtros dinámicos personalizados
             $('#filtroTabla, #filtroOperacion, #filtroUsuario').on('change', function() {
                 applyFilters();
             });
@@ -283,7 +274,6 @@
                 var operacion = $('#filtroOperacion').val();
                 var usuario = $('#filtroUsuario').val();
                 
-                // Limpiar filtros anteriores
                 $.fn.dataTable.ext.search.pop();
                 
                 if (tabla || operacion || usuario) {
@@ -301,16 +291,13 @@
                 table.draw();
             }
             
-            // Mejorar los controles de DataTables
             $('.dataTables_filter input').addClass('form-control form-control-sm');
             $('.dataTables_length select').addClass('form-select form-select-sm');
             
-            // Auto-redimensionar la tabla cuando cambia el tamaño de la ventana
             $(window).resize(function() {
                 table.columns.adjust();
             });
             
-            // Ajustar columnas después de un pequeño delay
             setTimeout(function() {
                 table.columns.adjust();
             }, 200);

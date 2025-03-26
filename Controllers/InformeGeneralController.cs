@@ -23,7 +23,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             ViewData["FullWidth"] = true;
             var viewModel = new RegistroPesajesViewModel();
 
-            // Obtener la lista de barcos
             var barcos = await _movimientoService.GetBarcosSelectListAsync();
             ViewBag.Barcos = new SelectList(barcos, "Value", "Text", selectedBarco);
 
@@ -31,7 +30,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             {
                 try
                 {
-                    // Get the ship name from the dropdown list and extract only the name part
                     var barcoItem = barcos.FirstOrDefault(b => b.Value == selectedBarco.Value.ToString());
                     if (barcoItem != null)
                     {
@@ -39,7 +37,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         var parts = fullText.Split('-');
                         if (parts.Length >= 3)
                         {
-                            // Get only the ship name part, ignoring ID and date
                             viewModel.NombreBarco = parts[2].Trim();
                         }
                         else
@@ -52,17 +49,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         viewModel.NombreBarco = "Sin nombre";
                     }
 
-                    // Set ViewData for ship name before loading other data
                     ViewData["NombreBarco"] = viewModel.NombreBarco;
 
-                    // ...rest of your existing code...
                     var informeGeneralData = await _movimientoService.GetInformeGeneralAsync(selectedBarco.Value);
                     var escotillasData = await _movimientoService.GetEscotillasDataAsync(selectedBarco.Value);
 
-                    // Set ViewData for ship name
                     ViewData["NombreBarco"] = viewModel.NombreBarco;
 
-                    // Map to ViewModel
                     viewModel.Tabla2Data = informeGeneralData.Select(ig => new RegistroPesajesAgregado
                     {
                         Agroindustria = ig.Empresa ?? "Sin nombre",
@@ -86,7 +79,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                         viewModel.EstadoGeneral = escotillasData.EstadoGeneral;
                         viewModel.TotalKilosRequeridos = escotillasData.TotalKilosRequeridos;
 
-                        // Establecer ViewData que será utilizado por la vista parcial
                         ViewData["KilosRequeridos"] = escotillasData.TotalKilosRequeridos;
                         ViewData["EstadoGeneral"] = escotillasData.EstadoGeneral;
 

@@ -10,7 +10,6 @@
             <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Editar Registro de Requerimiento</h4>
         </div>
         <div class="card-body">
-            <!-- Display any ModelState errors -->
             @if (!ViewData.ModelState.IsValid)
             {
                 <div class="alert alert-danger">
@@ -39,7 +38,6 @@
                 <input type="hidden" name="selectedBarco" value="@ViewBag.SelectedBarco" />
 
                 <div class="row g-3">
-                    <!-- Empresa -->
                     <div class="col-md-12">
                         <div class="form-floating">
                             <select asp-for="IdEmpresa" class="form-select" asp-items="ViewBag.Empresas" required>
@@ -50,7 +48,6 @@
                         </div>
                     </div>
 
-                    <!-- Cantidad Requerida -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="CantidadRequerida" class="form-control" type="number" min="0" step="0.01"
@@ -60,7 +57,6 @@
                         </div>
                     </div>
 
-                    <!-- Cantidad de Camiones -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="CantidadCamiones" class="form-control" type="number" min="0" required />

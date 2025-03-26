@@ -33,6 +33,8 @@ namespace API.Controllers
                 return new JsonResult(BadRequest("El id debe ser 0"));
             }
 
+            barco.nombrebarco = barco.nombrebarco?.ToUpper();
+            
             _context.Barcos.Add(barco);
             _context.SaveChanges();
             
@@ -59,6 +61,8 @@ namespace API.Controllers
                     "Barcos", 
                     $"Estado anterior del barco {barcoExistente.nombrebarco} (ID: {barcoExistente.id})"
                 );
+                
+                barco.nombrebarco = barco.nombrebarco?.ToUpper();
                 
                 _context.Entry(barcoExistente).CurrentValues.SetValues(barco);
                 _context.SaveChanges();
@@ -102,20 +106,38 @@ namespace API.Controllers
         // Delete
         [HttpDelete]
         [Authorize(Roles = "Administrador")]
-        public JsonResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var barco = _context.Barcos.Find(id);
-            if (barco == null)
+            try
             {
-                return new JsonResult(NotFound());
-            }
+                var barco = await _context.Barcos.FindAsync(id);
+                if (barco == null)
+                {
+                    return NotFound(new { message = "Barco no encontrado" });
+                }
 
-            _historialService.GuardarHistorial("ELIMINAR", barco, "Barcos", $"Eliminación: {barco.nombrebarco}");
-            
-            _context.Barcos.Remove(barco);
-            _context.SaveChanges();
-            
-            return new JsonResult(NoContent());
+                var tieneImportaciones = await _context.Importaciones
+                    .AnyAsync(i => i.idbarco == id);
+                
+                if (tieneImportaciones)
+                {
+                    return BadRequest(new {
+                        message = "No se puede eliminar este barco porque tiene importaciones asociadas."
+                    });
+                }
+
+                _historialService.GuardarHistorial("ELIMINAR", barco, "Barcos", $"Eliminación: {barco.nombrebarco}");
+                
+                _context.Barcos.Remove(barco);
+                await _context.SaveChangesAsync();
+                
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al eliminar barco: {Id}", id);
+                return StatusCode(500, new { message = "Error al eliminar barco", error = ex.Message });
+            }
         }
 
         // GetAll

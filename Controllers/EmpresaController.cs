@@ -137,12 +137,35 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 this.Success("Empresa eliminada correctamente.");
                 return RedirectToAction(nameof(Index));
             }
+            catch (HttpRequestException ex) when (ex.Message.Contains("400") && 
+                (ex.Message.Contains("importaciones") || ex.Message.Contains("movimientos") || 
+                 ex.Message.Contains("asociada") || ex.Message.Contains("relacionada")))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar empresa con ID: {id} que tiene relaciones");
+                this.Warning("No se puede eliminar esta empresa porque tiene importaciones o movimientos asociados.");
+                return RedirectToAction(nameof(Index));
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("importaciones") || 
+                ex.Message.Contains("movimientos") || ex.Message.Contains("asociada") || 
+                ex.Message.Contains("relacionada"))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar empresa con ID: {id} con relaciones");
+                this.Warning(ex.Message);
+                return RedirectToAction(nameof(Index));
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar la empresa con ID {Id}", id);
-                var empresa = await _empresaService.GetByIdAsync(id);
-                this.Error("Ocurrió un error al eliminar la empresa: " + ex.Message);
-                return View("Delete", empresa);
+                
+                try {
+                    var empresa = await _empresaService.GetByIdAsync(id);
+                    this.Error($"Error al eliminar la empresa: {ex.Message}");
+                    return View("Delete", empresa);
+                }
+                catch {
+                    this.Error($"Error al eliminar la empresa: {ex.Message}");
+                    return RedirectToAction(nameof(Index));
+                }
             }
         }
     }

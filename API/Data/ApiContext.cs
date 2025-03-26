@@ -37,8 +37,31 @@ namespace API.Data
                 .HasForeignKey(m => m.idempresa)
                 .OnDelete(DeleteBehavior.Restrict);
             
+            modelBuilder.Entity<Movimiento>()
+                .HasOne<Empresa_Bodegas>()
+                .WithMany()
+                .HasForeignKey(m => m.bodega)
+                .OnDelete(DeleteBehavior.Restrict);
+        
+            modelBuilder.Entity<Importacion>()
+                .HasOne<Barco>()
+                .WithMany()
+                .HasForeignKey(i => i.idbarco)
+                .OnDelete(DeleteBehavior.Restrict);
+            
             modelBuilder.Entity<RolPermiso>()
                 .ToTable("rol_permisos");
+
+            modelBuilder.Entity<Importacion>()
+                .HasOne(i => i.Barco)
+                .WithMany()
+                .HasForeignKey(i => i.idbarco)
+                .HasPrincipalKey(b => b.id)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            modelBuilder.Entity<Importacion>()
+                .Property(i => i.idbarco)
+                .HasColumnName("idbarco");
         }
     }
 }

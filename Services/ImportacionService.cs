@@ -234,13 +234,66 @@ public class ImportacionService : IImportacionService
 
     public async Task DeleteAsync(int id)
     {
-        var url = _apiBaseUrl + $"Delete?id={id}";
-        _logger.LogInformation($"Eliminando importacion con ID={id}");
-        var response = await _httpClient.DeleteAsync(url);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogError($"Error al eliminar la importacion con ID={id}");
-            throw new HttpRequestException($"Error al eliminar la importacion con ID={id}");
+            var url = _apiBaseUrl + $"Delete?id={id}";
+            _logger.LogInformation($"Eliminando importación con ID={id}");
+            
+            var response = await _httpClient.DeleteAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning($"Error al eliminar importación: Status={response.StatusCode}, Content={content}");
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    try
+                    {
+                        using (JsonDocument doc = JsonDocument.Parse(content))
+                        {
+                            if (doc.RootElement.TryGetProperty("message", out JsonElement messageElement))
+                            {
+                                string mensaje = messageElement.GetString() ?? "No se puede eliminar la importación";
+                                
+                                if (mensaje.Contains("movimientos") || mensaje.Contains("asociados"))
+                                {
+                                    _logger.LogWarning($"Importación con ID={id} tiene movimientos asociados");
+                                    throw new InvalidOperationException(mensaje);
+                                }
+                                
+                                throw new InvalidOperationException(mensaje);
+                            }
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        _logger.LogError(jsonEx, $"Error al analizar la respuesta JSON: {content}");
+                    }
+                    
+                    if (content.Contains("movimientos") || content.Contains("asociados"))
+                    {
+                        throw new InvalidOperationException("No se puede eliminar esta importación porque tiene movimientos asociados.");
+                    }
+                }
+                
+                throw new HttpRequestException($"Error al eliminar importación: {response.StatusCode}, {content}");
+            }
+            
+            _logger.LogInformation($"Importación con ID={id} eliminada exitosamente");
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (HttpRequestException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error inesperado al eliminar la importación con ID={id}");
+            throw new Exception($"Error al eliminar la importación: {ex.Message}", ex);
         }
     }
 }

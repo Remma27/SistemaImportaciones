@@ -230,10 +230,26 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 await _movimientoService.DeleteAsync(id);
                 this.Success("Requerimiento eliminado exitosamente");
             }
+            catch (HttpRequestException ex) when (ex.Message.Contains("400") && 
+                (ex.Message.Contains("relacionado") || ex.Message.Contains("asociado") || 
+                ex.Message.Contains("depende") || ex.Message.Contains("utilizado")))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar movimiento con ID: {id} que tiene dependencias");
+                this.Warning("No se puede eliminar este requerimiento porque tiene dependencias.");
+                return RedirectToAction(nameof(Index), new { selectedBarco });
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("relacionado") || 
+                ex.Message.Contains("asociado") || ex.Message.Contains("depende") || 
+                ex.Message.Contains("utilizado"))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar movimiento con ID: {id} con dependencias");
+                this.Warning(ex.Message);
+                return RedirectToAction(nameof(Index), new { selectedBarco });
+            }
             catch (Exception ex)
             {
-                this.Error("Error al eliminar el requerimiento: " + ex.Message);
                 _logger.LogError(ex, "Error deleting movimiento ID {Id}: {Message}", id, ex.Message);
+                this.Error("Error al eliminar el requerimiento: " + ex.Message);
             }
             return RedirectToAction(nameof(Index), new { selectedBarco });
         }

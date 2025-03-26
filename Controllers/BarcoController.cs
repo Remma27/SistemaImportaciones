@@ -138,14 +138,12 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
             }
             catch (HttpRequestException ex) when (ex.Message.Contains("400") && ex.Message.Contains("importaciones"))
             {
-                // Error específico cuando el barco tiene importaciones asociadas
                 _logger.LogWarning(ex, $"Intento de eliminar barco con ID: {id} que tiene importaciones asociadas");
                 this.Warning("No se puede eliminar este barco porque tiene importaciones asociadas.");
                 return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("asociadas") || ex.Message.Contains("relacionada"))
             {
-                // Otra forma de capturar errores de relaciones desde el servicio
                 _logger.LogWarning(ex, $"Intento de eliminar barco con ID: {id} con relaciones");
                 this.Warning(ex.Message);
                 return RedirectToAction(nameof(Index));

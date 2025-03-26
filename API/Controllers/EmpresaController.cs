@@ -38,12 +38,15 @@ namespace API.Controllers
                 {
                     return new JsonResult(BadRequest("El id debe ser 0 para crear una nueva empresa."));
                 }
+
+                empresa.nombreempresa = empresa.nombreempresa?.ToUpper();
+
                 _context.Empresas.Add(empresa);
                 _context.SaveChanges();
-                
+
                 _historialService.GuardarHistorial("CREAR", empresa, "Empresas", $"Creación: {empresa.nombreempresa}");
                 _logger.LogInformation($"Empresa creada con ID: {empresa.id_empresa}, registro en historial completado");
-                
+
                 return new JsonResult(Ok(empresa));
             }
             catch (Exception ex)
@@ -79,6 +82,8 @@ namespace API.Controllers
                     $"Estado anterior de empresa {empresaInDb.nombreempresa} (ID: {empresaInDb.id_empresa})"
                 );
                 
+                empresa.nombreempresa = empresa.nombreempresa?.ToUpper();
+                
                 _context.Entry(empresaInDb).CurrentValues.SetValues(empresa);
                 _context.SaveChanges();
                 
@@ -113,31 +118,43 @@ namespace API.Controllers
         // Delete
         [HttpDelete]
         [Authorize(Roles = "Administrador")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             try
             {
                 _logger.LogInformation($"Iniciando eliminación de empresa ID: {id}");
                 
-                var result = _context.Empresas.Find(id);
-                if (result == null)
+                var empresa = await _context.Empresas.FindAsync(id);
+                if (empresa == null)
                 {
-                    return new JsonResult(NotFound());
+                    return NotFound(new { message = "Empresa no encontrada" });
                 }
                 
-                _historialService.GuardarHistorial("ELIMINAR", result, "Empresas", $"Eliminación: {result.id_empresa}");
+                // Verificar si hay movimientos relacionados
+                var tieneMovimientos = await _context.Movimientos
+                    .AnyAsync(m => m.idempresa == id);
+                    
+                if (tieneMovimientos)
+                {
+                    _logger.LogWarning($"No se puede eliminar la empresa ID: {id} porque tiene movimientos asociados");
+                    return BadRequest(new {
+                        message = "No se puede eliminar esta empresa porque tiene movimientos asociados."
+                    });
+                }
+
+                _historialService.GuardarHistorial("ELIMINAR", empresa, "Empresas", $"Eliminación de empresa {empresa.nombreempresa}");
                 
-                _context.Empresas.Remove(result);
-                _context.SaveChanges();
+                _context.Empresas.Remove(empresa);
+                await _context.SaveChangesAsync();
                 
                 _logger.LogInformation($"Empresa ID: {id} eliminada exitosamente");
                 
-                return new JsonResult(NoContent());
+                return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar empresa: {Id}", id);
-                return new JsonResult(StatusCode(500, new { message = "Error al eliminar empresa", error = ex.Message }));
+                return StatusCode(500, new { message = "Error al eliminar empresa", error = ex.Message });
             }
         }
 

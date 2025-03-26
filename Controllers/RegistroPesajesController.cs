@@ -486,6 +486,22 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
 
                 return RedirectToAction(nameof(Index), new { selectedBarco, empresaId, refreshData = true });
             }
+            catch (HttpRequestException ex) when (ex.Message.Contains("400") && 
+                (ex.Message.Contains("relacionado") || ex.Message.Contains("asociado") || 
+                 ex.Message.Contains("depende") || ex.Message.Contains("utilizado")))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar movimiento con ID: {id} que tiene dependencias");
+                TempData["Warning"] = "No se puede eliminar este registro porque tiene relaciones con otros datos.";
+                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("relacionado") || 
+                ex.Message.Contains("asociado") || ex.Message.Contains("depende") || 
+                ex.Message.Contains("utilizado"))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar movimiento con ID: {id} con dependencias");
+                TempData["Warning"] = ex.Message;
+                return RedirectToAction(nameof(Index), new { selectedBarco, empresaId });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar el registro {id}");

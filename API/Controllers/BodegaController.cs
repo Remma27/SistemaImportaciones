@@ -37,6 +37,8 @@ namespace API.Controllers
                     return new JsonResult(BadRequest("El id debe ser 0 para crear una nueva bodega.")) { StatusCode = 400 };
                 }
 
+                bodega.bodega = bodega.bodega?.ToUpper();
+
                 _context.Empresa_Bodegas.Add(bodega);
                 _context.SaveChanges();
                 
@@ -73,6 +75,8 @@ namespace API.Controllers
                     $"Estado anterior de bodega ID: {bodegaInDb.id}, Nombre: {bodegaInDb.bodega}"
                 );
 
+                bodega.bodega = bodega.bodega?.ToUpper();
+
                 _context.Entry(bodegaInDb).CurrentValues.SetValues(bodega);
                 _context.SaveChanges();
                 
@@ -107,22 +111,33 @@ namespace API.Controllers
         // Delete
         [HttpDelete]
         [Authorize(Roles = "Administrador")]
-        public JsonResult Delete(int id)
+        public async Task<JsonResult> Delete(int id)
         {
             try
             {
                 _logger.LogInformation($"Iniciando eliminación de bodega ID: {id}");
                 
-                var result = _context.Empresa_Bodegas.Find(id);
+                var result = await _context.Empresa_Bodegas.FindAsync(id);
                 if (result == null)
                 {
                     return new JsonResult(NotFound()) { StatusCode = 404 };
                 }
                 
+                var bodegaEnUso = await _context.Movimientos
+                    .AnyAsync(m => m.bodega == id);
+                    
+                if (bodegaEnUso)
+                {
+                    _logger.LogWarning($"No se puede eliminar la bodega ID: {id} porque está siendo utilizada en movimientos");
+                    return new JsonResult(new { 
+                        message = "No se puede eliminar esta bodega porque está siendo utilizada en movimientos de pesaje."
+                    }) { StatusCode = 400 };
+                }
+                
                 _historialService.GuardarHistorial("ELIMINAR", result, "Empresa_Bodegas", $"Eliminación de bodega ID: {id}");
                 
                 _context.Empresa_Bodegas.Remove(result);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 
                 _logger.LogInformation($"Bodega ID: {id} eliminada exitosamente");
                 

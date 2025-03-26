@@ -125,32 +125,37 @@ namespace API.Controllers
         // Delete
         [HttpDelete]
         [Authorize(Roles = "Administrador")]
-        public JsonResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                _logger.LogInformation($"Iniciando eliminación de importación ID: {id}");
-                
-                var result = _context.Importaciones.Find(id);
-                if (result == null)
+                var importacion = await _context.Importaciones.FindAsync(id);
+                if (importacion == null)
                 {
-                    return new JsonResult(NotFound());
+                    return NotFound(new { message = "Importación no encontrada" });
                 }
+
+                var tieneMovimientos = await _context.Movimientos
+                    .AnyAsync(m => m.idimportacion == id);
                 
-                // Registrar antes de eliminar
-                _historialService.GuardarHistorial("ELIMINAR", result, "Importaciones", $"Eliminación: {result.id}");
+                if (tieneMovimientos)
+                {
+                    return BadRequest(new {
+                        message = "No se puede eliminar esta importación porque tiene movimientos asociados."
+                    });
+                }
+
+                _historialService.GuardarHistorial("ELIMINAR", importacion, "Importaciones", $"Eliminación de importación {importacion.id}");
                 
-                _context.Importaciones.Remove(result);
-                _context.SaveChanges();
+                _context.Importaciones.Remove(importacion);
+                await _context.SaveChangesAsync();
                 
-                _logger.LogInformation($"Importación ID: {id} eliminada exitosamente");
-                
-                return new JsonResult(NoContent());
+                return NoContent();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al eliminar importación: {Id}", id);
-                return new JsonResult(StatusCode(500, new { message = "Error al eliminar importación", error = ex.Message }));
+                return StatusCode(500, new { message = "Error al eliminar importación", error = ex.Message });
             }
         }
 

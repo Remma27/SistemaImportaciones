@@ -135,12 +135,24 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 this.Success("Bodega eliminada correctamente.");
                 return RedirectToAction("Index", "Bodega");
             }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("relacionada"))
+            {
+                _logger.LogWarning(ex, $"Intento de eliminar bodega con ID: {id} que tiene relaciones");
+                this.Warning($"No se puede eliminar la bodega porque tiene movimientos asociados.");
+                return RedirectToAction("Index", "Bodega");
+            }
+            catch (HttpRequestException ex) when (ex.Message.Contains("400"))
+            {
+                _logger.LogWarning(ex, $"Error de validación al eliminar bodega con ID: {id}");
+                this.Warning($"No se puede eliminar la bodega: {ex.Message}");
+                return RedirectToAction("Index", "Bodega");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error al eliminar la bodega con ID: {id}");
                 var bodega = await _bodegaService.GetByIdAsync(id);
-                this.Error($"Error al eliminar la bodega {bodega?.bodega}. Por favor, intente más tarde.");
-                return View(bodega);
+                this.Error($"Error al eliminar la bodega {bodega?.bodega}. {ex.Message}");
+                return View("Delete", bodega);
             }
         }
     }

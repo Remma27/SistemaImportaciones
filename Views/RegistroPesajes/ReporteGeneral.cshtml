@@ -9,7 +9,6 @@
     var todasLasEscotillas = new int[] { 1, 2, 3, 4, 5, 6, 7 };
     var unidades = new[] { "Kilogramos", "Quintales", "Libras", "Toneladas" };
     
-    // Pre-calcular los totales por escotilla para cada unidad de medida
     var totalesKgPorEscotilla = new Dictionary<int, decimal>();
     var totalesQQPorEscotilla = new Dictionary<int, decimal>();
     var totalesLbPorEscotilla = new Dictionary<int, decimal>();
@@ -34,7 +33,6 @@
             .Sum(e => e.DescargaTon);
     }
     
-    // Calcular el gran total para cada unidad
     var totalKg = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaKg);
     var totalQQ = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaQuintales);
     var totalLb = Model.Empresas.SelectMany(e => e.Escotillas).Sum(e => e.DescargaLb);
@@ -75,14 +73,11 @@
             {
                 <div class="mb-4">
                     <div class="row align-items-center">
-                        <!-- Título del barco - Apila en móviles, alinea al inicio en desktop -->
                         <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <h4 class="text-primary mb-0">
                                 <i class="fas fa-ship me-2"></i>Barco: @ViewBag.BarcoSeleccionado
                             </h4>
                         </div>
-                        
-                        <!-- Botones mejorados para responsividad -->
                         <div class="col-12 col-md-6">
                             <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-2">
                                 <button id="toggleUnits" class="btn btn-info px-3 py-2">
@@ -100,7 +95,6 @@
                     </div>
                 </div>
                 
-                <!-- Modified table container with wider layout and fixed footer -->
                 <div class="table-responsive table-container" style="max-height: 600px; overflow-y: auto;">
                     <table id="tablaReporte" class="table table-striped table-bordered table-hover w-100">
                         <thead class="table-primary sticky-top">
@@ -120,7 +114,6 @@
                         <tbody>
                             @foreach (var empresa in Model.Empresas)
                             {
-                                <!-- Primera fila para Kilogramos -->
                                 <tr class="unidad-row kg-row">
                                     <td rowspan="4" class="align-middle fw-bold">@empresa.NombreEmpresa</td>
                                     <td>Kilogramos</td>
@@ -132,7 +125,6 @@
                                     <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaKg).ToString("N2")</td>
                                 </tr>
                                 
-                                <!-- Fila para Quintales -->
                                 <tr class="unidad-row qq-row">
                                     <td>Quintales</td>
                                     @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -143,7 +135,6 @@
                                     <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaQuintales).ToString("N4")</td>
                                 </tr>
                                 
-                                <!-- Fila para Libras -->
                                 <tr class="unidad-row lb-row">
                                     <td>Libras</td>
                                     @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -154,7 +145,6 @@
                                     <td class="text-end fw-bold">@empresa.Escotillas.Sum(e => e.DescargaLb).ToString("N0")</td>
                                 </tr>
                                 
-                                <!-- Fila para Toneladas -->
                                 <tr class="unidad-row ton-row">
                                     <td>Toneladas</td>
                                     @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -167,7 +157,6 @@
                             }
                         </tbody>
                         <tfoot class="table-primary sticky-bottom">
-                            <!-- Totales por Kilogramos -->
                             <tr class="unidad-row kg-row">
                                 <td colspan="2" class="text-end fw-bold" style="position: sticky; bottom: auto; z-index: 10; background-color: #cfe2ff;">TOTAL Kilogramos:</td>
                                 @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -181,7 +170,6 @@
                                 </td>
                             </tr>
                             
-                            <!-- Totales por Quintales -->
                             <tr class="unidad-row qq-row">
                                 <td colspan="2" class="text-end fw-bold" style="position: sticky; bottom: auto; z-index: 10; background-color: #cfe2ff;">TOTAL Quintales:</td>
                                 @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -195,7 +183,6 @@
                                 </td>
                             </tr>
                             
-                            <!-- Totales por Libras -->
                             <tr class="unidad-row lb-row">
                                 <td colspan="2" class="text-end fw-bold" style="position: sticky; bottom: auto; z-index: 10; background-color: #cfe2ff;">TOTAL Libras:</td>
                                 @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -209,7 +196,6 @@
                                 </td>
                             </tr>
                             
-                            <!-- Totales por Toneladas -->
                             <tr class="unidad-row ton-row">
                                 <td colspan="2" class="text-end fw-bold" style="position: sticky; bottom: auto; z-index: 10; background-color: #cfe2ff;">TOTAL Toneladas:</td>
                                 @foreach (var numeroEscotilla in todasLasEscotillas)
@@ -232,42 +218,34 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Existing toggle units code
         const qqRows = document.querySelectorAll('.qq-row');
         const lbRows = document.querySelectorAll('.lb-row');
         let unitsVisible = false;
         
-        // Hide rows on page load
         qqRows.forEach(row => row.style.display = 'none');
         lbRows.forEach(row => row.style.display = 'none');
         
-        // Set up toggle button
         const toggleButton = document.getElementById('toggleUnits');
         toggleButton.addEventListener('click', function() {
             unitsVisible = !unitsVisible;
             
             if (unitsVisible) {
-                // Show all unit rows
                 qqRows.forEach(row => row.style.display = '');
                 lbRows.forEach(row => row.style.display = '');
                 toggleButton.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Mostrar Unidades Básicas';
                 toggleButton.classList.replace('btn-info', 'btn-secondary');
             } else {
-                // Hide Quintales and Libras
                 qqRows.forEach(row => row.style.display = 'none');
                 lbRows.forEach(row => row.style.display = 'none');
                 toggleButton.innerHTML = '<i class="fas fa-eye me-1"></i>Mostrar Todas las Unidades';
                 toggleButton.classList.replace('btn-secondary', 'btn-info');
             }
             
-            // Fix rowspan for empresa cells when hiding rows
             fixRowspans(unitsVisible);
         });
         
-        // Initially fix rowspans
         fixRowspans(unitsVisible);
         
-        // Function to adjust rowspan for empresa cells
         function fixRowspans(showingAllUnits) {
             const empresaCells = document.querySelectorAll('td.fw-bold.align-middle');
             empresaCells.forEach(cell => {
@@ -275,16 +253,12 @@
             });
         }
 
-        // Adjust table header width to match body columns
         function adjustHeaderWidths() {
-            // Get all table body rows
             const bodyRows = document.querySelectorAll('#tablaReporte tbody tr:first-child td');
             const headerCells = document.querySelectorAll('#tablaReporte thead tr:last-child th');
             
-            // Skip if no data or mismatch in columns
             if (bodyRows.length === 0 || headerCells.length !== bodyRows.length - 1) return;
             
-            // Apply widths from body to header
             for (let i = 0; i < headerCells.length; i++) {
                 if (bodyRows[i+1]) {
                     const width = bodyRows[i+1].offsetWidth;
@@ -293,48 +267,40 @@
             }
         }
         
-        // Run once on page load
         setTimeout(adjustHeaderWidths, 100);
         
-        // Also adjust on window resize
         window.addEventListener('resize', adjustHeaderWidths);
     });
 </script>
 
 <style>
-    /* Make the table use more horizontal space */
     .container-fluid {
         max-width: 100%;
         padding-left: 1rem;
         padding-right: 1rem;
     }
     
-    /* Make the table take up full available width */
     .table-responsive {
         border: 1px solid #dee2e6;
         border-radius: 0.25rem;
     }
     
-    /* Ensure all cells have appropriate padding */
     #tablaReporte td, #tablaReporte th {
         padding: 0.5rem;
     }
     
-    /* Fixed header styling */
     #tablaReporte thead.sticky-top {
         position: sticky;
         top: 0;
         z-index: 5;
     }
     
-    /* Fixed footer styling */
     #tablaReporte tfoot.sticky-bottom {
         position: sticky;
         bottom: 0;
-        z-index: 4; /* Lower than header but still above body */
+        z-index: 4; 
     }
     
-    /* Add borders to headers and footers for better separation */
     #tablaReporte thead th {
         box-shadow: 0 1px 0 #dee2e6, 0 -1px 0 #dee2e6;
         background-clip: padding-box;
@@ -345,12 +311,10 @@
         background-clip: padding-box;
     }
     
-    /* Ensure proper column sizing and prevent wrapping */
     #tablaReporte th, #tablaReporte td {
         white-space: nowrap;
     }
     
-    /* Add some min widths to ensure columns aren't too narrow */
     #tablaReporte th:first-child {
         min-width: 150px;
     }
@@ -359,17 +323,14 @@
         min-width: 100px;
     }
     
-    /* Escotilla columns should have consistent width */
     #tablaReporte thead tr:last-child th {
         min-width: 80px;
     }
     
-    /* Highlight rows on hover */
     #tablaReporte tbody tr:hover {
         background-color: rgba(0,123,255,0.05) !important;
     }
     
-    /* Box shadow for scroll indication at bottom */
     .table-container::after {
         content: '';
         position: absolute;

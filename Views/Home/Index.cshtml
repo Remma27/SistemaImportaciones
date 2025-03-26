@@ -6,7 +6,6 @@
 }
 
 <style>
-    /* Estilos personalizados para la página de inicio */
     .menu-link {
         padding: 0.8rem 0.5rem;
         border-radius: 6px;
@@ -44,7 +43,6 @@
 
         @if (User.IsInRole("Reporteria"))
         {
-            <!-- Para usuarios con rol Reportería, mostrar solo el informe general -->
             <div class="col-12 col-md-10 col-lg-7 mb-5">
                 <div class="card shadow">
                     <div class="card-header bg-info text-white">
@@ -73,7 +71,6 @@
         }
         else
         {
-            <!-- Preferences Card - Solo para administradores y operadores -->
             <div class="col-12 col-md-10 col-lg-7 mb-5">
                 <div class="card shadow">
                     <div class="card-header bg-primary text-white">
@@ -121,7 +118,6 @@
                 </div>
             </div>
 
-            <!-- Operations Card - Solo para administradores y operadores -->
             <div class="col-12 col-md-10 col-lg-7 mb-5">
                 <div class="card shadow">
                     <div class="card-header bg-success text-white">
@@ -162,7 +158,6 @@
                 </div>
             </div>
             
-            <!-- Administration Card - Solo visible para administradores -->
             @if (User.IsInRole("Administrador"))
             {
                 <div class="col-12 col-md-10 col-lg-7 mb-5">

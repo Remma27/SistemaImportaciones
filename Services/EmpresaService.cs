@@ -28,7 +28,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 var content = await response.Content.ReadAsStringAsync();
 
                 _logger.LogInformation($"Respuesta recibida: Status={response.StatusCode}");
-                // Log first 100 chars of content for debugging
                 _logger.LogDebug($"Contenido de respuesta: {content.Substring(0, Math.Min(100, content.Length))}...");
 
                 if (!response.IsSuccessStatusCode)
@@ -42,16 +41,13 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     PropertyNameCaseInsensitive = true
                 };
 
-                // Analyze JSON structure
                 using JsonDocument document = JsonDocument.Parse(content);
                 var root = document.RootElement;
                 
                 _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
                 
-                // Handle different JSON formats
                 if (root.ValueKind == JsonValueKind.Array)
                 {
-                    // Direct array - our new format
                     _logger.LogInformation("Detectado formato de array directo");
                     var empresas = JsonSerializer.Deserialize<List<Empresa>>(content, options);
                     _logger.LogInformation($"Empresas deserializadas: {empresas?.Count ?? 0}");
@@ -59,7 +55,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                 }
                 else if (root.ValueKind == JsonValueKind.Object)
                 {
-                    // Object with a property - check common patterns
                     if (root.TryGetProperty("value", out JsonElement valueElement))
                     {
                         _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -69,7 +64,6 @@ namespace Sistema_de_Gestion_de_Importaciones.Services
                     }
                     else
                     {
-                        // Try Newtonsoft as last resort
                         _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                         try
                         {

@@ -48,7 +48,6 @@
                         <form asp-action="AsignarRol" method="post" class="fade-in">
                             <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                             
-                            <!-- Asegurar que el UsuarioId se envía correctamente -->
                             <input type="hidden" asp-for="UsuarioId" value="@usuario.id" />
 
                             <div class="mb-4">
@@ -167,18 +166,15 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         $(document).ready(function() {
-            // Verificar si hay roles cargados
-            var roleCount = $('select.select-role option').length - 1; // Restamos el placeholder
+            var roleCount = $('select.select-role option').length - 1;
             console.log('Roles cargados: ' + roleCount);
             
-            // Asegurar que se seleccione el rol actual del usuario si existe
             var currentRolId = @(usuario?.rol_id ?? 0);
             if (currentRolId > 0) {
                 $('select.select-role').val(currentRolId);
                 console.log('Rol seleccionado: ' + currentRolId);
             }
             
-            // Añadir diagnóstico al formulario
             $('#btnGuardarRol').click(function() {
                 console.log('Enviando asignación de rol...');
                 console.log('UsuarioId: ' + $('#UsuarioId').val());

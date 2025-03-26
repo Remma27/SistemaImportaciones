@@ -9,7 +9,7 @@
     <div class="card user-management-card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
             <h5 class="mb-0">Gestión de Usuarios</h5>
-            <div class="mt-3 mt-md-0"> <!-- Cambiado de mt-2 a mt-3 para más espacio en móviles -->
+            <div class="mt-3 mt-md-0"> 
                 <a asp-action="Create" class="btn btn-primary">
                     <i class="fas fa-plus me-1"></i> Nuevo Usuario
                 </a>
@@ -106,7 +106,6 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Inicialización de DataTable
             var table = $('#datatablesUsers').DataTable({
                 responsive: true,
                 language: {
@@ -116,23 +115,20 @@
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
                 columnDefs: [
-                    { responsivePriority: 1, targets: [0] },      // Nombre siempre visible
-                    { responsivePriority: 1, targets: [-1] },     // Acciones siempre visible
-                    { responsivePriority: 2, targets: [1, 3] },   // Email y Estado segunda prioridad
-                    { responsivePriority: 3, targets: [2, 4] },   // Rol y Último acceso tercera prioridad
-                    { className: "actions-column", targets: -1 },  // Clase para columna de acciones
-                    { "orderable": false, targets: [-1] }          // Columna de acciones no ordenable
+                    { responsivePriority: 1, targets: [0] },      
+                    { responsivePriority: 1, targets: [-1] },     
+                    { responsivePriority: 2, targets: [1, 3] },   
+                    { responsivePriority: 3, targets: [2, 4] },   
+                    { className: "actions-column", targets: -1 },  
+                    { "orderable": false, targets: [-1] }          
                 ]
             });
             
-            // Variable global para controlar el dropdown activo
             var activeButtonId = null;
             var $activeBackdrop = null;
             var $activeMenu = null;
             
-            // Implementación de los dropdowns
             $('.dropdown-toggle').on('click', function(e) {
-                // No modificar el comportamiento de los dropdowns en el navbar
                 if ($(this).closest('.navbar').length) {
                     return;
                 }
@@ -142,17 +138,14 @@
                 
                 var $button = $(this);
                 
-                // Asignar ID único si no tiene uno
                 var buttonId = $button.attr('id');
                 if (!buttonId) {
                     buttonId = 'btn_' + Math.random().toString(36).substr(2, 9);
                     $button.attr('id', buttonId);
                 }
                 
-                // Verificar si este botón ya tiene un dropdown abierto
                 var isOpen = activeButtonId === buttonId;
                 
-                // Cerrar todos los dropdowns abiertos
                 if ($activeMenu) {
                     $activeMenu.remove();
                     $activeMenu = null;
@@ -165,35 +158,29 @@
                 
                 $('body').css('overflow', '');
                 
-                // Si ya estaba abierto, solo resetear el estado y terminar
                 if (isOpen) {
                     activeButtonId = null;
                     return;
                 }
                 
-                // Actualizar botón activo
                 activeButtonId = buttonId;
                 
                 var $menu = $button.next('.dropdown-menu');
                 
-                // Crear un clon del menú para posicionarlo correctamente
                 var $clonedMenu = $menu.clone();
                 $clonedMenu.addClass('fixed-dropdown');
-                $activeMenu = $clonedMenu; // Guardar referencia para cerrar después
+                $activeMenu = $clonedMenu; 
                 
-                // Determinar la posición exacta del botón
                 var buttonPos = $button[0].getBoundingClientRect();
                 var $row = $button.closest('tr');
                 var rowIndex = $row.index();
                 var isFirstTwoRows = rowIndex < 2;
                 
-                // Replicar eventos en los elementos del menú clonado
                 $clonedMenu.find('a').each(function() {
                     var $a = $(this);
                     var href = $a.attr('href');
                     
                     $a.on('click', function(e) {
-                        // Evitar que el evento se propague al documento
                         e.stopPropagation();
                         
                         if (href && href !== '#') {
@@ -203,18 +190,13 @@
                     });
                 });
                 
-                // Crear backdrop con evento de cierre consistente
                 var $backdrop = $('<div class="table-dropdown-backdrop"></div>');
-                $activeBackdrop = $backdrop; // Guardar referencia
+                $activeBackdrop = $backdrop;
                 
-                // Posicionar y mostrar el dropdown según el tamaño de pantalla
                 if (window.innerWidth <= 576) {
-                    // En móviles: mostrar como bottom sheet
                     
-                    // Añadir backdrop primero
                     $('body').append($backdrop);
                     
-                    // Configurar el menú para móviles
                     $clonedMenu.css({
                         'position': 'fixed',
                         'bottom': '0',
@@ -229,23 +211,19 @@
                         'background-color': '#fff'
                     });
                     
-                    // Añadir el menú al body
                     $('body').append($clonedMenu);
                     
-                    // Mostrar backdrop con animación
                     setTimeout(function() {
                         $backdrop.addClass('show');
                         $('body').css('overflow', 'hidden');
                     }, 10);
                     
                 } else {
-                    // Para desktop/tablet: posicionar según la fila
                     var menuWidth = 220;
                     var windowHeight = window.innerHeight;
                     var windowWidth = window.innerWidth;
                     var leftPos = Math.min(buttonPos.left, windowWidth - menuWidth - 10);
                     
-                    // Configuración común
                     var commonCss = {
                         'position': 'fixed',
                         'width': menuWidth + 'px',
@@ -255,14 +233,12 @@
                     };
                     
                     if (isFirstTwoRows) {
-                        // Para las primeras dos filas: mostrar debajo
                         $clonedMenu.css($.extend({}, commonCss, {
                             'top': (buttonPos.bottom + window.scrollY) + 'px',
                             'left': leftPos + 'px',
                             'max-height': (windowHeight - buttonPos.bottom - 10) + 'px'
                         }));
                     } else {
-                        // Para el resto: mostrar encima
                         $clonedMenu.css($.extend({}, commonCss, {
                             'bottom': (windowHeight - buttonPos.top + window.scrollY) + 'px',
                             'left': leftPos + 'px',
@@ -272,16 +248,14 @@
                     
                     $('body').append($clonedMenu);
                     $('body').append($backdrop);
-                    $backdrop.css('opacity', '0'); // Invisible en desktop
+                    $backdrop.css('opacity', '0');
                     $backdrop.addClass('show');
                 }
                 
-                // Evento unificado para cerrar al hacer clic en el backdrop
                 $backdrop.on('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    // Cerrar dropdown y limpiar referencias
                     if ($activeMenu) {
                         $activeMenu.remove();
                         $activeMenu = null;
@@ -299,18 +273,15 @@
                     activeButtonId = null;
                 });
                 
-                // Evento para cerrar al hacer clic en el mismo botón
                 $button.one('click.close-dropdown', function() {
                     setTimeout(function() {
                         if (activeButtonId === buttonId) {
-                            // Simular clic en el backdrop para cerrar
                             $backdrop.trigger('click');
                         }
                     }, 50);
                 });
             });
             
-            // Cerrar dropdowns al hacer scroll o resize (con mecanismo unificado)
             function closeAllDropdowns() {
                 if ($activeMenu) {
                     $activeMenu.remove();
@@ -332,7 +303,6 @@
             $('.table-responsive, .dataTables_scrollBody').on('scroll', closeAllDropdowns);
             $(window).on('resize', closeAllDropdowns);
             
-            // Asegurar que se cierren los dropdowns al hacer clic fuera
             $(document).on('click', function(e) {
                 if (!$(e.target).closest('.dropdown-toggle').length && 
                     !$(e.target).closest('.fixed-dropdown').length) {

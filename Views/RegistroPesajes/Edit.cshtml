@@ -14,7 +14,6 @@
                 <input type="hidden" asp-for="IdEmpresa" />
                 <input type="hidden" asp-for="TipoTransaccion" />
                 <div class="row g-3">
-                    <!-- Guía -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="Guia" class="form-control" placeholder="Guía" required />
@@ -22,7 +21,6 @@
                             <span asp-validation-for="Guia" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Guía Alterna -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="GuiaAlterna" class="form-control" placeholder="Guía Alterna" />
@@ -30,7 +28,6 @@
                             <span asp-validation-for="GuiaAlterna" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Placa -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="Placa" class="form-control" placeholder="Placa" required />
@@ -38,7 +35,6 @@
                             <span asp-validation-for="Placa" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Placa Alterna -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="PlacaAlterna" class="form-control" placeholder="Placa Alterna" />
@@ -46,7 +42,6 @@
                             <span asp-validation-for="PlacaAlterna" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Kilos -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <input asp-for="PesoEntregado" class="form-control" type="number" min="0" step="0.01"
@@ -55,7 +50,6 @@
                             <span asp-validation-for="PesoEntregado" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Escotilla -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <select asp-for="Escotilla" class="form-select" required>
@@ -69,7 +63,6 @@
                             <span asp-validation-for="Escotilla" class="text-danger"></span>
                         </div>
                     </div>
-                    <!-- Bodega -->
                     <div class="col-md-6">
                         <div class="form-floating">
                             <select asp-for="Bodega" class="form-select" asp-items="ViewBag.Bodegas">

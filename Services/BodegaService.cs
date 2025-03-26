@@ -40,16 +40,13 @@ public class BodegaService : IBodegaService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
             _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
             
-            // Handle different JSON formats
             if (root.ValueKind == JsonValueKind.Array)
             {
-                // Direct array - new format
                 _logger.LogInformation("Detectado formato de array directo");
                 var bodegas = JsonSerializer.Deserialize<List<Empresa_Bodegas>>(content, options);
                 _logger.LogInformation($"Bodegas deserializadas: {bodegas?.Count ?? 0}");
@@ -57,7 +54,6 @@ public class BodegaService : IBodegaService
             }
             else if (root.ValueKind == JsonValueKind.Object)
             {
-                // Object with a property - check common patterns
                 if (root.TryGetProperty("value", out JsonElement valueElement))
                 {
                     _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -67,7 +63,6 @@ public class BodegaService : IBodegaService
                 }
                 else
                 {
-                    // Try Newtonsoft as last resort
                     _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                     try
                     {
@@ -118,7 +113,6 @@ public class BodegaService : IBodegaService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
@@ -134,7 +128,6 @@ public class BodegaService : IBodegaService
                 }
                 else
                 {
-                    // Direct object - new format
                     bodega = JsonSerializer.Deserialize<Empresa_Bodegas>(content, options);
                 }
             }

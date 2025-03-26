@@ -80,7 +80,6 @@
                     </div>
                     
                     <div class="position-relative">
-                        <!-- Barra de herramientas -->
                         <div class="position-absolute top-0 end-0 p-2">
                             <div class="btn-group btn-group-sm">
                                 <button id="btnExpandAll" class="btn btn-sm btn-light" title="Expandir todo">
@@ -98,7 +97,6 @@
                             </div>
                         </div>
                         
-                        <!-- Visor de JSON -->
                         <pre id="jsonViewer" class="json-viewer" style="min-height: 60vh;">@ViewBag.FormattedJSON</pre>
                     </div>
                 </div>
@@ -131,36 +129,32 @@
             let currentFontSize = 14;
             const jsonViewer = document.getElementById('jsonViewer');
             
-            // Formatear el JSON inicialmente
             try {
                 const jsonText = jsonViewer.textContent;
                 const jsonObj = JSON.parse(jsonText);
                 const formattedJson = JSON.stringify(jsonObj, null, 2);
                 jsonViewer.textContent = formattedJson;
                 
-                // Colorear el JSON (implementación simple para demostración)
                 highlightJson();
             } catch (e) {
                 console.error("Error al procesar JSON:", e);
             }
             
-            // Función para resaltar la sintaxis JSON
             function highlightJson() {
                 let jsonText = jsonViewer.textContent;
-                // Esta es una implementación básica, en producción usaríamos una biblioteca como highlight.js
                 jsonText = jsonText
                     .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function(match) {
-                        let cls = 'text-primary'; // número
+                        let cls = 'text-primary';
                         if (/^"/.test(match)) {
                             if (/:$/.test(match)) {
-                                cls = 'text-success fw-bold'; // clave
+                                cls = 'text-success fw-bold';
                             } else {
-                                cls = 'text-danger'; // string
+                                cls = 'text-danger';
                             }
                         } else if (/true|false/.test(match)) {
-                            cls = 'text-warning'; // booleano
+                            cls = 'text-warning';
                         } else if (/null/.test(match)) {
-                            cls = 'text-secondary'; // null
+                            cls = 'text-secondary';
                         }
                         return '<span class="' + cls + '">' + match + '</span>';
                     });
@@ -168,11 +162,9 @@
                 jsonViewer.innerHTML = jsonText;
             }
             
-            // Botón para copiar el JSON
             $('#btnCopyJson').on('click', function() {
                 navigator.clipboard.writeText(jsonViewer.textContent)
                     .then(() => {
-                        // Mostrar mensaje de éxito
                         const toast = document.createElement('div');
                         toast.className = 'position-fixed bottom-0 end-0 p-3 m-3 bg-success text-white rounded';
                         toast.style.zIndex = '9999';
@@ -187,18 +179,15 @@
                     });
             });
             
-            // Botón para alternar el formato compacto/expandido
             $('#btnToggleFormat').on('click', function() {
                 try {
                     const jsonObj = JSON.parse(jsonViewer.textContent);
                     compactView = !compactView;
                     
                     if (compactView) {
-                        // Vista compacta
                         jsonViewer.textContent = JSON.stringify(jsonObj);
                         $('#formatButtonText').text('Vista expandida');
                     } else {
-                        // Vista expandida
                         jsonViewer.textContent = JSON.stringify(jsonObj, null, 2);
                         $('#formatButtonText').text('Vista compacta');
                     }
@@ -209,7 +198,6 @@
                 }
             });
             
-            // Controles de zoom
             $('#btnZoomIn').on('click', function() {
                 currentFontSize += 2;
                 jsonViewer.style.fontSize = currentFontSize + 'px';
@@ -222,7 +210,6 @@
                 }
             });
             
-            // Funcionalidad para expandir/contraer (simulada)
             $('#btnExpandAll').on('click', function() {
                 highlightJson();
             });

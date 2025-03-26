@@ -40,16 +40,13 @@ public class BarcoService : IBarcoService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
             _logger.LogDebug($"JSON Root Kind: {root.ValueKind}");
             
-            // Handle different JSON formats
             if (root.ValueKind == JsonValueKind.Array)
             {
-                // Direct array - new format
                 _logger.LogInformation("Detectado formato de array directo");
                 var barcos = JsonSerializer.Deserialize<List<Barco>>(content, options);
                 _logger.LogInformation($"Barcos deserializados: {barcos?.Count ?? 0}");
@@ -57,7 +54,6 @@ public class BarcoService : IBarcoService
             }
             else if (root.ValueKind == JsonValueKind.Object)
             {
-                // Object with a property - check common patterns
                 if (root.TryGetProperty("value", out JsonElement valueElement))
                 {
                     _logger.LogInformation("Detectado formato con propiedad 'value'");
@@ -67,7 +63,6 @@ public class BarcoService : IBarcoService
                 }
                 else
                 {
-                    // Try Newtonsoft as last resort
                     _logger.LogInformation("Intentando deserialización con Newtonsoft.Json");
                     try
                     {
@@ -119,7 +114,6 @@ public class BarcoService : IBarcoService
                 PropertyNameCaseInsensitive = true
             };
 
-            // Analyze JSON structure
             using JsonDocument document = JsonDocument.Parse(content);
             var root = document.RootElement;
             
@@ -135,7 +129,6 @@ public class BarcoService : IBarcoService
                 }
                 else
                 {
-                    // Direct object - new format
                     barco = JsonSerializer.Deserialize<Barco>(content, options);
                 }
             }

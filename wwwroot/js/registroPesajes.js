@@ -206,7 +206,6 @@ function getHeaderStructure(headerCells) {
     headerCells.forEach((cell, index) => {
         const isHidden = !isElementVisible(cell)
 
-        // Lógica para manejar columnas toggle
         if (cell.classList.contains('unit-toggle-columns')) {
             const shouldInclude = isElementVisible(cell)
             if (!shouldInclude) {
@@ -214,7 +213,6 @@ function getHeaderStructure(headerCells) {
                 return
             }
 
-            // Si es visible, agregar las dos columnas (libras y quintales)
             const headerName = cell.textContent.trim()
             headerRow.push(`${headerName} (Libras)`)
             headerRow.push(`${headerName} (Quintales)`)
@@ -223,7 +221,6 @@ function getHeaderStructure(headerCells) {
             return
         }
 
-        // Para las otras columnas, continuar con la lógica existente
         if (isHidden) {
             excludeColumnIndices.push(index)
             columnMapping[index] = -1
@@ -268,25 +265,20 @@ function getHeaderStructure(headerCells) {
 }
 
 const columnFormatRules = {
-    // Porcentajes
     '% Desc.': { type: 'percentage', decimals: 2 },
     Porcentaje: { type: 'percentage', decimals: 2 },
 
-    // Unidades de peso
     Libras: { type: 'weight', unit: 'lbs', decimals: 2 },
     Quintales: { type: 'weight', unit: 'qq', decimals: 2 },
     Kg: { type: 'weight', unit: 'kg', decimals: 2 },
     Ton: { type: 'weight', unit: 'ton', decimals: 2 },
 
-    // Campos monetarios
     Total: { type: 'currency', symbol: 'Q', decimals: 2 },
     Precio: { type: 'currency', symbol: 'USD', decimals: 2 },
 
-    // Campos especiales
     Guía: { type: 'text', format: 'guia' },
     Placa: { type: 'text', format: 'placa' },
 
-    // Valores numéricos grandes
     Cantidad: { type: 'number', format: 'comma', decimals: 0 },
 }
 
@@ -305,7 +297,6 @@ function processTableRow(row, headerInfo) {
             continue
         }
 
-        // Verificar si la celda está oculta
         const $cell = $(cell)
 
         if (isHidden) {
@@ -355,57 +346,45 @@ function processTableRow(row, headerInfo) {
     return rowData
 }
 
-// Improved number extraction and formatting for international compatibility
 function extraerNumero(texto, mantenerDecimales = false) {
     if (!texto) return 0;
     
-    // Check for negative numbers (both - and parentheses format)
     const esNegativo = texto.toString().trim().startsWith('-') || 
                        (texto.toString().trim().includes('(') && 
                         texto.toString().trim().includes(')'));
     
     let cleaned = texto.toString()
         .trim()
-        .replace(/[\$€\s]/g, '')  // Remove currency symbols and spaces
-        .replace(/\(([^)]+)\)/, '-$1');  // Convert (123) to -123
+        .replace(/[\$€\s]/g, '') 
+        .replace(/\(([^)]+)\)/, '-$1');
     
     if (cleaned === '' || cleaned === '-') return 0;
     
-    // IMPROVED: Detect numbers with thousands separators like 9,318,790
     const comas = cleaned.match(/,/g) || [];
     const puntos = cleaned.match(/\./g) || [];
     
-    // Check for American format (thousands with commas, decimal with period)
-    // For example: 9,318,790 or 9,318,790.25
     const esFormatoAmericano = 
-        (comas.length > 1) || // Multiple commas indicate thousands separators
-        (comas.length === 1 && cleaned.match(/,\d{3}($|\D)/)) || // Comma followed by exactly 3 digits
-        (puntos.length === 1 && cleaned.match(/\.\d{1,2}$/)); // Period followed by 1-2 digits at the end
+        (comas.length > 1) || 
+        (comas.length === 1 && cleaned.match(/,\d{3}($|\D)/)) || 
+        (puntos.length === 1 && cleaned.match(/\.\d{1,2}$/));
     
-    // Check for European format (thousands with periods, decimal with comma)
-    // For example: 9.318.790 or 9.318.790,25
     const esFormatoEuropeo = 
-        (puntos.length > 1) || // Multiple periods indicate thousands separators
-        (puntos.length === 1 && cleaned.match(/\.\d{3}($|\D)/)) || // Period followed by exactly 3 digits
-        (comas.length === 1 && cleaned.match(/,\d{1,2}$/)); // Comma followed by 1-2 digits at the end
+        (puntos.length > 1) || 
+        (puntos.length === 1 && cleaned.match(/\.\d{3}($|\D)/)) ||
+        (comas.length === 1 && cleaned.match(/,\d{1,2}$/));
     
-    // Handle American format (9,318,790)
     if (esFormatoAmericano) {
-        // Remove all commas (thousands separators)
         cleaned = cleaned.replace(/,/g, '');
     }
-    // Handle European format (9.318.790,25)
     else if (esFormatoEuropeo) {
         cleaned = cleaned
-            .replace(/\.(?=.*,)/g, '')  // Remove periods (thousands separators)
-            .replace(',', '.');         // Convert decimal comma to period
+            .replace(/\.(?=.*,)/g, '')  
+            .replace(',', '.');         
     }
-    // If there is only one comma or period, treat as decimal separator
     else if (cleaned.includes(',')) {
         cleaned = cleaned.replace(',', '.');
     }
     
-    // Clean up multiple decimal points if they somehow remain
     const decimalPoints = cleaned.match(/\./g) || [];
     if (decimalPoints.length > 1) {
         cleaned = cleaned.replace(/\./g, (match, index, string) => 
@@ -414,7 +393,6 @@ function extraerNumero(texto, mantenerDecimales = false) {
     
     let valor = parseFloat(cleaned);
     
-    // Ensure negative values
     if (esNegativo && valor > 0) {
         valor = -valor;
     }
@@ -423,7 +401,6 @@ function extraerNumero(texto, mantenerDecimales = false) {
         return isNaN(valor) ? 0 : valor;
     }
     
-    // Preserve original decimal places if requested
     const decimalMatch = texto.toString().match(/[.,](\d+)(?!\d)/);
     if (decimalMatch && decimalMatch[1]) {
         const decimales = decimalMatch[1].length;
@@ -471,14 +448,14 @@ function formatNumbersInExcelSheet(worksheet, data) {
                     worksheet[cellAddress] = {
                         v: numValue,
                         t: 'n',
-                        z: isPercentageColumn ? '0.00%' : '#,##0.00', // Always use 2 decimal places
+                        z: isPercentageColumn ? '0.00%' : '#,##0.00', 
                     }
                 }
             } else if (typeof cellValue === 'number') {
                 worksheet[cellAddress] = {
                     v: cellValue,
                     t: 'n',
-                    z: isPercentageColumn ? '0.00%' : '#,##0.00', // Always use 2 decimal places
+                    z: isPercentageColumn ? '0.00%' : '#,##0.00', 
                 }
 
                 if (isPercentageColumn && cellValue < 1) {
@@ -495,7 +472,6 @@ function calculateColumnWidths(headers) {
     return headers.map(header => {
         const rule = getFormatRule(header)
 
-        // Anchuras basadas en tipo de dato
         if (rule) {
             switch (rule.type) {
                 case 'text':
@@ -511,7 +487,6 @@ function calculateColumnWidths(headers) {
             }
         }
 
-        // Anchura por defecto basada en contenido
         return Math.min(Math.max(header.length * 1.3, 12), 25)
     })
 }
@@ -1017,31 +992,25 @@ function exportTableToExcel(tableId, filename) {
         const headers = []
         const columnRules = []
 
-        // Configuración de formatos
         const columnFormatRules = {
-            // Porcentajes
             '% Desc.': { type: 'percentage', decimals: 2 },
             Porcentaje: { type: 'percentage', decimals: 2 },
 
-            // Unidades de peso
             Libras: { type: 'weight', unit: 'lbs', decimals: 0 },
             Quintales: { type: 'weight', unit: 'qq', decimals: 2 },
             Kg: { type: 'weight', unit: 'kg', decimals: 0 },
             Ton: { type: 'weight', unit: 'ton', decimals: 3 },
 
-            // Campos especiales
             Guía: { type: 'text', format: 'guia' },
             'Guía Alterna': { type: 'text', format: 'guia' },
             Placa: { type: 'text', format: 'placa' },
             'Placa Alterna': { type: 'text', format: 'placa' },
 
-            // Numéricos
             Peso: { type: 'number', format: 'comma', decimals: 2 },
             Faltante: { type: 'number', format: 'comma', decimals: 2 },
             Requerido: { type: 'number', format: 'comma', decimals: 2 },
         }
 
-        // Procesar encabezados
         const headerCells = Array.from(table.querySelectorAll('thead th')).filter(
             cell => isElementVisible(cell) && !cell.classList.contains('no-export'),
         )
@@ -1049,7 +1018,6 @@ function exportTableToExcel(tableId, filename) {
         headerCells.forEach(cell => {
             const headerText = cell.textContent.trim()
 
-            // Manejar columnas de conversión
             if (cell.classList.contains('unit-toggle-columns') && isElementVisible(cell)) {
                 headers.push(`${headerText} (Libras)`, `${headerText} (Quintales)`)
                 columnRules.push({ ...columnFormatRules['Libras'] }, { ...columnFormatRules['Quintales'] })
@@ -1061,7 +1029,6 @@ function exportTableToExcel(tableId, filename) {
 
         data.push(headers)
 
-        // Procesar filas del cuerpo
         const bodyRows = table.querySelectorAll('tbody tr')
         bodyRows.forEach(row => {
             const rowData = []
@@ -1073,7 +1040,6 @@ function exportTableToExcel(tableId, filename) {
                 const headerRule = columnRules[index]
                 let cellValue = cell.textContent.trim()
 
-                // Manejar celdas especiales
                 if (cell.classList.contains('unit-toggle-columns')) {
                     const lbs = cell.querySelector('.top-value')?.textContent.trim() || '0'
                     const qq = cell.querySelector('.bottom-value')?.textContent.trim() || '0'
@@ -1082,7 +1048,6 @@ function exportTableToExcel(tableId, filename) {
                     return
                 }
 
-                // Manejar campos con valores alternos
                 if (cell.querySelector('.data-alt-guia') || cell.querySelector('.data-alt-placa')) {
                     const main = cell.querySelector('div > span')?.textContent.trim() || ''
                     const alt = cell.querySelector('.data-alt-guia, .data-alt-placa')?.textContent.trim() || ''
@@ -1094,7 +1059,6 @@ function exportTableToExcel(tableId, filename) {
                     return
                 }
 
-                // Aplicar formato según tipo
                 if (headerRule) {
                     switch (headerRule.type) {
                         case 'percentage':
@@ -1117,7 +1081,6 @@ function exportTableToExcel(tableId, filename) {
             data.push(rowData)
         })
 
-        // Procesar totales
         const footerRows = table.querySelectorAll('tfoot tr')
         footerRows.forEach(row => {
             if (row.classList.contains('no-export')) return
@@ -1143,10 +1106,8 @@ function exportTableToExcel(tableId, filename) {
             data.push(rowData)
         })
 
-        // Crear hoja de cálculo
         const ws = XLSX.utils.aoa_to_sheet(data)
 
-        // Aplicar formatos
         data.forEach((row, rowIndex) => {
             row.forEach((value, colIndex) => {
                 const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex })
@@ -1154,7 +1115,6 @@ function exportTableToExcel(tableId, filename) {
             })
         })
 
-        // Configurar anchos de columna
         ws['!cols'] = calculateColumnWidths(headers, columnRules).map(w => ({ wch: w }))
 
         XLSX.utils.book_append_sheet(wb, ws, 'Datos')
@@ -1165,7 +1125,6 @@ function exportTableToExcel(tableId, filename) {
     }
 }
 
-// Funciones auxiliares
 function isElementVisible(el) {
     if (!el) return false
     let current = el
@@ -1227,7 +1186,6 @@ function calculateColumnWidths(headers, rules) {
     })
 }
 
-// Función mejorada para exportar el resumen agregado que utiliza valores raw
 function exportResumenAgregadoToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
@@ -1237,7 +1195,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
     try {
         const wb = XLSX.utils.book_new()
         
-        // Get visible columns and their header texts
         const headerCells = table.querySelectorAll('thead th')
         const columns = Array.from(headerCells).filter(cell => {
             return isElementVisible(cell) && 
@@ -1248,7 +1205,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         const headers = []
         const columnTypes = []
         
-        // Process headers, correctly handling unit-toggle columns
         columns.forEach(col => {
             const text = col.textContent.trim()
             
@@ -1268,7 +1224,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         
         const data = [headers]
         
-        // Process body rows
         const bodyRows = table.querySelectorAll('tbody tr')
         bodyRows.forEach(row => {
             if (row.classList.contains('no-export')) return
@@ -1290,25 +1245,21 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         return
                     }
                     
-                    // IMPORTANTE: Usar data-raw-value para valores numéricos cuando esté disponible
                     if (col.classList.contains('unit-toggle-columns')) {
                         const lbsElement = cell.querySelector('.top-value')
                         const qqElement = cell.querySelector('.bottom-value')
                         
-                        // Usar data-raw-value o extraer números como respaldo
                         const lbsValue = lbsElement?.getAttribute('data-raw-value') || 
                                          lbsElement?.textContent.trim() || '0'
                         const qqValue = qqElement?.getAttribute('data-raw-value') || 
                                         qqElement?.textContent.trim() || '0'
                         
-                        // Convertir a números
                         rowData.push(parseFloat(lbsValue) || 0, parseFloat(qqValue) || 0)
                     } else {
                         const rawValue = cell.getAttribute('data-raw-value')
                         const type = columnTypes[rowData.length]
                         
                         if (rawValue !== null && rawValue !== undefined) {
-                            // Usar el valor raw para valores numéricos
                             if (type === 'percentage') {
                                 rowData.push(parseFloat(rawValue) / 100)
                             } 
@@ -1320,7 +1271,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                                 rowData.push(rawValue)
                             }
                         } else {
-                            // Fallback a texto si no hay data-raw-value
                             const value = cell.textContent.trim()
                             if (type === 'percentage') {
                                 rowData.push(extractPercentage(value))
@@ -1345,7 +1295,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
             data.push(rowData)
         })
         
-        // Process footer rows similarly
         const footerRows = table.querySelectorAll('tfoot tr')
         footerRows.forEach(footerRow => {
             if (footerRow.classList.contains('no-export') || 
@@ -1367,7 +1316,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         return
                     }
                     
-                    // IMPORTANTE: Usar data-raw-value para valores numéricos cuando esté disponible
                     if (col.classList.contains('unit-toggle-columns')) {
                         const lbsElement = cell.querySelector('.top-value')
                         const qqElement = cell.querySelector('.bottom-value')
@@ -1420,9 +1368,8 @@ function exportResumenAgregadoToExcel(tableId, filename) {
         
         const ws = XLSX.utils.aoa_to_sheet(data)
         
-        // Aplicar formatos explícitos a todas las celdas numéricas
         data.forEach((row, rowIndex) => {
-            if (rowIndex === 0) return // Skip headers
+            if (rowIndex === 0) return 
             
             row.forEach((value, colIndex) => {
                 const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex })
@@ -1430,9 +1377,8 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                 
                 const tipo = columnTypes[colIndex]
                 
-                // Si es un número, garantizar el formato correcto
                 if (typeof value === 'number') {
-                    ws[cellRef].t = 'n' // Forzar tipo numérico
+                    ws[cellRef].t = 'n' 
                     
                     if (tipo === 'percentage') {
                         ws[cellRef].z = '0.00%'
@@ -1440,7 +1386,6 @@ function exportResumenAgregadoToExcel(tableId, filename) {
                         ws[cellRef].z = '#,##0.00'
                     } else if (tipo === 'libras') {
                         ws[cellRef].z = '#,##0'
-                        // Para números grandes, asegurar formato entero
                         ws[cellRef].v = Math.round(value) 
                     } else if (tipo === 'weight') {
                         ws[cellRef].z = '#,##0.00'
@@ -1451,10 +1396,8 @@ function exportResumenAgregadoToExcel(tableId, filename) {
             })
         })
         
-        // Configurar anchos de columna
         ws['!cols'] = calcResumenColumnWidths(data, columnTypes)
         
-        // Opciones explícitas para garantizar formato numérico
         const workbookOpts = {
             bookType: 'xlsx',
             bookSST: false,
@@ -1477,18 +1420,14 @@ function exportResumenAgregadoToExcel(tableId, filename) {
     }
 }
 
-// Funciones de extracción mejoradas
 function extractNumber(text) {
-    // Eliminar todo excepto dígitos, puntos, comas y signo negativo
     const cleanText = text.replace(/[^\d.,\-]/g, '');
     
-    // Identificar si hay separadores de miles (comas o puntos seguidos de 3 dígitos)
     const hasThousandsSeparators = /[.,]\d{3}(?=[.,]|$)/.test(cleanText);
     
     let result;
     
     if (hasThousandsSeparators) {
-        // Si hay separadores de miles, eliminarlos todos y usar solo el último como decimal
         const lastSeparatorIndex = Math.max(cleanText.lastIndexOf(','), cleanText.lastIndexOf('.'));
         if (lastSeparatorIndex > 0) {
             result = cleanText.substring(0, lastSeparatorIndex).replace(/[.,]/g, '') + 
@@ -1498,22 +1437,17 @@ function extractNumber(text) {
             result = cleanText.replace(/[.,]/g, '');
         }
     } else {
-        // Si no hay separadores de miles, reemplazar posible coma decimal por punto
         result = cleanText.replace(',', '.');
     }
     
-    // Parsear y devolver como número
     return parseFloat(result) || 0;
 }
 
 function extractPercentage(text) {
-    // Eliminar símbolo de porcentaje y espacios
     const cleaned = text.replace(/[%\s]/g, '');
-    // Extraer número y dividir por 100
     return extractNumber(cleaned) / 100;
 }
 
-// Actualizar también la función estándar de exportación a Excel
 function exportTableToExcel(tableId, filename) {
     const table = document.getElementById(tableId)
     if (!table) {
@@ -1526,31 +1460,25 @@ function exportTableToExcel(tableId, filename) {
         const headers = []
         const columnRules = []
 
-        // Configuración de formatos
         const columnFormatRules = {
-            // Porcentajes
             '% Desc.': { type: 'percentage', decimals: 2 },
             Porcentaje: { type: 'percentage', decimals: 2 },
 
-            // Unidades de peso
             Libras: { type: 'weight', unit: 'lbs', decimals: 0 },
             Quintales: { type: 'weight', unit: 'qq', decimals: 2 },
             Kg: { type: 'weight', unit: 'kg', decimals: 0 },
             Ton: { type: 'weight', unit: 'ton', decimals: 3 },
 
-            // Campos especiales
             Guía: { type: 'text', format: 'guia' },
             'Guía Alterna': { type: 'text', format: 'guia' },
             Placa: { type: 'text', format: 'placa' },
             'Placa Alterna': { type: 'text', format: 'placa' },
 
-            // Numéricos
             Peso: { type: 'number', format: 'comma', decimals: 2 },
             Faltante: { type: 'number', format: 'comma', decimals: 2 },
             Requerido: { type: 'number', format: 'comma', decimals: 2 },
         }
 
-        // Procesar encabezados
         const headerCells = Array.from(table.querySelectorAll('thead th')).filter(
             cell => isElementVisible(cell) && !cell.classList.contains('no-export'),
         )
@@ -1558,7 +1486,6 @@ function exportTableToExcel(tableId, filename) {
         headerCells.forEach(cell => {
             const headerText = cell.textContent.trim()
 
-            // Manejar columnas de conversión
             if (cell.classList.contains('unit-toggle-columns') && isElementVisible(cell)) {
                 headers.push(`${headerText} (Libras)`, `${headerText} (Quintales)`)
                 columnRules.push({ ...columnFormatRules['Libras'] }, { ...columnFormatRules['Quintales'] })
@@ -1570,7 +1497,6 @@ function exportTableToExcel(tableId, filename) {
 
         data.push(headers)
 
-        // Procesar filas del cuerpo
         const bodyRows = table.querySelectorAll('tbody tr')
         bodyRows.forEach(row => {
             const rowData = []
@@ -1582,7 +1508,6 @@ function exportTableToExcel(tableId, filename) {
                 const headerRule = columnRules[index]
                 let cellValue = cell.textContent.trim()
 
-                // Manejar celdas especiales
                 if (cell.classList.contains('unit-toggle-columns')) {
                     const lbs = cell.querySelector('.top-value')?.textContent.trim() || '0'
                     const qq = cell.querySelector('.bottom-value')?.textContent.trim() || '0'
@@ -1591,7 +1516,6 @@ function exportTableToExcel(tableId, filename) {
                     return
                 }
 
-                // Manejar campos con valores alternos
                 if (cell.querySelector('.data-alt-guia') || cell.querySelector('.data-alt-placa')) {
                     const main = cell.querySelector('div > span')?.textContent.trim() || ''
                     const alt = cell.querySelector('.data-alt-guia, .data-alt-placa')?.textContent.trim() || ''
@@ -1603,7 +1527,6 @@ function exportTableToExcel(tableId, filename) {
                     return
                 }
 
-                // Aplicar formato según tipo
                 if (headerRule) {
                     switch (headerRule.type) {
                         case 'percentage':
@@ -1626,7 +1549,6 @@ function exportTableToExcel(tableId, filename) {
             data.push(rowData)
         })
 
-        // Procesar totales
         const footerRows = table.querySelectorAll('tfoot tr')
         footerRows.forEach(row => {
             if (row.classList.contains('no-export')) return
@@ -1652,10 +1574,8 @@ function exportTableToExcel(tableId, filename) {
             data.push(rowData)
         })
 
-        // Crear hoja de cálculo
         const ws = XLSX.utils.aoa_to_sheet(data)
 
-        // Aplicar formatos
         data.forEach((row, rowIndex) => {
             row.forEach((value, colIndex) => {
                 const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex })
@@ -1663,10 +1583,8 @@ function exportTableToExcel(tableId, filename) {
             })
         })
 
-        // Configurar anchos de columna
         ws['!cols'] = calculateColumnWidths(headers, columnRules).map(w => ({ wch: w }))
 
-        // Add workbook options to ensure consistent decimal handling
         const workbookOpts = {
             bookType: 'xlsx',
             bookSST: false,
@@ -1681,24 +1599,17 @@ function exportTableToExcel(tableId, filename) {
     }
 }
 
-// Actualizar la función para los registros individuales:
 $('#btnExportarExcelIndividuales').on('click', function () {
-    // ...existing code...
     
-    // Al procesar celdas:
     const rawValue = cell.getAttribute('data-raw-value');
     if (rawValue !== null && rawValue !== undefined) {
         rowData.push(parseFloat(rawValue));
     } else {
-        // Fallback a extracción normal
         const cellText = cell.textContent.trim();
-        // ...existing code...
     }
     
-    // ...existing code...
 });
 
-// Añadir la función que falta para calcular los anchos de columna en el resumen agregado
 function calcResumenColumnWidths(data, columnTypes) {
     const colWidths = data[0].map(header => Math.max(12, header.length * 1.2));
 
@@ -1719,7 +1630,6 @@ function calcResumenColumnWidths(data, columnTypes) {
                 } else if (colType === 'quintales') {
                     numStr = cellValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 } else if (colType === 'libras') {
-                    // Usar formato que garantice números enteros para libras
                     numStr = Math.round(cellValue).toLocaleString('en-US', { maximumFractionDigits: 0 });
                 } else {
                     numStr = cellValue.toLocaleString('en-US');
@@ -1738,7 +1648,6 @@ function calcResumenColumnWidths(data, columnTypes) {
         const header = data[0][idx] || '';
         const colType = columnTypes[idx] || '';
 
-        // Ajustes específicos para tipos de columnas
         if (header.includes('Empresa')) {
             return { wch: Math.max(width, 25) };
         } else if (colType === 'percentage') {
@@ -1757,20 +1666,16 @@ function calcResumenColumnWidths(data, columnTypes) {
     });
 }
 
-// También debemos definir las funciones extractNumber y extractPercentage que son usadas en exportResumenAgregadoToExcel
 function extractNumber(text) {
     if (!text) return 0;
     
-    // Eliminar todo excepto dígitos, puntos, comas y signo negativo
     const cleanText = text.replace(/[^\d.,\-]/g, '');
     
-    // Identificar si hay separadores de miles (comas o puntos seguidos de 3 dígitos)
     const hasThousandsSeparators = /[.,]\d{3}(?=[.,]|$)/.test(cleanText);
     
     let result;
     
     if (hasThousandsSeparators) {
-        // Si hay separadores de miles, eliminarlos todos y usar solo el último como decimal
         const lastSeparatorIndex = Math.max(cleanText.lastIndexOf(','), cleanText.lastIndexOf('.'));
         if (lastSeparatorIndex > 0) {
             result = cleanText.substring(0, lastSeparatorIndex).replace(/[.,]/g, '') + 
@@ -1780,55 +1685,42 @@ function extractNumber(text) {
             result = cleanText.replace(/[.,]/g, '');
         }
     } else {
-        // Si no hay separadores de miles, reemplazar posible coma decimal por punto
         result = cleanText.replace(',', '.');
     }
     
-    // Parsear y devolver como número
     return parseFloat(result) || 0;
 }
 
 function extractPercentage(text) {
     if (!text) return 0;
-    // Eliminar símbolo de porcentaje y espacios
     const cleaned = text.replace(/[%\s]/g, '');
-    // Extraer número y dividir por 100
     return extractNumber(cleaned) / 100;
 }
 
-// Implementar la función calcColumnWidths faltante para manejo de columnas en Excel
 function calcColumnWidths(data) {
-    // Si no hay datos, devolver una configuración predeterminada
     if (!data || data.length === 0 || !data[0]) {
-        return [{ wch: 10 }]; // Ancho de columna predeterminado
+        return [{ wch: 10 }]; 
     }
 
-    // Obtener los encabezados de la primera fila
     const headers = data[0];
-    // Inicializar los anchos con un valor basado en la longitud del texto del encabezado
     const widths = headers.map(header => ({ 
         wch: Math.min(Math.max(String(header).length * 1.2, 10), 30) 
     }));
 
-    // Ajustar anchos basado en el contenido de todas las filas
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
         for (let j = 0; j < row.length && j < widths.length; j++) {
             const cellValue = row[j];
             if (cellValue === null || cellValue === undefined) continue;
             
-            // Calcular el ancho necesario para este valor
             let valueWidth;
             if (typeof cellValue === 'number') {
-                // Para números, convertir a string con formato y calcular longitud
                 const formatted = cellValue.toLocaleString('en-US');
-                valueWidth = formatted.length + 1; // +1 para espacio extra
+                valueWidth = formatted.length + 1; 
             } else {
-                // Para strings, usar longitud directamente
                 valueWidth = String(cellValue).length;
             }
             
-            // Actualizar el ancho si este valor requiere más espacio
             widths[j].wch = Math.max(widths[j].wch, Math.min(valueWidth * 1.1, 50));
         }
     }
@@ -1836,9 +1728,7 @@ function calcColumnWidths(data) {
     return widths;
 }
 
-// También podemos definir una función alternativa para btn individuales
 function calcIndividualesColumnWidths(data) {
-    // Similar a calcColumnWidths pero con reglas específicas para la tabla de registros individuales
     const colWidths = [];
     
     if (!data || data.length === 0) return colWidths;
@@ -1849,7 +1739,6 @@ function calcIndividualesColumnWidths(data) {
         const header = headers[i];
         let width = Math.max(String(header).length * 1.3, 10);
         
-        // Reglas personalizadas para columnas específicas
         if (header.includes('#')) {
             width = 6;
         } else if (header.includes('Esc')) {
@@ -1870,13 +1759,11 @@ function calcIndividualesColumnWidths(data) {
             width = 12;
         }
         
-        // Limitar el ancho máximo
         width = Math.min(width, 30);
         
         colWidths.push({ wch: width });
     }
     
-    // Refinar anchos basados en los datos
     for (let i = 1; i < data.length; i++) {
         const row = data[i];
         for (let j = 0; j < row.length && j < colWidths.length; j++) {
@@ -1884,10 +1771,9 @@ function calcIndividualesColumnWidths(data) {
             if (!value && value !== 0) continue;
             
             let valueWidth = typeof value === 'string' ? value.length : String(value).length;
-            // Limitar el incremento de ancho por datos muy largos
             colWidths[j].wch = Math.min(
                 Math.max(colWidths[j].wch, valueWidth * 1.1),
-                50 // Ancho máximo absoluto
+                50 
             );
         }
     }
@@ -1895,17 +1781,12 @@ function calcIndividualesColumnWidths(data) {
     return colWidths;
 }
 
-// Asegurémonos de que el código que llama a calcColumnWidths esté utilizando la nueva función
 $('#btnExportarExcelIndividuales').off('click').on('click', function() {
-    // ...existing code...
     
     try {
-        // ...existing code...
         
-        // Corregir línea que puede estar causando el error
-        ws['!cols'] = calcColumnWidths(data); // Usar la nueva función definida
+        ws['!cols'] = calcColumnWidths(data); 
         
-        // ...existing code...
     } catch (error) {
         console.error('Error completo:', error);
         alert('Error durante la exportación: ' + error.message);

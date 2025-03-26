@@ -119,22 +119,18 @@
 </div>
 
 <script>
-    // Make the escotillas containers scrollable horizontally
     document.addEventListener('DOMContentLoaded', function() {
         const containers = document.querySelectorAll('.escotillas-container');
         
-        // Add visual cue for scrollable areas on small screens
         if (window.innerWidth < 992) {
             containers.forEach(container => {
                 if (container.scrollWidth > container.clientWidth) {
                     container.style.boxShadow = '0 0 5px rgba(0,0,0,0.1)';
                     
-                    // Add subtle divider lines between escotillas on small screens
                     const escotillas = container.querySelectorAll('.escotilla-header, .escotilla-value');
                     escotillas.forEach(el => {
                         el.style.borderRight = '1px solid #f0f0f0';
                     });
-                    // Remove border from last element
                     if (escotillas.length > 0) {
                         escotillas[escotillas.length - 1].style.borderRight = 'none';
                     }

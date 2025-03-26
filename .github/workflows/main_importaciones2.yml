@@ -1,3 +1,5 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
 
 name: Build and deploy ASP.Net Core app to Azure Web App - Importaciones2
 
@@ -18,7 +20,7 @@ jobs:
     build:
         runs-on: windows-latest
         permissions:
-            contents: read 
+            contents: read #This is required for actions/checkout
 
         steps:
             - uses: actions/checkout@v4
@@ -45,12 +47,10 @@ jobs:
             - name: Run tests
               run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal
 
+            # Solo publicamos si es un push a main o un workflow_dispatch (no en PR)
             - name: dotnet publish
               if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-              run: |
-                dotnet publish -c ${{ env.BUILD_CONFIGURATION }} --no-build
-                mkdir -p "${{env.DOTNET_ROOT}}/myapp"
-                cp -r */bin/${{ env.BUILD_CONFIGURATION }}/**/publish/* "${{env.DOTNET_ROOT}}/myapp/"
+              run: dotnet publish -c ${{ env.BUILD_CONFIGURATION }} -o "${{env.DOTNET_ROOT}}/myapp" --no-build
 
             - name: Upload artifact for deployment job
               if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -63,6 +63,7 @@ jobs:
     deploy:
         runs-on: windows-latest
         needs: build
+        # Solo desplegamos si es un push a main o un workflow_dispatch (no en PR)
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         environment:
             name: 'Production'

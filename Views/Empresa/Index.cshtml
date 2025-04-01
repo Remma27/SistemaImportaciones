@@ -5,6 +5,7 @@
 }
 
 <div class="container-fluid">
+    @Html.AntiForgeryToken()
     <div class="card shadow">
         <div class="card-header bg-primary text-white py-3">
             <div class="row align-items-center">
@@ -59,14 +60,13 @@
                                 <tr>
                                     <td>@Html.DisplayFor(modelItem => item.nombreempresa)</td>
                                     <td>
-                                        @if (item.estatus == 1)
-                                        {
-                                            <span class="badge bg-success">Activo</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">Inactivo</span>
-                                        }
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input status-toggle" 
+                                                   type="checkbox" 
+                                                   id="status-@item.id_empresa" 
+                                                   data-id="@item.id_empresa"
+                                                   @(item.estatus == 1 ? "checked" : "")>
+                                        </div>
                                     </td>
                                     <td class="text-end">
                                         <a asp-controller="Empresa" asp-action="Edit" asp-route-id="@item.id_empresa"
@@ -98,4 +98,76 @@
         z-index: 1;
         background-color: #f8f9fa;
     }
+    
+    /* Toggle switch styling */
+    .status-toggle {
+        width: 3em;
+        height: 1.5em;
+        cursor: pointer;
+    }
+    
+    .status-toggle:checked {
+        background-color: #198754;
+        border-color: #198754;
+    }
+    
+    .status-toggle:not(:checked) {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .form-check.form-switch {
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-check-label {
+        margin-left: 0.5rem;
+    }
 </style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Handle status toggle clicks
+            $('.status-toggle').on('change', function() {
+                const checkbox = $(this);
+                const id = checkbox.data('id');
+                const isChecked = checkbox.prop('checked');
+                
+                // Disable checkbox while processing
+                checkbox.prop('disabled', true);
+                
+                // Get CSRF token
+                const token = $('input[name="__RequestVerificationToken"]').val();
+                
+                // Make AJAX request to update status
+                $.ajax({
+                    url: '@Url.Action("ToggleStatus", "Empresa")',
+                    type: 'POST',
+                    data: { id: id, __RequestVerificationToken: token },
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success message
+                            toastService.success(response.message);
+                        } else {
+                            // Restore checkbox state
+                            checkbox.prop('checked', !isChecked);
+                            // Show error message
+                            toastService.error(response.message);
+                        }
+                    },
+                    error: function() {
+                        // Restore checkbox state
+                        checkbox.prop('checked', !isChecked);
+                        toastService.error('Error de comunicación con el servidor');
+                    },
+                    complete: function() {
+                        // Re-enable checkbox
+                        checkbox.prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+}

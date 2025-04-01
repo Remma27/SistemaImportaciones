@@ -168,5 +168,36 @@ namespace Sistema_de_Gestion_de_Importaciones.Controllers
                 }
             }
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administrador,Operador")]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            try
+            {
+                // Get current empresa
+                var empresa = await _empresaService.GetByIdAsync(id);
+                if (empresa == null)
+                {
+                    return Json(new { success = false, message = "Empresa no encontrada" });
+                }
+
+                // Toggle status (1 -> 0, 0 -> 1)
+                empresa.estatus = empresa.estatus == 1 ? 0 : 1;
+                empresa.idusuario = User.GetUserId();
+
+                // Update database
+                await _empresaService.UpdateAsync(id, empresa);
+
+                string statusText = empresa.estatus == 1 ? "activada" : "desactivada";
+                return Json(new { success = true, message = $"Empresa {statusText} correctamente", newStatus = empresa.estatus });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cambiar estado de la empresa {Id}", id);
+                return Json(new { success = false, message = "Error al cambiar el estado de la empresa" });
+            }
+        }
     }
 }

@@ -338,6 +338,14 @@ builder.Services.AddHttpClient("API", (sp, client) =>
     CookieContainer = new CookieContainer()
 });
 
+builder.Services.AddHttpClient("ApiClient", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["API_BASE_URL"] ?? "http://localhost:5079/");
+    client.DefaultRequestHeaders.Accept.Clear();
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+})
+.AddHttpMessageHandler<ApiAuthenticationHandler>();
+
 builder.Services.AddScoped<IImportacionService>(sp =>
 {
     var httpClient = sp.GetRequiredService<IHttpClientFactory>().CreateClient("API");
@@ -415,6 +423,8 @@ builder.Services.AddScoped<IHistorialService>(sp =>
 });
 
 builder.Services.AddScoped<RolPermisoService>();
+
+builder.Services.AddScoped<ISyncService, SyncService>();
 
 builder.Services.AddHsts(options =>
 {

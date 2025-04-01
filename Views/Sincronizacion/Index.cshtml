@@ -1,0 +1,208 @@
+@{
+    ViewData["Title"] = "Sincronización de Datos";
+}
+
+<link rel="stylesheet" href="~/css/sincronizacion.css" asp-append-version="true" />
+
+<div class="container sync-container">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="sync-title">Sincronización de Datos</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card sync-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-download me-2"></i>Exportar Datos</h5>
+                </div>
+                <div class="card-body">
+                    <p>Exporta los datos completos del sistema para poder importarlos en otro servidor.</p>
+
+                    <!-- Export form -->
+                    <form id="exportForm" data-process="true" onsubmit="handleExport(event)">
+                        <button type="submit" class="btn btn-primary sync-btn">
+                            <i class="fas fa-download me-2"></i> Exportar Datos
+                        </button>
+                        <small class="d-block text-muted mt-2">Se generará un archivo comprimido con todos los datos del
+                            sistema.</small>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card sync-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Importar Datos</h5>
+                </div>
+                <div class="card-body">
+                    <p>Importa los datos previamente exportados desde otro servidor.</p>
+                    
+                    <!-- Import form -->
+                    <form action="/mvc/Sincronizacion/ImportarDatos" method="post" enctype="multipart/form-data" data-process="true">
+                        <div class="mb-3">
+                            <div class="form-file-upload">
+                                <label for="archivo" class="file-custom-label d-block" id="fileLabel">
+                                    Seleccionar archivo de sincronización
+                                </label>
+                                <input type="file" id="archivo" name="archivo" class="file-input-hidden"
+                                       accept=".json,.gz,.json.gz" required />
+                            </div>
+                            <div class="file-name-display" id="fileName"></div>
+                            <small class="text-muted d-block mt-1">Acepta archivos JSON o archivos comprimidos (.gz)</small>
+                        </div>
+                        <button type="submit" class="btn btn-success sync-btn">
+                            <i class="fas fa-upload me-2"></i> Importar Datos
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card sync-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Instrucciones</h5>
+                </div>
+                <div class="card-body sync-instructions">
+                    <ol>
+                        <li><strong>Para sincronizar datos desde un sistema sin internet a uno en línea:</strong>
+                            <ul>
+                                <li>En el sistema sin internet, use "Exportar Datos" para crear un archivo comprimido</li>
+                                <li>Transfiera el archivo manualmente al sistema con internet</li>
+                                <li>En el sistema con internet, use "Importar Datos" para cargar el archivo</li>
+                            </ul>
+                        </li>
+                        <li><strong>Para sincronizar datos desde un sistema en línea a uno sin internet:</strong>
+                            <ul>
+                                <li>En el sistema en línea, use "Exportar Datos"</li>
+                                <li>Transfiera el archivo al sistema sin internet</li>
+                                <li>Importe el archivo en el sistema sin internet</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <div class="alert alert-warning sync-alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i> <strong>Importante:</strong> La sincronización importa el conjunto completo de datos. Si se detectan entidades idénticas durante la importación, éstas se omitirán sin actualizarse.
+                    </div>
+                    <div class="alert alert-info sync-alert">
+                        <i class="fas fa-info-circle me-2"></i> La sincronización puede tardar varios minutos dependiendo de la cantidad de datos. No cierre la ventana durante el proceso.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Processing overlay with spinner -->
+<div id="processingOverlay" class="processing-overlay">
+    <div class="processing-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Procesando...</span>
+        </div>
+        <h5 id="processingMessage">Procesando datos...</h5>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // File input handling
+            $('#archivo').change(function() {
+                const fileName = $(this).val().split('\\').pop();
+                if (fileName) {
+                    $('#fileName').text(fileName);
+                    $('#fileLabel').text('Archivo seleccionado');
+                } else {
+                    $('#fileName').text('');
+                    $('#fileLabel').text('Seleccionar archivo de sincronización');
+                }
+            });
+
+            // Process forms with loading indicator
+            $('form[data-process="true"]').submit(function(e) {
+                if (this.checkValidity()) {
+                    // Use the form's action attribute directly instead of includes
+                    const actionUrl = $(this).attr('action').toLowerCase();
+                    const isExport = actionUrl.includes('exportardatos');
+                    const isImport = actionUrl.includes('importardatos');
+                    const isEmail = actionUrl.includes('enviarcorreo');
+                    
+                    const processingMsg = isExport 
+                        ? 'Exportando datos, por favor espere...' 
+                        : (isImport 
+                            ? 'Importando datos, por favor espere...' 
+                            : 'Enviando correo, por favor espere...');
+                    
+                    $('#processingMessage').text(processingMsg);
+                    
+                    // For exports, we handle differently since it's a download
+                    if (isExport) {
+                        // Don't block UI for exports, just show toast and restore button
+                        setTimeout(() => {
+                            toastService.success('La exportación ha comenzado. El archivo se descargará automáticamente.');
+                            $(this).find('button[type="submit"]').prop('disabled', false);
+                        }, 1000);
+                    } else {
+                        // For non-exports, show overlay and handle standard form submission
+                        $('#processingOverlay').addClass('show');
+                    }
+                    
+                    // Disable button
+                    const btn = $(this).find('button[type="submit"]');
+                    const originalHtml = btn.html();
+                    btn.prop('disabled', true);
+                    btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...');
+                    
+                    // For exports, restore button after 3 seconds
+                    if (isExport) {
+                        setTimeout(() => {
+                            btn.prop('disabled', false);
+                            btn.html(originalHtml);
+                        }, 3000);
+                    }
+                }
+            });
+
+            // Hide processing overlay when page loads again after form submission
+            $('#processingOverlay').removeClass('show');
+
+        });
+
+        function handleExport(event) {
+            event.preventDefault();
+            
+            // Display processing state
+            const btn = $('#exportForm').find('button[type="submit"]');
+            const originalHtml = btn.html();
+            btn.prop('disabled', true);
+            btn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...');
+            
+            // Show toast message
+            toastService.success('Iniciando exportación. El archivo se descargará automáticamente.');
+            
+            // Use URL helpers to get the correct path
+            const exportUrl = '@Url.Action("ExportarDatos", "Sincronizacion")';
+            
+            // Create a hidden iframe for download
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = exportUrl;
+            document.body.appendChild(iframe);
+            
+            // Reset button after a delay
+            setTimeout(() => {
+                btn.prop('disabled', false);
+                btn.html(originalHtml);
+                
+                // Clean up iframe after download should be complete
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 10000);
+            }, 3000);
+        }
+    </script>
+}

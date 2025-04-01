@@ -1,0 +1,165 @@
+.sync-container {
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.sync-title {
+    color: #333;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #0d6efd;
+    padding-left: 15px;
+}
+
+.sync-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    height: 100%;
+}
+
+.sync-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+}
+
+.sync-card .card-header {
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    font-weight: 600;
+}
+
+.sync-card .card-body {
+    padding: 1.5rem;
+}
+
+.sync-btn {
+    border-radius: 5px;
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.2s;
+}
+
+.sync-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sync-btn:active {
+    transform: translateY(0);
+}
+
+.sync-instructions {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.sync-instructions ol li {
+    margin-bottom: 1rem;
+}
+
+.sync-instructions ul li {
+    margin-bottom: 0.5rem;
+}
+
+.sync-alert {
+    border-radius: 5px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-file-upload {
+    position: relative;
+}
+
+.file-custom-label {
+    cursor: pointer;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+    transition: all 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.file-custom-label:hover {
+    background-color: #e9ecef;
+}
+
+.file-input-hidden {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.file-name-display {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.email-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+    .sync-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .email-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .email-form .sync-btn {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Processing animation */
+.processing-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1050;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s linear;
+}
+
+.processing-overlay.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.processing-spinner {
+    padding: 2rem;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+}
+
+.processing-spinner .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+}

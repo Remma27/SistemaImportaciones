@@ -114,14 +114,15 @@
                                                             <i class="fas fa-chart-bar menu-icon"></i>Informe General
                                                         </a>
                                                     </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="@Url.Action("Index", "Sincronizacion")">
+                                                            <i class="fas fa-sync menu-icon"></i> Sincronización
+                                                        </a>
+                                                    </li>
                                                 </ul>
                                             </li>
 
-                                            <li class="nav-item">
-                                                <a class="nav-link" href="@Url.Action("Index", "Sincronizacion")">
-                                                    <i class="fas fa-sync"></i> Sincronización
-                                                </a>
-                                            </li>
+
 
                                             @if (User.IsInRole("Administrador"))
                                             {

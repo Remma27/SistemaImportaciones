@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Verificar si Chart está disponible
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está cargado correctamente');
+        return;
+    }
+
     const COLORS = {
         COMPLETE: '#28a745',
         IN_PROGRESS: '#0d6efd',
@@ -24,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return COLORS.WARNING;
     }
 
+    // Objeto para almacenar instancias de gráficas
+    const chartInstances = {};
+
     function initializeDonutCharts() {
         document.querySelectorAll('canvas[id^="donutChart"]').forEach(canvas => {
             const porcentaje = parseFloat(canvas.getAttribute('data-porcentaje') || 0);
@@ -31,53 +40,69 @@ document.addEventListener('DOMContentLoaded', function () {
             const complemento = 100 - porcentaje;
         
             const color = determinarColor(estado, porcentaje);
-
-            if (Chart.getChart(canvas)) {
-                Chart.getChart(canvas).destroy();
+            
+            // Método más seguro para verificar y destruir gráficos existentes
+            try {
+                // Si tenemos una instancia guardada para este canvas
+                if (chartInstances[canvas.id]) {
+                    chartInstances[canvas.id].destroy();
+                    delete chartInstances[canvas.id];
+                }
+                // Alternativa usando Chart.getChart si está disponible
+                else if (typeof Chart.getChart === 'function' && Chart.getChart(canvas)) {
+                    Chart.getChart(canvas).destroy();
+                }
+            } catch (e) {
+                console.warn('Error al intentar destruir gráfico existente:', e);
             }
 
-            new Chart(canvas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [porcentaje, complemento],
-                        backgroundColor: [color, COLORS.BACKGROUND],
-                        borderWidth: 0,
-                        borderRadius: 5,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '75%',
-                    rotation: -90,
-                    circumference: 360,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
+            try {
+                // Crear nueva instancia y guardarla
+                chartInstances[canvas.id] = new Chart(canvas.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [porcentaje, complemento],
+                            backgroundColor: [color, COLORS.BACKGROUND],
+                            borderWidth: 0,
+                            borderRadius: 5,
+                            hoverOffset: 4
+                        }]
                     },
-                    animation: {
-                        animateRotate: true,
-                        animateScale: true,
-                        duration: 2000,
-                        easing: 'easeOutQuart'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        rotation: -90,
+                        circumference: 360,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 2000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+
+                const container = canvas.closest('.donut-chart-container');
+                if (container) {
+                    const badge = container.querySelector('.badge');
+                    if (badge) {
+                        badge.style.backgroundColor = color;
+                        badge.style.color = 'white';
+                    }
+                
+                    const porcentajeSpan = container.querySelector('.fw-bold');
+                    if (porcentajeSpan) {
+                        porcentajeSpan.style.color = color; 
                     }
                 }
-            });
-
-            const container = canvas.closest('.donut-chart-container');
-            if (container) {
-                const badge = container.querySelector('.badge');
-                if (badge) {
-                    badge.style.backgroundColor = color;
-                    badge.style.color = 'white';
-                }
-            
-                const porcentajeSpan = container.querySelector('.fw-bold');
-                if (porcentajeSpan) {
-                    porcentajeSpan.style.color = color; 
-                }
+            } catch (e) {
+                console.error('Error al crear gráfico de dona:', e);
             }
         });
     }

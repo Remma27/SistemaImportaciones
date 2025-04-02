@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using API.Data;
 using API.Models;
 using Microsoft.EntityFrameworkCore;
@@ -24,19 +23,11 @@ namespace API.Services
         private readonly IConfiguration _config;
         private readonly HistorialService _historialService;
         
-        // Lista de tablas sin campo de fecha (ajustar según tu estructura real)
-        private readonly HashSet<Type> _entidadesSinFecha = new HashSet<Type>
-        {
-            // Ejemplos (reemplazar con tus entidades reales sin fecha):
-            // typeof(Usuario),
-            // typeof(Permiso),
-            // typeof(Rol)
-        };
 
         public SyncService(
             ApiContext context, 
             ILogger<SyncService> logger, 
-            IConfiguration config,
+            IConfiguration config, 
             HistorialService historialService)
         {
             _context = context;
@@ -44,7 +35,6 @@ namespace API.Services
             _config = config;
             _historialService = historialService;
         }
-
         public async Task<MemoryStream> ExportarDatosAsync(DateTime? desde = null)
         {
             try
@@ -58,7 +48,6 @@ namespace API.Services
                     VersionBase = DateTime.MinValue
                 };
 
-                // 1. Barcos
                 try {
                     _logger.LogInformation("Exportando todos los Barcos");
                     paqueteDatos.Barcos = await _context.Barcos.ToListAsync();
@@ -68,7 +57,6 @@ namespace API.Services
                     paqueteDatos.Barcos = new List<Barco>();
                 }
                 
-                // 2. Empresas
                 try {
                     _logger.LogInformation("Exportando todas las Empresas");
                     paqueteDatos.Empresas = await _context.Empresas.ToListAsync();
@@ -78,7 +66,6 @@ namespace API.Services
                     paqueteDatos.Empresas = new List<Empresa>();
                 }
                 
-                // 3. Unidades
                 try {
                     _logger.LogInformation("Exportando todas las Unidades");
                     paqueteDatos.Unidades = await _context.Unidades.ToListAsync();
@@ -88,7 +75,6 @@ namespace API.Services
                     paqueteDatos.Unidades = new List<Unidad>();
                 }
 
-                // 4. Importaciones
                 try {
                     _logger.LogInformation("Exportando todas las Importaciones");
                     paqueteDatos.Importaciones = await _context.Importaciones
@@ -100,7 +86,6 @@ namespace API.Services
                     paqueteDatos.Importaciones = new List<Importacion>();
                 }
                 
-                // 5. Movimientos
                 try {
                     _logger.LogInformation("Exportando todos los Movimientos");
                     paqueteDatos.Movimientos = await _context.Movimientos
@@ -113,7 +98,6 @@ namespace API.Services
                     paqueteDatos.Movimientos = new List<Movimiento>();
                 }
                 
-                // 6. Empresa_Bodegas
                 try {
                     _logger.LogInformation("Exportando todas las Bodegas de Empresa");
                     paqueteDatos.EmpresaBodegas = await _context.Empresa_Bodegas.ToListAsync();
@@ -123,7 +107,6 @@ namespace API.Services
                     paqueteDatos.EmpresaBodegas = new List<Empresa_Bodegas>();
                 }
 
-                // 7. Usuarios
                 try {
                     _logger.LogInformation("Exportando todos los Usuarios");
                     paqueteDatos.Usuarios = await _context.Usuarios
@@ -135,19 +118,15 @@ namespace API.Services
                     paqueteDatos.Usuarios = new List<Usuario>();
                 }
                 
-                // 8. Roles - Diagnóstico detallado
                 try {
                     _logger.LogInformation("Exportando todos los Roles");
                     
-                    // 1. Intentar obtener el conteo
                     int rolesCount = await _context.Roles.CountAsync();
                     _logger.LogDebug("Conteo de roles en la base de datos: {Count}", rolesCount);
                     
-                    // 2. Intentar cargar los roles sin tracking
                     var roles = await _context.Roles.AsNoTracking().ToListAsync();
                     _logger.LogDebug("Roles cargados de la base de datos: {Count}", roles.Count);
                     
-                    // 3. Intentar serializar solo los roles para ver si hay problemas
                     try {
                         var tempOptions = new JsonSerializerOptions { WriteIndented = true };
                         var rolesJson = JsonSerializer.Serialize(roles, tempOptions);
@@ -156,7 +135,6 @@ namespace API.Services
                         _logger.LogError(serEx, "Error al serializar Roles individualmente");
                     }
                     
-                    // 4. Asignar al paquete
                     paqueteDatos.Roles = roles;
                     _logger.LogInformation("Exportados {Count} roles", roles.Count);
                 } catch (Exception ex) {
@@ -164,7 +142,6 @@ namespace API.Services
                     paqueteDatos.Roles = new List<Rol>();
                 }
                 
-                // 9. Permisos
                 try {
                     _logger.LogInformation("Exportando todos los Permisos");
                     paqueteDatos.Permisos = await _context.Permisos.ToListAsync();
@@ -174,7 +151,6 @@ namespace API.Services
                     paqueteDatos.Permisos = new List<Permiso>();
                 }
                 
-                // 10. RolPermisos
                 try {
                     _logger.LogInformation("Exportando todos los RolPermisos");
                     paqueteDatos.RolPermisos = await _context.RolPermisos
@@ -187,7 +163,6 @@ namespace API.Services
                     paqueteDatos.RolPermisos = new List<RolPermiso>();
                 }
                 
-                // 11. HistorialCambios (opcional)
                 try {
                     _logger.LogInformation("Exportando todo el Historial de Cambios");
                     paqueteDatos.HistorialCambios = await _context.HistorialCambios.ToListAsync();
@@ -197,7 +172,6 @@ namespace API.Services
                     paqueteDatos.HistorialCambios = new List<HistorialCambios>();
                 }
                 
-                // Serializar a JSON
                 var options = new JsonSerializerOptions
                 {
                     ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles, // Cambiar a IgnoreCycles
@@ -208,7 +182,6 @@ namespace API.Services
                 
                 var jsonData = JsonSerializer.Serialize(paqueteDatos, options);
                 
-                // Comprimir los datos
                 var compressedStream = new MemoryStream();
                 using (var gzipStream = new System.IO.Compression.GZipStream(
                     compressedStream, System.IO.Compression.CompressionMode.Compress, true))
@@ -218,15 +191,36 @@ namespace API.Services
                 }
                 
                 compressedStream.Position = 0;
-                
-                // Registrar la exportación en el historial
-                _historialService.GuardarHistorial("Sincronización", 
-                    $"Exportación completa. Total entidades exportadas: " +
-                    $"{paqueteDatos.Barcos.Count + paqueteDatos.Empresas.Count + paqueteDatos.Unidades.Count + 
-                      paqueteDatos.Importaciones.Count + paqueteDatos.Movimientos.Count + paqueteDatos.EmpresaBodegas.Count + 
-                      paqueteDatos.Usuarios.Count + paqueteDatos.Roles.Count + paqueteDatos.Permisos.Count + paqueteDatos.RolPermisos.Count}",
-                    "Exportación");
-                
+
+                var exportData = new 
+                {
+                    Fecha = DateTime.UtcNow,
+                    EntidadesExportadas = new 
+                    {
+                        Barcos = paqueteDatos.Barcos.Count,
+                        Empresas = paqueteDatos.Empresas.Count, 
+                        Unidades = paqueteDatos.Unidades.Count,
+                        Importaciones = paqueteDatos.Importaciones.Count,
+                        Movimientos = paqueteDatos.Movimientos.Count,
+                        EmpresaBodegas = paqueteDatos.EmpresaBodegas.Count,
+                        Usuarios = paqueteDatos.Usuarios.Count, 
+                        Roles = paqueteDatos.Roles.Count,
+                        Permisos = paqueteDatos.Permisos.Count,
+                        RolPermisos = paqueteDatos.RolPermisos.Count,
+                        HistorialCambios = paqueteDatos.HistorialCambios.Count
+                    },
+                    TotalEntidades = paqueteDatos.Barcos.Count + paqueteDatos.Empresas.Count + paqueteDatos.Unidades.Count + 
+                                     paqueteDatos.Importaciones.Count + paqueteDatos.Movimientos.Count + paqueteDatos.EmpresaBodegas.Count + 
+                                     paqueteDatos.Usuarios.Count + paqueteDatos.Roles.Count + paqueteDatos.Permisos.Count + 
+                                     paqueteDatos.RolPermisos.Count + paqueteDatos.HistorialCambios.Count
+                };
+
+                _historialService.GuardarHistorial(
+                    "Sincronización", 
+                    exportData, 
+                    "Exportación",
+                    $"Exportación completa. Total entidades exportadas: {exportData.TotalEntidades}");
+
                 return compressedStream;
             }
             catch (Exception ex)
@@ -249,7 +243,6 @@ namespace API.Services
                     return resultado;
                 }
 
-                // Descomprimir el stream si es necesario
                 datosStream.Position = 0;
                 bool isGzipped = false;
                 
@@ -303,16 +296,13 @@ namespace API.Services
                     return resultado;
                 }
 
-                // Usar la estrategia de ejecución del contexto para manejar transacciones automáticamente
                 var strategy = _context.Database.CreateExecutionStrategy();
                 
                 await strategy.ExecuteAsync(async () => {
-                    // Todo el código que necesita transacción va dentro de esta lambda
                     using (var transaction = await _context.Database.BeginTransactionAsync())
                     {
                         try
                         {
-                            // 1. Entidades base (sin dependencias)
                             await ImportarEntidades(_context.Barcos, paqueteDatos.Barcos, b => b.id, resultado);
                             await ImportarEntidades(_context.Empresas, paqueteDatos.Empresas, e => e.id_empresa, resultado);
                             await ImportarEntidades(_context.Unidades, paqueteDatos.Unidades, u => u.id, resultado);
@@ -322,7 +312,6 @@ namespace API.Services
                             await _context.SaveChangesAsync();
                             _context.ChangeTracker.Clear();
                             
-                            // 2. Entidades que dependen de las entidades base
                             await ImportarEntidades(_context.Importaciones, paqueteDatos.Importaciones, i => i.id, resultado);
                             await ImportarEntidades(_context.Empresa_Bodegas, paqueteDatos.EmpresaBodegas, eb => eb.id, resultado);
                             await ImportarEntidades(_context.Usuarios, paqueteDatos.Usuarios, u => u.id, resultado);
@@ -331,10 +320,8 @@ namespace API.Services
                             await _context.SaveChangesAsync();
                             _context.ChangeTracker.Clear();
                             
-                            // 3. Entidades que dependen de las entidades de nivel 2
                             await ImportarEntidades(_context.Movimientos, paqueteDatos.Movimientos, m => m.id, resultado);
                             
-                            // 4. Finalmente historial y otras entidades de sistema
                             await ImportarEntidades(_context.HistorialCambios, paqueteDatos.HistorialCambios, h => h.Id, resultado);
                             
                             await _context.SaveChangesAsync();
@@ -344,7 +331,6 @@ namespace API.Services
                             resultado.Mensaje = $"Sincronización completada con éxito. Agregados: {resultado.Agregados}, Actualizados: {resultado.Actualizados}, Omitidos: {resultado.Omitidos}";
                             resultado.FechaSincronizacion = DateTime.UtcNow;
 
-                            // Create a detailed data object for better logging
                             var syncData = new 
                             {
                                 Fecha = DateTime.UtcNow,
@@ -363,7 +349,7 @@ namespace API.Services
                         catch (Exception)
                         {
                             await transaction.RollbackAsync();
-                            throw; // Re-throw para que la estrategia de ejecución lo maneje
+                            throw; 
                         }
                     }
                 });
@@ -397,7 +383,6 @@ namespace API.Services
             return resultado;
         }
 
-        // Método auxiliar para importar entidades de forma simplificada
         private async Task ImportarEntidades<T>(
             DbSet<T> dbSet, 
             List<T> entidades, 
@@ -423,34 +408,27 @@ namespace API.Services
                         continue;
                     }
                     
-                    // Buscar entidad existente
                     var existente = string.IsNullOrEmpty(idStr) ? null : await FindEntityByIdAsync<T>(idStr);
                     
                     if (existente == null)
                     {
-                        // Limpiar propiedades de navegación para evitar conflictos
                         LimpiarNavegacionesYPrepararFK(entidad);
                         
-                        // Agregar nueva entidad
                         dbSet.Add(entidad);
                         resultado.Agregados++;
                         _logger.LogInformation($"Agregada entidad {typeof(T).Name} con ID {idStr}");
                     }
                     else
                     {
-                        // Comparar entidades para evitar actualizaciones innecesarias
                         if (EntidadesIguales(existente, entidad))
                         {
-                            // Sin cambios, no actualizar
                             resultado.Omitidos++;
                             _logger.LogInformation($"Omitida entidad {typeof(T).Name} con ID {idStr} (sin cambios)");
                         }
                         else
                         {
-                            // Actualizar entidad existente
                             _context.Entry(existente).State = EntityState.Detached;
                             
-                            // Limpiar propiedades de navegación para evitar conflictos
                             LimpiarNavegacionesYPrepararFK(entidad);
                             
                             dbSet.Update(entidad);
@@ -469,36 +447,31 @@ namespace API.Services
             }
         }
 
-        // Método para comparar entidades y determinar si son iguales
         private bool EntidadesIguales<T>(T entidad1, T entidad2) where T : class
         {
             if (entidad1 == null || entidad2 == null)
                 return false;
             
-            // Obtener propiedades para comparar (excluyendo navegaciones y propiedades de seguimiento)
             var properties = typeof(T).GetProperties()
                 .Where(p => 
                     p.CanRead && 
                     p.CanWrite &&
                     !p.Name.EndsWith("Id") && // Excluir FKs
-                    !typeof(IEnumerable<object>).IsAssignableFrom(p.PropertyType) && // Excluir colecciones
-                    p.PropertyType.Namespace != "System.Collections.Generic" && // Excluir colecciones genéricas
-                    p.GetMethod?.IsVirtual != true); // Excluir propiedades virtuales (navegaciones)
+                    !typeof(IEnumerable<object>).IsAssignableFrom(p.PropertyType) && 
+                    p.PropertyType.Namespace != "System.Collections.Generic" &&
+                    p.GetMethod?.IsVirtual != true);
                     
-            // Comparar cada propiedad
             foreach (var prop in properties)
             {
                 var value1 = prop.GetValue(entidad1);
                 var value2 = prop.GetValue(entidad2);
                 
-                // Manejar comparación de nulos
                 if (value1 == null && value2 == null)
                     continue;
                     
                 if (value1 == null || value2 == null)
                     return false;
                     
-                // Comparación según el tipo
                 if (!value1.Equals(value2))
                     return false;
             }
@@ -506,13 +479,11 @@ namespace API.Services
             return true;
         }
 
-        // Método para limpiar navegaciones pero preservando FK
         private void LimpiarNavegacionesYPrepararFK<T>(T entidad) where T : class
         {
             var entityType = _context.Model.FindEntityType(typeof(T));
             if (entityType == null) return;
             
-            // 1. Guardar todos los valores de FKs primero
             var fkProperties = entityType.GetForeignKeys()
                 .SelectMany(fk => fk.Properties)
                 .ToList();
@@ -529,7 +500,6 @@ namespace API.Services
                 }
             }
             
-            // 2. Limpiar todas las navegaciones
             foreach (var navigation in entityType.GetNavigations())
             {
                 var propInfo = typeof(T).GetProperty(navigation.Name);
@@ -537,7 +507,6 @@ namespace API.Services
                     propInfo.SetValue(entidad, null);
             }
             
-            // 3. Restaurar valores de FKs
             foreach (var fkEntry in fkValues)
             {
                 var propInfo = typeof(T).GetProperty(fkEntry.Key);
@@ -545,10 +514,8 @@ namespace API.Services
                     propInfo.SetValue(entidad, fkEntry.Value);
             }
             
-            // 4. Manejar casos especiales conocidos
             if (typeof(T) == typeof(Importacion))
             {
-                // Asegurarse de que BarcoId está configurado
                 var importacion = entidad as Importacion;
                 if (importacion?.Barco != null && importacion.idbarco == 0)
                 {
@@ -558,7 +525,6 @@ namespace API.Services
             }
             else if (typeof(T) == typeof(Movimiento))
             {
-                // Asegurar que ImportacionId y EmpresaId están configurados
                 var movimiento = entidad as Movimiento;
                 if (movimiento?.Importacion != null && movimiento.idimportacion == 0)
                 {
@@ -585,17 +551,14 @@ namespace API.Services
                     datos = await ExportarDatosAsync();
                 }
 
-                // Reposicionar el stream al inicio para leerlo
                 datos.Position = 0;
                 
-                // Crear un archivo temporal
                 var archivoTemporal = Path.Combine(Path.GetTempPath(), $"Sincronizacion_{DateTime.Now:yyyyMMddHHmmss}.json");
                 using (var fileStream = new FileStream(archivoTemporal, FileMode.Create))
                 {
                     await datos.CopyToAsync(fileStream);
                 }
 
-                // Configurar cliente SMTP desde configuración
                 var smtpHost = _config["SMTP:Host"] ?? "smtp.gmail.com";
                 var smtpPort = int.Parse(_config["SMTP:Port"] ?? "587");
                 var smtpUser = _config["SMTP:Username"] ?? throw new Exception("Falta configuración de usuario SMTP");
@@ -610,7 +573,6 @@ namespace API.Services
                     EnableSsl = smtpSsl
                 };
 
-                // Crear mensaje
                 var mensaje = new MailMessage
                 {
                     From = new MailAddress(smtpFrom, "Sistema de Gestión de Importaciones"),
@@ -623,10 +585,8 @@ namespace API.Services
                 mensaje.To.Add(destinatario);
                 mensaje.Attachments.Add(new Attachment(archivoTemporal));
 
-                // Enviar el correo
                 await smtpClient.SendMailAsync(mensaje);
                 
-                // Limpiar
                 File.Delete(archivoTemporal);
                 
                 _logger.LogInformation("Correo de sincronización enviado con éxito a {Destinatario}", destinatario);
@@ -645,8 +605,6 @@ namespace API.Services
 
         public async Task<DateTime> ObtenerUltimaSincronizacionAsync()
         {
-            // Aquí podrías tener una tabla o registro para almacenar la última sincronización
-            // Por simplicidad, retornamos hace 7 días como valor predeterminado
             try
             {
                 var ultimoRegistro = await _context.HistorialCambios
@@ -678,210 +636,8 @@ namespace API.Services
             return Task.CompletedTask;
         }
 
-        private async Task ProcesarEntidadConFecha<T>(
-            DbSet<T> dbSet, 
-            T entidad, 
-            Func<T, object> keySelector,
-            Func<T, DateTime> fechaSelector,
-            ResultadoSync resultado) 
-            where T : class
-        {
-            try
-            {
-                var id = keySelector(entidad);
-                if (id == null)
-                {
-                    _logger.LogWarning("ID nulo para entidad tipo {TipoEntidad}", typeof(T).Name);
-                    resultado.Omitidos++;
-                    return;
-                }
-
-                var idStr = id?.ToString();
-                if (string.IsNullOrEmpty(idStr))
-                {
-                    _logger.LogWarning("ID string nulo o vacío para entidad tipo {TipoEntidad}", typeof(T).Name);
-                    resultado.Omitidos++;
-                    return;
-                }
-
-                // Usar el método FindEntityByIdAsync en lugar de hacer búsquedas con expresiones no traducibles
-                var entidadExistente = await FindEntityByIdAsync<T>(idStr);
-                        
-                if (entidadExistente == null)
-                {
-                    // Desconectar navegaciones para evitar problemas de tracking
-                    DesconectarNavegaciones(entidad);
-                    
-                    // Nueva entidad - agregar
-                    dbSet.Add(entidad);
-                    resultado.Agregados++;
-                    _logger.LogInformation("Agregada nueva {EntidadTipo} con ID {Id}", 
-                        typeof(T).Name, id);
-                }
-                else 
-                {
-                    // Comparar fechas
-                    var fechaExistente = fechaSelector(entidadExistente);
-                    var fechaNueva = fechaSelector(entidad);
-                    
-                    if (fechaNueva > fechaExistente)
-                    {
-                        // Desconectar navegaciones para evitar problemas de tracking
-                        DesconectarNavegaciones(entidad);
-                        
-                        // Desasociar la entidad existente
-                        _context.Entry(entidadExistente).State = EntityState.Detached;
-                        
-                        // Actualizar con la nueva versión
-                        dbSet.Update(entidad);
-                        resultado.Actualizados++;
-                        _logger.LogInformation("Actualizada {EntidadTipo} con ID {Id}", 
-                            typeof(T).Name, id);
-                    }
-                    else
-                    {
-                        resultado.Omitidos++;
-                        _logger.LogInformation("Omitida {EntidadTipo} con ID {Id}", 
-                            typeof(T).Name, id);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error procesando entidad {Tipo} con ID {Id}: {Message}", 
-                    typeof(T).Name, keySelector(entidad)?.ToString() ?? "desconocido", ex.Message);
-                resultado.ErroresCount++;
-                resultado.Errores.Add($"Error procesando {typeof(T).Name}: {ex.Message}");
-            }
-        }
-
-        private async Task ProcesarEntidadSinFecha<T>(
-            DbSet<T> dbSet, 
-            T entidad, 
-            Func<T, object> keySelector,
-            ResultadoSync resultado) 
-            where T : class
-        {
-            try
-            {
-                var id = keySelector(entidad);
-                if (id == null)
-                {
-                    _logger.LogWarning("ID nulo para entidad sin fecha tipo {TipoEntidad}", typeof(T).Name);
-                    resultado.Omitidos++;
-                    return;
-                }
-
-                var idStr = id.ToString();
-                
-                // Buscar entidad existente por ID
-                var entidadExistente = string.IsNullOrEmpty(idStr) ? null : await FindEntityByIdAsync<T>(idStr);
-                        
-                if (entidadExistente == null)
-                {
-                    // Desconectar navegaciones para evitar problemas de tracking
-                    DesconectarNavegaciones(entidad);
-                    
-                    // Nueva entidad - agregar
-                    dbSet.Add(entidad);
-                    resultado.Agregados++;
-                    _logger.LogInformation("Agregada nueva {EntidadTipo} sin fecha con ID {Id}", 
-                        typeof(T).Name, id);
-                }
-                else 
-                {
-                    // Desconectar navegaciones para evitar problemas de tracking
-                    DesconectarNavegaciones(entidad);
-                    
-                    // Desasociar la entidad existente
-                    _context.Entry(entidadExistente).State = EntityState.Detached;
-                    
-                    // Actualizar con la nueva versión
-                    dbSet.Update(entidad);
-                    resultado.Actualizados++;
-                    _logger.LogInformation("Actualizada {EntidadTipo} sin fecha con ID {Id}", 
-                        typeof(T).Name, id);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error procesando entidad sin fecha {Tipo} con ID {Id}: {Message}", 
-                    typeof(T).Name, keySelector(entidad)?.ToString() ?? "desconocido", ex.Message);
-                resultado.ErroresCount++;
-                resultado.Errores.Add($"Error procesando {typeof(T).Name}: {ex.Message}");
-            }
-        }
-
-        // Método auxiliar para desconectar propiedades de navegación
-        private void DesconectarNavegaciones<T>(T entidad) where T : class
-        {
-            // Preserve IDs for foreign keys while clearing navigation properties
-            var navigationProperties = _context.Model
-                .FindEntityType(typeof(T))
-                ?.GetNavigations();
-                
-            if (navigationProperties != null)
-            {
-                foreach (var navigationProperty in navigationProperties)
-                {
-                    // Skip navigation properties for essential foreign keys in Importaciones and Movimientos
-                    if ((typeof(T) == typeof(Importacion) && navigationProperty.Name == "Barco") ||
-                        (typeof(T) == typeof(Movimiento) && (navigationProperty.Name == "Importacion" || 
-                                                             navigationProperty.Name == "Empresa")))
-                    {
-                        // For these special cases, preserve the ID but null the navigation
-                        var propertyInfo = typeof(T).GetProperty(navigationProperty.Name);
-                        if (propertyInfo != null)
-                        {
-                            var value = propertyInfo.GetValue(entidad);
-                            if (value != null)
-                            {
-                                // Keep the foreign key property (e.g., BarcoId) but clear the navigation property
-                                var fkProp = typeof(T).GetProperty(navigationProperty.Name + "Id");
-                                if (fkProp != null)
-                                {
-                                    var idValue = fkProp.GetValue(entidad);
-                                    propertyInfo.SetValue(entidad, null);  // Clear navigation
-                                    fkProp.SetValue(entidad, idValue);     // Restore FK value
-                                }
-                            }
-                        }
-                        continue;
-                    }
-                    
-                    // For other navigation properties, handle normally
-                    var propInfo = typeof(T).GetProperty(navigationProperty.Name);
-                    if (propInfo != null)
-                    {
-                        var value = propInfo.GetValue(entidad);
-                        
-                        // If it's a collection, set to null
-                        if (value is IEnumerable<object>)
-                        {
-                            propInfo.SetValue(entidad, null);
-                        }
-                        // If it's a reference, set to null
-                        else if (value != null)
-                        {
-                            propInfo.SetValue(entidad, null);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Approach 1: Use client evaluation
-        private async Task<TEntity?> FindEntityByStringKeyAsync<TEntity>(string idStr, Expression<Func<TEntity, object>> keySelector) where TEntity : class
-        {
-            // Pull data to memory first, then apply the filter
-            var items = await _context.Set<TEntity>().ToListAsync();
-            return items.FirstOrDefault(e => keySelector.Compile()(e).ToString() == idStr);
-        }
-
-        // Approach 2: Use specific property expressions based on entity type
         private async Task<TEntity?> FindEntityByIdAsync<TEntity>(string idStr) where TEntity : class
         {
-            // Use type-specific handling based on the entity type
             if (typeof(TEntity) == typeof(Barco))
             {
                 return await _context.Set<TEntity>().FirstOrDefaultAsync(e => EF.Property<int>(e, "id").ToString() == idStr) as TEntity;
@@ -927,12 +683,10 @@ namespace API.Services
                 return await _context.Set<TEntity>().FirstOrDefaultAsync(e => EF.Property<int>(e, "Id").ToString() == idStr) as TEntity;
             }
             
-            // Fallback for any other entity types: load entities to memory and filter
             _logger.LogWarning("No se encontró un método específico para buscar entidad de tipo {EntityType}, usando método fallback", typeof(TEntity).Name);
             var entities = await _context.Set<TEntity>().ToListAsync();
             return entities.FirstOrDefault(e => 
             {
-                // Try to find an Id property using reflection
                 var idProperty = typeof(TEntity).GetProperties()
                     .FirstOrDefault(p => p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase) || 
                                        p.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase));

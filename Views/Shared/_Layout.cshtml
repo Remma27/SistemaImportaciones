@@ -6,6 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Importaciones</title>
     
+    <script>
+        if (sessionStorage.getItem('appLoaded')) {
+            document.write('<style>.loading-indicator{display:none !important;}</style>');
+        } else {
+            sessionStorage.setItem('appLoaded', 'true');
+        }
+    </script>
+    
     <style>
         .loading-indicator {
             position: fixed;
@@ -19,7 +27,7 @@
             justify-content: center;
             background-color: rgba(248, 249, 250, 0.85);
             z-index: 9999;
-            transition: opacity 0.8s ease-in-out;
+            transition: none;
         }
         
         .loading-spinner {
@@ -45,38 +53,13 @@
         }
         
         header, main {
-            transition: opacity 0.5s ease-in-out;
+            transition: none;
         }
         
         .js-loading .container {
             opacity: 0;
         }
     </style>
-    <script>
-        var isOfflineMode = !navigator.onLine;
-        
-        document.documentElement.classList.add('js-loading');
-        
-        var spinnerTimeout = isOfflineMode ? 8000 : 5000;
-        
-        window.addEventListener('DOMContentLoaded', function() {
-            if (isOfflineMode) {
-                var loadingText = document.querySelector('.loading-text');
-                if (loadingText) {
-                    loadingText.textContent = "Cargando en modo sin conexión...";
-                }
-            }
-        });
-        
-        window.setTimeout(function() {
-            document.documentElement.classList.remove('js-loading');
-            var spinner = document.querySelector('.loading-indicator');
-            if (spinner) spinner.style.opacity = '0';
-            setTimeout(function() { 
-                if (spinner) spinner.style.display = 'none';
-            }, 800);
-        }, spinnerTimeout);
-    </script>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231e3c72'/><text x='50' y='62' font-family='Arial' font-size='35' fill='white' text-anchor='middle'>SGI</text></svg>" type="image/svg+xml">
         
@@ -156,7 +139,7 @@
 </head>
 
 <body class="h-100">
-    <div class="loading-indicator">
+    <div class="loading-indicator" id="global-loading-indicator">
         <div class="loading-spinner"></div>
         <div class="loading-text">Cargando...</div>
     </div>
@@ -194,32 +177,6 @@
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     
     <script src="~/js/diagnostico-offline.js" asp-append-version="true"></script>
-    
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                document.documentElement.classList.remove('js-loading');
-                
-                if (!navigator.onLine) {
-                    if (typeof toastService !== 'undefined') {
-                        setTimeout(function() {
-                            toastService.info('Trabajando en modo sin conexión');
-                        }, 1500);
-                    }
-                }
-            }, 200);
-        });
-        
-        window.addEventListener('load', function() {
-            var indicator = document.querySelector('.loading-indicator');
-            if (indicator) {
-                indicator.style.opacity = '0';
-                setTimeout(function() {
-                    indicator.style.display = 'none';
-                }, 800);
-            }
-        });
-    </script>
 
     <script>
         window.addEventListener('load', function() {
@@ -278,6 +235,55 @@
                 };
             }
         });
+    </script>
+
+    <script>
+        (function() {
+            if (sessionStorage.getItem('appLoaded') !== 'firstLoad') {
+                var spinner = document.getElementById('global-loading-indicator');
+                if (spinner) {
+                    spinner.style.display = 'none';
+                    setTimeout(function() {
+                        spinner.parentNode.removeChild(spinner);
+                    }, 100);
+                }
+            } else {
+                sessionStorage.setItem('appLoaded', 'subsequentLoad');
+                
+                setTimeout(function() {
+                    var spinner = document.getElementById('global-loading-indicator');
+                    if (spinner) {
+                        spinner.style.display = 'none';
+                    }
+                }, 500);
+            }
+            
+            window.showLoadingIndicator = function() {
+                console.log("Mostrar spinner deshabilitado para mejorar la experiencia");
+                return false;
+            };
+        })();
+    </script>
+
+    <script>
+        (function() {
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        console.warn('Spinner style changed by:', 
+                            new Error().stack.split('\n')[2].trim());
+                    }
+                });
+            });
+            
+            var spinner = document.getElementById('global-loading-indicator');
+            if (spinner) {
+                observer.observe(spinner, {     
+                    attributes: true,
+                    attributeFilter: ['style', 'class']
+                });
+            }
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

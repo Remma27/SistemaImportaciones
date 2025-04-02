@@ -79,43 +79,6 @@ namespace API.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> EnviarPorCorreo([FromBody] SolicitudEnvioCorreo solicitud)
-        {
-            if (string.IsNullOrEmpty(solicitud?.Destinatario))
-            {
-                return BadRequest("Se requiere un correo electrónico de destino");
-            }
-
-            try
-            {
-                var resultado = await _syncService.EnviarPorCorreoAsync(solicitud.Destinatario, new MemoryStream());
-                
-                if (resultado)
-                {
-                    return Ok(new { 
-                        Exitoso = true, 
-                        Mensaje = $"Datos enviados exitosamente a {solicitud.Destinatario}" 
-                    });
-                }
-                else
-                {
-                    return StatusCode(500, new { 
-                        Exitoso = false, 
-                        Mensaje = "Error al enviar correo electrónico" 
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al enviar correo de sincronización");
-                return StatusCode(500, new { 
-                    Exitoso = false, 
-                    Mensaje = $"Error: {ex.Message}" 
-                });
-            }
-        }
-
         [HttpGet]
         public async Task<IActionResult> ObtenerUltimaSincronizacion()
         {
@@ -136,10 +99,5 @@ namespace API.Controllers
                 });
             }
         }
-    }
-
-    public class SolicitudEnvioCorreo
-    {
-        public required string Destinatario { get; set; }
     }
 }

@@ -25,7 +25,7 @@ $(document).ready(function () {
 
         if (typeof XLSX === 'undefined') {
             const script = document.createElement('script')
-            script.src = 'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js'
+            script.src = '/wwwroot/lib/xlsx/xlsx.full.min.js'
             script.onload = function () {
                 exportTableToExcelWithXLSX(table, filename)
             }

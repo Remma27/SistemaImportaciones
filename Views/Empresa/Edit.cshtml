@@ -29,19 +29,7 @@
                             </div>
                             <span asp-validation-for="nombreempresa" class="text-danger small"></span>
                         </div>
-
-                        <div class="mb-4">
-                            <label asp-for="estatus" class="form-label fw-bold">Estado</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-toggle-on"></i></span>
-                                <select asp-for="estatus" class="form-select">
-                                    <option value="1">Activo</option>
-                                    <option value="2">Inactivo</option>
-                                </select>
-                            </div>
-                            <span asp-validation-for="estatus" class="text-danger small"></span>
-                        </div>
-
+                        
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <button type="submit" class="btn btn-warning btn-lg">
                                 <i class="fas fa-save me-2"></i>Guardar Cambios

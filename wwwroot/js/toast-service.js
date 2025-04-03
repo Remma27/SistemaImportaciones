@@ -104,4 +104,4 @@ class ToastService {
     }
 }
 
-const toastService = new ToastService()
+window.toastService = window.toastService || new ToastService();

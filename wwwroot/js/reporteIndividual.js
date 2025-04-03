@@ -1,6 +1,14 @@
 $(document).ready(function () {
     $('#btnExportarExcel').prop('disabled', false).removeClass('disabled');
     
+    // Verificar si la biblioteca XLSX está disponible
+    const isXLSXAvailable = typeof XLSX !== 'undefined';
+    
+    if (!isXLSXAvailable) {
+        console.warn('La biblioteca XLSX no está disponible. La exportación a Excel no funcionará.');
+        $('#btnExportarExcel').attr('title', 'Exportación a Excel no disponible. Verifique su conexión a internet.');
+    }
+    
     const checkInterval = setInterval(function() {
         if ($('#btnExportarExcel').is(':disabled')) {
             console.log('Rehabilitando el botón de exportar');
@@ -55,6 +63,12 @@ $(document).ready(function () {
 
     $('#btnExportarExcel').on('click', function () {
         $(this).prop('disabled', false).removeClass('disabled');
+        
+        // Verificar nuevamente si XLSX está disponible
+        if (typeof XLSX === 'undefined') {
+            toastService.error('La biblioteca para exportar a Excel no está disponible. Verifica tu conexión a internet e intenta nuevamente.');
+            return;
+        }
         
         const originalTable = document.getElementById('tablaDetallada');
         const clonedTable = originalTable.cloneNode(true);

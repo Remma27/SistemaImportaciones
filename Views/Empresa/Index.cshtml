@@ -69,17 +69,19 @@
                                         </div>
                                     </td>
                                     <td class="text-end">
-                                        <a asp-controller="Empresa" asp-action="Edit" asp-route-id="@item.id_empresa"
-                                            class="btn btn-sm btn-warning">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        @if (User.IsInRole("Administrador"))
-                                        {
-                                            <a asp-controller="Empresa" asp-action="Delete" asp-route-id="@item.id_empresa"
-                                                class="btn btn-sm btn-danger">
-                                                <i class="fas fa-trash"></i>
+                                        <div class="d-flex flex-wrap gap-1 justify-content-end">
+                                            <a asp-controller="Empresa" asp-action="Edit" asp-route-id="@item.id_empresa"
+                                               class="btn btn-sm btn-warning">
+                                                <i class="fas fa-edit"></i>
                                             </a>
-                                        }
+                                            @if (User.IsInRole("Administrador"))
+                                            {
+                                                <a asp-controller="Empresa" asp-action="Delete" asp-route-id="@item.id_empresa"
+                                                   class="btn btn-sm btn-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -124,6 +126,13 @@
     .form-check-label {
         margin-left: 0.5rem;
     }
+
+    @@media (max-width: 992px) {
+    .d-flex.flex-wrap.gap-1 .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
 </style>
 
 @section Scripts {

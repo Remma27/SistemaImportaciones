@@ -120,3 +120,369 @@
     margin-right: 0.75rem;
     color: #2a5298;
 }
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100%;
+    background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%); /* Mismo estilo que el header pero vertical */
+    z-index: 1050;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    color: #fff;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1049;
+    display: none;
+}
+
+.sidebar.active {
+    left: 0;
+}
+
+.sidebar-header {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.close-sidebar {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.sidebar-brand .logo-icon {
+    margin-right: 10px;
+    font-size: 22px;
+    color: #8bc34a;
+}
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    padding: 10px 0;
+}
+
+.sidebar-user i {
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-menu li a {
+    padding: 15px;
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.sidebar-menu li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-menu li a i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-submenu {
+    list-style: none;
+    padding: 0;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-submenu li a {
+    padding-left: 40px;
+}
+
+.sidebar-divider {
+    height: 1px;
+    margin: 10px 0;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-logout {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: #fff;
+    padding: 15px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-logout i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-logout:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Asegurar que el botón del sidebar sea visible y tenga buen contraste */
+.btn-sidebar {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-sidebar:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Ajuste para asegurar visibilidad en tamaños intermedios */
+@media (min-width: 768px) and (max-width: 991px) {
+    .user-badge {
+        font-size: 0.9rem;
+    }
+    
+    .user-controls {
+        justify-content: flex-end;
+    }
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        left: -300px;
+    }
+}
+
+/* Menú horizontal personalizado para pantallas grandes */
+.horizontal-menu {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 5px 10px;
+}
+
+.main-menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+}
+
+.menu-item {
+    position: relative;
+    margin: 5px 8px 5px 0;
+}
+
+.menu-item > a {
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.menu-item > a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+}
+
+.menu-item > a i {
+    margin-right: 0.5rem;
+}
+
+.small-icon {
+    font-size: 0.7rem;
+}
+
+/* Dropdown en el menú horizontal */
+.dropdown-menu-item {
+    position: relative;
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    min-width: 220px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    list-style: none;
+    padding: 5px;
+    margin: 0;
+    z-index: 1000;
+    display: none;
+}
+
+.dropdown-menu-item:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown-content li a {
+    color: #333;
+    padding: 8px 15px;
+    display: block;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.dropdown-content li a:hover {
+    background-color: #f0f7ff;
+    transform: translateX(5px);
+}
+
+/* Asegurarnos que el menú horizontal sea visible en pantallas grandes */
+@media (min-width: 992px) {
+    .d-lg-block {
+        display: block !important;
+    }
+    
+    .horizontal-menu {
+        display: block !important;
+    }
+    
+    /* Asegurar que el navbar se muestre en pantallas grandes */
+    .navbar-expand-lg .navbar-collapse {
+        display: flex !important;
+    }
+    
+    /* Hacer visibles los elementos del menú */
+    #navbarMain {
+        display: flex !important;
+    }
+    
+    /* Forzar visibilidad del contenedor del navbar */
+    .d-lg-block {
+        display: block !important;
+    }
+    
+    /* Ajuste específico para la navbar en pantallas grandes */
+    .navbar-nav {
+        flex-direction: row;
+    }
+    
+    .navbar-nav .nav-item {
+        margin-right: 5px;
+    }
+}
+
+/* Reemplaza la sección de media queries para desktop */
+@media (min-width: 992px) {
+    /* Ocultar botón sidebar en pantallas grandes */
+    .btn-sidebar {
+        display: none !important;
+    }
+    
+    /* Hacer visible el menú horizontal en desktop */
+    .desktop-menu {
+        display: block !important;
+    }
+    
+    /* Ocultar el menú en home page */
+    body.home-page .desktop-menu {
+        display: none !important;
+    }
+}
+
+/* Siempre ocultar el menú desktop en pantallas pequeñas */
+@media (max-width: 991.98px) {
+    .desktop-menu {
+        display: none !important;
+    }
+}
+
+/* Asegura que el menú sea siempre visible en pantallas grandes
+   independientemente de las clases Bootstrap */
+@media (min-width: 992px) {
+    .horizontal-menu {
+        display: block !important;
+    }
+    
+    /* Garantiza que el contenedor del menú esté visible */
+    .desktop-menu {
+        display: block !important;
+    }
+    
+    /* Botón del sidebar oculto en desktop */
+    .btn-sidebar {
+        display: none !important;
+    }
+}
+
+/* Regla específica para el rango problemático */
+@media (min-width: 992px) and (max-width: 1100px) {
+    .desktop-menu {
+        display: block !important;
+    }
+    
+    .btn-sidebar {
+        display: none !important;
+    }
+    
+    /* Ajustes para este rango específico de resolución */
+    .horizontal-menu {
+        padding: 3px 5px;
+    }
+    
+    .menu-item > a {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+    
+    .dropdown-content {
+        min-width: 200px;
+    }
+}
+
+/* Fix para resoluciones específicas como 1003x667 */
+@media (min-width: 1000px) and (max-width: 1010px) {
+    .desktop-menu {
+        display: block !important;
+    }
+}

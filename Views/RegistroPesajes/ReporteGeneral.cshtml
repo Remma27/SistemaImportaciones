@@ -6,7 +6,7 @@
     var selectedBarco = Context.Request.Query["selectedBarco"].ToString();
     var returnController = Context.Request.Query["returnController"].ToString();
     var backController = !string.IsNullOrEmpty(returnController) ? returnController : "RegistroPesajes";
-    var todasLasEscotillas = new int[] { 1, 2, 3, 4, 5, 6, 7 };
+    var todasLasEscotillas = new int[] { 1, 2, 3, 4, 5 };
     var unidades = new[] { "Kilogramos", "Quintales", "Libras", "Toneladas" };
     
     var totalesKgPorEscotilla = new Dictionary<int, decimal>();
@@ -101,7 +101,7 @@
                             <tr>
                                 <th rowspan="2" class="align-middle" style="position: sticky; top: 0; z-index: 10; background-color: #cfe2ff;">Empresa</th>
                                 <th rowspan="2" class="align-middle" style="position: sticky; top: 0; z-index: 10; background-color: #cfe2ff;">Unidad</th>
-                                <th colspan="7" class="text-center" style="position: sticky; top: 0; z-index: 10; background-color: #cfe2ff;">Escotillas</th>
+                                <th colspan="5" class="text-center" style="position: sticky; top: 0; z-index: 10; background-color: #cfe2ff;">Escotillas</th>
                                 <th rowspan="2" class="align-middle text-center" style="position: sticky; top: 0; z-index: 10; background-color: #cfe2ff;">Subtotal</th>
                             </tr>
                             <tr>
@@ -286,7 +286,8 @@
     }
     
     #tablaReporte td, #tablaReporte th {
-        padding: 0.5rem;
+        padding: 0.75rem;
+        vertical-align: middle;
     }
     
     #tablaReporte thead.sticky-top {
@@ -324,7 +325,11 @@
     }
     
     #tablaReporte thead tr:last-child th {
-        min-width: 80px;
+        min-width: 100px;
+    }
+    
+    #tablaReporte tbody tr td.text-end {
+        padding-right: 1rem;
     }
     
     #tablaReporte tbody tr:hover {
@@ -340,5 +345,16 @@
         height: 10px;
         background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.05));
         pointer-events: none;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    @@media (min-width: 992px) {
+        .table-responsive {
+            overflow-x: visible;
+        }
     }
 </style>

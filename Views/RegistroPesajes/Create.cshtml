@@ -134,5 +134,13 @@
                 }
             });
         });
+
+        
+        $("form").submit(function() {
+            var submitButton = $(this).find("button[type='submit']");
+            submitButton.prop("disabled", true);
+            submitButton.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...');
+            return true;
+        });
     </script>
 }
